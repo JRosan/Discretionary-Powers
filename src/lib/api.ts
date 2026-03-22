@@ -203,7 +203,7 @@ export const api = {
   },
 
   statistics: {
-    getPublic: () => request<Record<string, unknown>>("/statistics"),
+    getPublic: () => request<Record<string, unknown>>("/statistics/public"),
   },
 
   health: {
