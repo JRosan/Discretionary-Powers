@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Providers } from "@/app/providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -23,7 +24,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#1D3557" />
       </head>
       <body>
-        {children}
+        <Providers>{children}</Providers>
         <script
           dangerouslySetInnerHTML={{
             __html: `
