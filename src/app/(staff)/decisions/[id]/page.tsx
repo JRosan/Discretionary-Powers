@@ -2,6 +2,7 @@
 
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
   FileText,
@@ -15,7 +16,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { DECISION_STEPS } from "@/lib/constants";
-import { trpc } from "@/lib/trpc";
+import { api } from "@/lib/api";
 
 const statusColors: Record<string, string> = {
   draft: "bg-surface text-text-secondary",
@@ -48,10 +49,11 @@ export default function DecisionDetailPage() {
   const params = useParams();
   const decisionId = params.id as string;
 
-  const { data, isLoading, error } = trpc.decision.getById.useQuery(
-    { id: decisionId },
-    { enabled: !!decisionId }
-  );
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["decision", decisionId],
+    queryFn: () => api.decisions.getById(decisionId),
+    enabled: !!decisionId,
+  });
 
   if (isLoading) {
     return (
@@ -67,7 +69,7 @@ export default function DecisionDetailPage() {
         <FileText className="h-12 w-12 mx-auto mb-3 text-text-muted" />
         <p className="text-lg font-medium text-text">Decision not found</p>
         <p className="text-sm text-text-secondary mt-1">
-          {error?.message ?? "This decision may have been removed."}
+          {error instanceof Error ? error.message : "This decision may have been removed."}
         </p>
         <Link href="/decisions" className="text-sm text-accent hover:underline mt-4 inline-block">
           Back to Decisions

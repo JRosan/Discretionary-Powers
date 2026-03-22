@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { DECISION_TYPES } from "@/lib/constants";
-import { trpc } from "@/lib/trpc";
+import { api } from "@/lib/api";
 
 function formatType(type: string): string {
   return type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
@@ -15,14 +16,18 @@ export default function NewDecisionPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
 
-  const ministriesQuery = trpc.ministry.list.useQuery();
+  const ministriesQuery = useQuery({
+    queryKey: ["ministries"],
+    queryFn: () => api.ministries.list(),
+  });
   const ministries = ministriesQuery.data ?? [];
 
-  const createMutation = trpc.decision.create.useMutation({
+  const createMutation = useMutation({
+    mutationFn: (data: Record<string, unknown>) => api.decisions.create(data),
     onSuccess: (decision) => {
       router.push(`/decisions/${decision.id}`);
     },
-    onError: (err) => {
+    onError: (err: Error) => {
       setError(err.message);
     },
   });
@@ -38,7 +43,7 @@ export default function NewDecisionPage() {
       title: formData.get("title") as string,
       description: (formData.get("description") as string) || undefined,
       ministryId: formData.get("ministryId") as string,
-      decisionType: formData.get("decisionType") as "regulatory" | "licensing" | "planning" | "financial" | "appointment" | "policy" | "enforcement" | "other",
+      decisionType: formData.get("decisionType") as string,
       deadline: deadline ? new Date(deadline).toISOString() : undefined,
     });
   }

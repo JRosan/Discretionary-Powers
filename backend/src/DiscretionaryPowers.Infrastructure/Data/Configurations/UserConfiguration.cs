@@ -1,0 +1,32 @@
+using DiscretionaryPowers.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace DiscretionaryPowers.Infrastructure.Data.Configurations;
+
+public class UserConfiguration : IEntityTypeConfiguration<User>
+{
+    public void Configure(EntityTypeBuilder<User> builder)
+    {
+        builder.ToTable("users");
+
+        builder.HasKey(u => u.Id);
+        builder.Property(u => u.Id).HasColumnName("id").HasDefaultValueSql("gen_random_uuid()");
+        builder.Property(u => u.Email).HasColumnName("email").IsRequired();
+        builder.Property(u => u.Name).HasColumnName("name").IsRequired();
+        builder.Property(u => u.PasswordHash).HasColumnName("password_hash");
+        builder.Property(u => u.Role).HasColumnName("role").IsRequired();
+        builder.Property(u => u.MinistryId).HasColumnName("ministry_id");
+        builder.Property(u => u.MfaEnabled).HasColumnName("mfa_enabled").HasDefaultValue(false);
+        builder.Property(u => u.Active).HasColumnName("active").HasDefaultValue(true);
+        builder.Property(u => u.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
+        builder.Property(u => u.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
+
+        builder.HasIndex(u => u.Email).IsUnique();
+
+        builder.HasOne(u => u.Ministry)
+            .WithMany(m => m.Users)
+            .HasForeignKey(u => u.MinistryId)
+            .OnDelete(DeleteBehavior.SetNull);
+    }
+}

@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import { Plus, Search, FileText, Loader2 } from "lucide-react";
 import { DECISION_STATUSES, DECISION_TYPES } from "@/lib/constants";
-import { trpc } from "@/lib/trpc";
+import { api } from "@/lib/api";
 
 const statusColors: Record<string, string> = {
   draft: "bg-surface text-text-secondary",
@@ -25,11 +26,15 @@ export default function DecisionsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [typeFilter, setTypeFilter] = useState<string>("");
 
-  const { data, isLoading } = trpc.decision.list.useQuery({
-    search: searchQuery || undefined,
-    status: (statusFilter || undefined) as "draft" | "in_progress" | "under_review" | "approved" | "published" | "challenged" | "withdrawn" | undefined,
-    decisionType: (typeFilter || undefined) as "regulatory" | "licensing" | "planning" | "financial" | "appointment" | "policy" | "enforcement" | "other" | undefined,
-    limit: 50,
+  const { data, isLoading } = useQuery({
+    queryKey: ["decisions", "list", searchQuery, statusFilter, typeFilter],
+    queryFn: () =>
+      api.decisions.list({
+        search: searchQuery || undefined,
+        status: statusFilter || undefined,
+        decisionType: typeFilter || undefined,
+        limit: 50,
+      }),
   });
 
   const decisions = data?.items ?? [];
@@ -158,7 +163,7 @@ export default function DecisionsPage() {
                   <td className="px-4 py-3 text-text-secondary">
                     {decision.deadline
                       ? new Date(decision.deadline).toLocaleDateString()
-                      : "—"}
+                      : "\u2014"}
                   </td>
                 </tr>
               ))}

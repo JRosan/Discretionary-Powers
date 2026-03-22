@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DiscretionaryPowers.Api/DiscretionaryPowers.Api.csproj" />
+    <Project Path="src/DiscretionaryPowers.Application/DiscretionaryPowers.Application.csproj" />
+    <Project Path="src/DiscretionaryPowers.Domain/DiscretionaryPowers.Domain.csproj" />
+    <Project Path="src/DiscretionaryPowers.Infrastructure/DiscretionaryPowers.Infrastructure.csproj" />
+  </Folder>
+</Solution>

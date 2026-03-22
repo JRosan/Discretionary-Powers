@@ -1,11 +1,10 @@
 export type {
-  Ministry,
-  User,
-  Decision,
-  DecisionStep,
-  Document,
-  AuditEntry,
-  JudicialReview,
-  Notification,
-  Comment,
-} from "@/db/schema/types";
+  ApiUser as User,
+  ApiMinistry as Ministry,
+  ApiDecision as Decision,
+  ApiDecisionStep as DecisionStep,
+  ApiDocument as Document,
+  ApiAuditEntry as AuditEntry,
+  ApiNotification as Notification,
+  ApiComment as Comment,
+} from "@/lib/api";

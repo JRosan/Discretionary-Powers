@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, CheckCircle2, Save, Loader2, SkipForward } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, SkipForward } from "lucide-react";
 import { DECISION_STEPS } from "@/lib/constants";
-import { trpc } from "@/lib/trpc";
+import { api } from "@/lib/api";
 
 const stepFields: Record<
   number,
@@ -77,6 +78,7 @@ const stepFields: Record<
 export default function StepPage() {
   const params = useParams();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const stepNumber = Number(params.stepNumber);
   const decisionId = params.id as string;
   const [error, setError] = useState<string | null>(null);
@@ -84,42 +86,11 @@ export default function StepPage() {
   const step = DECISION_STEPS.find((s) => s.number === stepNumber);
   const fields = stepFields[stepNumber] ?? [];
 
-  const utils = trpc.useUtils();
-
-  // Start step mutation (called when page loads if step is not_started)
-  const startMutation = trpc.decision.advanceStep.useMutation({
+  const advanceStepMutation = useMutation({
+    mutationFn: (data: Record<string, unknown>) =>
+      api.decisions.advanceStep(decisionId, stepNumber, data),
     onSuccess: () => {
-      utils.decision.getById.invalidate({ id: decisionId });
-    },
-  });
-
-  // Complete step mutation
-  const completeMutation = trpc.decision.advanceStep.useMutation({
-    onSuccess: () => {
-      utils.decision.getById.invalidate({ id: decisionId });
-      if (stepNumber < 10) {
-        router.push(`/decisions/${decisionId}/step/${stepNumber + 1}`);
-      } else {
-        router.push(`/decisions/${decisionId}`);
-      }
-    },
-    onError: (err) => {
-      setError(err.message);
-    },
-  });
-
-  // Skip step mutation
-  const skipMutation = trpc.decision.advanceStep.useMutation({
-    onSuccess: () => {
-      utils.decision.getById.invalidate({ id: decisionId });
-      if (stepNumber < 10) {
-        router.push(`/decisions/${decisionId}/step/${stepNumber + 1}`);
-      } else {
-        router.push(`/decisions/${decisionId}`);
-      }
-    },
-    onError: (err) => {
-      setError(err.message);
+      queryClient.invalidateQueries({ queryKey: ["decision", decisionId] });
     },
   });
 
@@ -131,7 +102,7 @@ export default function StepPage() {
     );
   }
 
-  const isPending = completeMutation.isPending || skipMutation.isPending;
+  const isPending = advanceStepMutation.isPending;
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -150,38 +121,47 @@ export default function StepPage() {
       }
     }
 
-    // First start the step if needed, then complete it
     try {
-      await startMutation.mutateAsync({
-        decisionId,
-        stepNumber,
-        action: "start",
-      }).catch(() => {
-        // Step may already be in_progress — that's fine
-      });
-    } catch {
-      // Ignore start errors (step may already be started)
-    }
+      // First start the step if needed
+      await api.decisions
+        .advanceStep(decisionId, stepNumber, { action: "start" })
+        .catch(() => {});
 
-    completeMutation.mutate({
-      decisionId,
-      stepNumber,
-      action: "complete",
-      data,
-      notes: notes || undefined,
-    });
+      // Then complete
+      await advanceStepMutation.mutateAsync({
+        action: "complete",
+        data,
+        notes: notes || undefined,
+      });
+
+      if (stepNumber < 10) {
+        router.push(`/decisions/${decisionId}/step/${stepNumber + 1}`);
+      } else {
+        router.push(`/decisions/${decisionId}`);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to complete step");
+    }
   }
 
-  function handleSkip() {
+  async function handleSkip() {
     const reason = prompt("Please provide a reason for skipping this step:");
     if (!reason) return;
 
-    skipMutation.mutate({
-      decisionId,
-      stepNumber,
-      action: "skip",
-      skipReason: reason,
-    });
+    try {
+      await advanceStepMutation.mutateAsync({
+        action: "skip",
+        skipReason: reason,
+      });
+
+      if (stepNumber < 10) {
+        router.push(`/decisions/${decisionId}/step/${stepNumber + 1}`);
+      } else {
+        router.push(`/decisions/${decisionId}`);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to skip step");
+    }
   }
 
   return (

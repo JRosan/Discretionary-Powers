@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { CommentWithUser } from "@/modules/comments";
+import type { ApiComment } from "@/lib/api";
 
 function getInitials(name: string): string {
   return name
@@ -51,7 +51,7 @@ function formatRole(role: string): string {
 
 interface CommentThreadProps {
   decisionId: string;
-  comments: CommentWithUser[];
+  comments: ApiComment[];
   onSubmit: (input: { content: string; isInternal: boolean }) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
   currentUserId?: string;
@@ -79,7 +79,7 @@ export function CommentThread({
     setContent("");
   };
 
-  const canDelete = (comment: CommentWithUser) => {
+  const canDelete = (comment: ApiComment) => {
     if (!currentUserId) return false;
     return (
       comment.userId === currentUserId ||

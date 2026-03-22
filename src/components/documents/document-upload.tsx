@@ -12,6 +12,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { DOCUMENT_CLASSIFICATIONS } from "@/lib/constants";
 import { Upload, FileText, X } from "lucide-react";
+import { api } from "@/lib/api";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
@@ -119,24 +120,13 @@ export function DocumentUpload({
     setError(null);
 
     try {
-      // Step 1: Get presigned upload URL from the server
-      const res = await fetch("/api/trpc/document.getUploadUrl", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          json: {
-            decisionId,
-            filename: file.name,
-            contentType: file.type,
-            classification,
-          },
-        }),
+      // Step 1: Get presigned upload URL from the API
+      const { uploadUrl, documentId } = await api.documents.getUploadUrl({
+        decisionId,
+        filename: file.name,
+        contentType: file.type,
+        classification,
       });
-
-      if (!res.ok) throw new Error("Failed to get upload URL.");
-
-      const data = await res.json();
-      const { uploadUrl, documentId } = data.result.data.json;
 
       setProgress(20);
 
@@ -152,15 +142,7 @@ export function DocumentUpload({
       setProgress(80);
 
       // Step 3: Confirm upload with file size
-      const confirmRes = await fetch("/api/trpc/document.confirmUpload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          json: { documentId, sizeBytes: file.size },
-        }),
-      });
-
-      if (!confirmRes.ok) throw new Error("Failed to confirm upload.");
+      await api.documents.confirmUpload(documentId, { sizeBytes: file.size });
 
       setProgress(100);
       clearFile();

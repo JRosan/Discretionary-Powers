@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import {
   FileText,
   Clock,
@@ -13,7 +14,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { trpc } from "@/lib/trpc";
+import { api } from "@/lib/api";
 
 const statusVariantMap: Record<string, "default" | "accent" | "warning" | "error" | "success" | "outline"> = {
   draft: "outline",
@@ -42,14 +43,17 @@ function timeAgo(dateStr: string | Date): string {
 }
 
 export default function DashboardPage() {
-  const statsQuery = trpc.decision.stats.useQuery(undefined, {
+  const statsQuery = useQuery({
+    queryKey: ["decision-stats"],
+    queryFn: () => api.decisions.getStats(),
     placeholderData: { total: 0, byStatus: {} },
   });
 
-  const recentQuery = trpc.decision.list.useQuery(
-    { limit: 5 },
-    { placeholderData: { items: [], hasMore: false, nextCursor: null } }
-  );
+  const recentQuery = useQuery({
+    queryKey: ["decisions", "recent"],
+    queryFn: () => api.decisions.list({ limit: 5 }),
+    placeholderData: { items: [], hasMore: false, nextCursor: null },
+  });
 
   const stats = statsQuery.data;
   const recentDecisions = recentQuery.data?.items ?? [];

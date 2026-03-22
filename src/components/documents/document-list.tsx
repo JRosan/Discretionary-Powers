@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Download, Trash2, FileText } from "lucide-react";
+import { api, type ApiDocument } from "@/lib/api";
 
 const CLASSIFICATION_LABELS: Record<string, string> = {
   evidence: "Evidence",
@@ -32,39 +33,22 @@ const CLASSIFICATION_VARIANTS: Record<
   internal_memo: "warning",
 };
 
-interface Document {
-  id: string;
-  filename: string;
-  originalFilename: string;
-  mimeType: string;
-  sizeBytes: number;
-  classification: string;
-  uploadedBy: string;
-  createdAt: string | null;
-}
-
 interface DocumentListProps {
   decisionId: string;
 }
 
 export function DocumentList({ decisionId }: DocumentListProps) {
-  const [documents, setDocuments] = useState<Document[]>([]);
+  const [documents, setDocuments] = useState<ApiDocument[]>([]);
   const [loading, setLoading] = useState(true);
-  const [deleteTarget, setDeleteTarget] = useState<Document | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ApiDocument | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   const fetchDocuments = useCallback(async () => {
     try {
-      const res = await fetch(
-        `/api/trpc/document.list?input=${encodeURIComponent(
-          JSON.stringify({ json: { decisionId } }),
-        )}`,
-      );
-      if (!res.ok) return;
-      const data = await res.json();
-      setDocuments(data.result.data.json ?? []);
+      const data = await api.documents.list(decisionId);
+      setDocuments(data);
     } catch {
-      // silently fail — user sees empty state
+      // silently fail -- user sees empty state
     } finally {
       setLoading(false);
     }
@@ -76,14 +60,7 @@ export function DocumentList({ decisionId }: DocumentListProps) {
 
   const handleDownload = useCallback(async (documentId: string) => {
     try {
-      const res = await fetch(
-        `/api/trpc/document.getDownloadUrl?input=${encodeURIComponent(
-          JSON.stringify({ json: { documentId } }),
-        )}`,
-      );
-      if (!res.ok) return;
-      const data = await res.json();
-      const { url, filename } = data.result.data.json;
+      const { url, filename } = await api.documents.getDownloadUrl(documentId);
       const a = document.createElement("a");
       a.href = url;
       a.download = filename;
@@ -97,14 +74,8 @@ export function DocumentList({ decisionId }: DocumentListProps) {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      const res = await fetch("/api/trpc/document.delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ json: { documentId: deleteTarget.id } }),
-      });
-      if (res.ok) {
-        setDocuments((prev) => prev.filter((d) => d.id !== deleteTarget.id));
-      }
+      await api.documents.delete(deleteTarget.id);
+      setDocuments((prev) => prev.filter((d) => d.id !== deleteTarget.id));
     } catch {
       // silently fail
     } finally {

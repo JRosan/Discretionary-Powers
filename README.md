@@ -4,23 +4,23 @@
 
 A digital platform for managing the 10-step framework for the exercise of discretionary powers in the British Virgin Islands. The system guides government officers through each stage of the decision-making process, ensuring transparency, accountability, and compliance with established procedures.
 
-## Tech Stack
+## Architecture
 
-| Layer        | Technology                        |
-| ------------ | --------------------------------- |
-| Framework    | Next.js 15 (App Router)          |
-| Language     | TypeScript                        |
-| Database     | PostgreSQL 17 + Drizzle ORM      |
-| API          | tRPC v11                          |
-| Auth         | NextAuth.js v5                    |
-| UI           | Tailwind CSS 4 + Radix UI        |
-| Storage      | MinIO (S3-compatible)             |
-| Email        | Nodemailer + Mailpit (dev)        |
-| Cache        | Redis 7                           |
-| Testing      | Vitest + Playwright               |
+| Layer        | Technology                             |
+| ------------ | -------------------------------------- |
+| Frontend     | Next.js 15 (App Router), TypeScript    |
+| Backend API  | ASP.NET Core (.NET 10), C#             |
+| Database     | PostgreSQL 17 + Entity Framework Core  |
+| Auth         | JWT Bearer + role-based policies       |
+| UI           | Tailwind CSS 4 + Radix UI             |
+| Storage      | MinIO (S3-compatible)                  |
+| Email        | MailKit + Mailpit (dev)                |
+| Cache        | Redis 7                                |
+| Testing      | Vitest + Playwright (frontend), xUnit (backend) |
 
 ## Prerequisites
 
+- [.NET 10 SDK](https://dotnet.microsoft.com/)
 - [Node.js](https://nodejs.org/) 22+
 - [Docker](https://www.docker.com/) and Docker Compose
 
@@ -31,57 +31,90 @@ A digital platform for managing the 10-step framework for the exercise of discre
 git clone <repository-url>
 cd discretionary-powers
 
-# Copy environment variables
-cp .env.example .env
-
 # Start infrastructure services
 docker compose -f docker/docker-compose.dev.yml up -d
 
-# Install dependencies
+# Start the backend API
+cd backend
+dotnet run --project src/DiscretionaryPowers.Api
+
+# In a separate terminal — start the frontend
 npm install
-
-# Run database migrations
-npm run db:migrate
-
-# Start the development server
 npm run dev
 ```
 
-The application will be available at [http://localhost:3000](http://localhost:3000).
-
-**Other services:**
+- Frontend: [http://localhost:3000](http://localhost:3000)
+- Backend API: [http://localhost:5000/api](http://localhost:5000/api)
+- Swagger docs: [http://localhost:5000/swagger](http://localhost:5000/swagger)
 - MinIO Console: [http://localhost:9001](http://localhost:9001)
 - Mailpit Web UI: [http://localhost:8025](http://localhost:8025)
-- Drizzle Studio: `npm run db:studio`
+
+## Demo Credentials
+
+| Email              | Password   | Role                 |
+| ------------------ | ---------- | -------------------- |
+| minister@gov.vg    | password   | Minister             |
+| secretary@gov.vg   | password   | Permanent Secretary  |
+| legal@gov.vg       | password   | Legal Advisor        |
+| auditor@gov.vg     | password   | Auditor              |
 
 ## Project Structure
 
 ```
-src/
-  app/            # Next.js App Router pages and layouts
-  components/     # Reusable UI components
-  db/             # Database schema and migrations
-  lib/            # Shared utilities and configuration
-  modules/        # Feature modules
-  server/         # tRPC routers and server-side logic
-  types/          # TypeScript type definitions
-docker/           # Docker and Docker Compose configuration
-tests/            # Test files
+├── backend/                          # C#/.NET Web API
+│   └── src/
+│       ├── DiscretionaryPowers.Domain/        # Entities, enums, workflow
+│       ├── DiscretionaryPowers.Application/   # Services, DTOs, validators
+│       ├── DiscretionaryPowers.Infrastructure/# EF Core, S3, email
+│       └── DiscretionaryPowers.Api/           # Controllers, auth, middleware
+├── src/                              # Next.js frontend
+│   ├── app/                          # Pages (App Router)
+│   │   ├── (staff)/                  # Staff portal (authenticated)
+│   │   └── (public)/                 # Public transparency portal
+│   ├── components/                   # UI components
+│   ├── lib/                          # API client, utilities
+│   └── modules/                      # Client-side business logic
+├── docker/                           # Docker Compose configuration
+└── tests/                            # Test files
 ```
 
 ## Available Scripts
 
+### Frontend
 | Command              | Description                          |
 | -------------------- | ------------------------------------ |
 | `npm run dev`        | Start development server             |
-| `npm run build`      | Build for production                  |
-| `npm start`          | Start production server               |
-| `npm run lint`       | Run ESLint                            |
-| `npm test`           | Run unit tests (Vitest)               |
-| `npm run test:e2e`   | Run end-to-end tests (Playwright)     |
-| `npm run db:generate`| Generate database migrations          |
-| `npm run db:migrate` | Run database migrations               |
-| `npm run db:studio`  | Open Drizzle Studio                   |
+| `npm run build`      | Build for production                 |
+| `npm run lint`       | Run ESLint                           |
+| `npm test`           | Run unit tests (Vitest)              |
+| `npm run test:e2e`   | Run E2E tests (Playwright)           |
+
+### Backend
+| Command                                              | Description              |
+| ---------------------------------------------------- | ------------------------ |
+| `dotnet run --project src/DiscretionaryPowers.Api`   | Start API server         |
+| `dotnet build`                                        | Build solution           |
+| `dotnet test`                                         | Run unit tests           |
+| `dotnet ef database update`                           | Apply EF migrations      |
+
+## API Documentation
+
+The API follows REST conventions with JWT Bearer authentication. Full OpenAPI/Swagger documentation is available at `/swagger` when the API is running.
+
+Key endpoints:
+- `POST /api/auth/login` — Authenticate and receive JWT token
+- `GET /api/decisions` — List decisions (filtered, paginated)
+- `POST /api/decisions` — Create a new decision
+- `PUT /api/decisions/{id}/steps/{stepNumber}` — Advance workflow step
+- `GET /api/decisions/public` — Public transparency endpoint
+- `GET /api/health` — Health check
+
+## Standards Compliance
+
+- **WCAG 2.2 AA** — Accessible design with Radix UI primitives
+- **ISO 27001** — Security controls, encryption, audit logging
+- **OWASP Top 10** — Parameterised queries, JWT auth, CORS, rate limiting
+- **BVI 10-Step Framework** — Enforced as workflow state machine
 
 ## License
 

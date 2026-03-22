@@ -1,0 +1,294 @@
+const BASE_URL =
+  typeof window !== "undefined"
+    ? (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api")
+    : (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api");
+
+function getToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("auth_token");
+}
+
+async function request<T>(
+  path: string,
+  options: RequestInit = {},
+): Promise<T> {
+  const token = getToken();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(options.headers as Record<string, string>),
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(`${BASE_URL}${path}`, {
+    ...options,
+    headers,
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    const message =
+      body?.message ?? body?.title ?? `Request failed with status ${res.status}`;
+    throw new Error(message);
+  }
+
+  if (res.status === 204) return undefined as T;
+  return res.json();
+}
+
+function qs(params?: Record<string, unknown>): string {
+  if (!params) return "";
+  const entries = Object.entries(params).filter(
+    ([, v]) => v !== undefined && v !== null && v !== "",
+  );
+  if (entries.length === 0) return "";
+  const sp = new URLSearchParams();
+  for (const [k, v] of entries) sp.set(k, String(v));
+  return `?${sp.toString()}`;
+}
+
+export const api = {
+  auth: {
+    login: (email: string, password: string) =>
+      request<{ token: string; user: ApiUser }>("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      }),
+    getCurrentUser: () => request<ApiUser>("/auth/me"),
+    logout: () => request<void>("/auth/logout", { method: "POST" }),
+  },
+
+  decisions: {
+    list: (params?: Record<string, unknown>) =>
+      request<{ items: ApiDecision[]; hasMore: boolean; nextCursor: string | null }>(
+        `/decisions${qs(params)}`,
+      ),
+    getById: (id: string) => request<ApiDecisionDetail>(`/decisions/${id}`),
+    create: (data: Record<string, unknown>) =>
+      request<ApiDecision>("/decisions", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    advanceStep: (id: string, stepNumber: number, data: Record<string, unknown>) =>
+      request<void>(`/decisions/${id}/steps/${stepNumber}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    approve: (id: string, notes?: string) =>
+      request<void>(`/decisions/${id}/approve`, {
+        method: "POST",
+        body: JSON.stringify({ notes }),
+      }),
+    publish: (id: string) =>
+      request<void>(`/decisions/${id}/publish`, { method: "POST" }),
+    flagForReview: (id: string, data: Record<string, unknown>) =>
+      request<void>(`/decisions/${id}/flag-review`, {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    getStats: () => request<ApiDecisionStats>("/decisions/stats"),
+    getPublicList: (params?: Record<string, unknown>) =>
+      request<{ items: ApiDecision[]; hasMore: boolean; nextCursor: string | null }>(
+        `/public/decisions${qs(params)}`,
+      ),
+    getPublicById: (id: string) =>
+      request<ApiDecisionDetail>(`/public/decisions/${id}`),
+    exportDecision: (id: string, format: string) =>
+      request<Blob>(`/decisions/${id}/export?format=${format}`),
+  },
+
+  documents: {
+    getUploadUrl: (data: Record<string, unknown>) =>
+      request<{ uploadUrl: string; documentId: string }>("/documents/upload-url", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    confirmUpload: (id: string, data: Record<string, unknown>) =>
+      request<void>(`/documents/${id}/confirm`, {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    list: (decisionId: string) =>
+      request<ApiDocument[]>(`/documents?decisionId=${decisionId}`),
+    getDownloadUrl: (id: string) =>
+      request<{ url: string; filename: string }>(`/documents/${id}/download-url`),
+    delete: (id: string) =>
+      request<void>(`/documents/${id}`, { method: "DELETE" }),
+  },
+
+  comments: {
+    create: (data: Record<string, unknown>) =>
+      request<ApiComment>("/comments", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    list: (decisionId: string) =>
+      request<ApiComment[]>(`/comments?decisionId=${decisionId}`),
+    count: (decisionId: string) =>
+      request<{ count: number }>(`/comments/count?decisionId=${decisionId}`),
+    delete: (id: string) =>
+      request<void>(`/comments/${id}`, { method: "DELETE" }),
+  },
+
+  notifications: {
+    list: (params?: Record<string, unknown>) =>
+      request<ApiNotification[]>(`/notifications${qs(params)}`),
+    getUnreadCount: () =>
+      request<{ count: number }>("/notifications/unread-count"),
+    markRead: (id: string) =>
+      request<void>(`/notifications/${id}/read`, { method: "POST" }),
+    markAllRead: () =>
+      request<void>("/notifications/read-all", { method: "POST" }),
+    delete: (id: string) =>
+      request<void>(`/notifications/${id}`, { method: "DELETE" }),
+  },
+
+  users: {
+    list: (params?: Record<string, unknown>) =>
+      request<ApiUser[]>(`/users${qs(params)}`),
+    getById: (id: string) => request<ApiUser>(`/users/${id}`),
+    create: (data: Record<string, unknown>) =>
+      request<ApiUser>("/users", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    update: (id: string, data: Record<string, unknown>) =>
+      request<ApiUser>(`/users/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    deactivate: (id: string) =>
+      request<void>(`/users/${id}/deactivate`, { method: "POST" }),
+  },
+
+  ministries: {
+    list: () => request<ApiMinistry[]>("/ministries"),
+    getById: (id: string) => request<ApiMinistry>(`/ministries/${id}`),
+    create: (data: Record<string, unknown>) =>
+      request<ApiMinistry>("/ministries", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    update: (id: string, data: Record<string, unknown>) =>
+      request<ApiMinistry>(`/ministries/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+  },
+
+  audit: {
+    getByDecision: (decisionId: string, params?: Record<string, unknown>) =>
+      request<ApiAuditEntry[]>(`/audit/decisions/${decisionId}${qs(params)}`),
+    getAll: (params?: Record<string, unknown>) =>
+      request<ApiAuditEntry[]>(`/audit${qs(params)}`),
+    verifyChain: () => request<{ valid: boolean; details: string }>("/audit/verify"),
+  },
+
+  statistics: {
+    getPublic: () => request<Record<string, unknown>>("/public/statistics"),
+  },
+
+  health: {
+    check: () => request<{ status: string }>("/health"),
+  },
+};
+
+// API types (decoupled from drizzle ORM types)
+
+export interface ApiUser {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  ministryId: string | null;
+  isActive: boolean;
+  createdAt: string | null;
+}
+
+export interface ApiMinistry {
+  id: string;
+  name: string;
+  code: string;
+  description: string | null;
+  isActive: boolean;
+}
+
+export interface ApiDecision {
+  id: string;
+  referenceNumber: string;
+  title: string;
+  description: string | null;
+  decisionType: string;
+  status: string;
+  currentStep: number;
+  ministryId: string;
+  createdBy: string;
+  deadline: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
+export interface ApiDecisionStep {
+  id: string;
+  decisionId: string;
+  stepNumber: number;
+  status: string;
+  data: Record<string, unknown> | null;
+  notes: string | null;
+  completedBy: string | null;
+  completedAt: string | null;
+  skipReason: string | null;
+}
+
+export interface ApiDecisionDetail extends ApiDecision {
+  steps: ApiDecisionStep[];
+}
+
+export interface ApiDecisionStats {
+  total: number;
+  byStatus: Record<string, number>;
+}
+
+export interface ApiDocument {
+  id: string;
+  filename: string;
+  originalFilename: string;
+  mimeType: string;
+  sizeBytes: number;
+  classification: string;
+  uploadedBy: string;
+  createdAt: string | null;
+}
+
+export interface ApiComment {
+  id: string;
+  decisionId: string;
+  userId: string;
+  userName: string;
+  userRole: string;
+  content: string;
+  isInternal: boolean;
+  createdAt: string | null;
+}
+
+export interface ApiNotification {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  read: boolean | null;
+  sentAt: string | Date | null;
+  decisionId: string | null;
+}
+
+export interface ApiAuditEntry {
+  id: string;
+  decisionId: string;
+  action: string;
+  performedBy: string;
+  details: Record<string, unknown> | null;
+  previousHash: string | null;
+  hash: string;
+  createdAt: string | null;
+}

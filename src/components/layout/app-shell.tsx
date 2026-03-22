@@ -16,6 +16,8 @@ import {
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { NotificationBell } from "@/components/common/notification-panel";
+import { useAuth } from "@/lib/auth-context";
+import { api } from "@/lib/api";
 
 interface NavItem {
   label: string;
@@ -48,6 +50,7 @@ interface AppShellProps {
 
 export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
   const [adminOpen, setAdminOpen] = React.useState(false);
   const [notifications, setNotifications] = React.useState<
     { id: string; type: string; title: string; message: string; read: boolean | null; sentAt: string | Date | null; decisionId: string | null }[]
@@ -56,19 +59,13 @@ export function AppShell({ children }: AppShellProps) {
 
   const fetchNotifications = React.useCallback(async () => {
     try {
-      const res = await fetch("/api/trpc/notification.list", { method: "GET" });
-      if (res.ok) {
-        const data = await res.json();
-        setNotifications(data?.result?.data ?? []);
-      }
-    } catch { /* ignore fetch errors silently */ }
+      const data = await api.notifications.list();
+      setNotifications(data);
+    } catch { /* ignore */ }
     try {
-      const res = await fetch("/api/trpc/notification.getUnreadCount", { method: "GET" });
-      if (res.ok) {
-        const data = await res.json();
-        setUnreadCount(data?.result?.data ?? 0);
-      }
-    } catch { /* ignore fetch errors silently */ }
+      const data = await api.notifications.getUnreadCount();
+      setUnreadCount(data.count);
+    } catch { /* ignore */ }
   }, []);
 
   React.useEffect(() => {
@@ -81,11 +78,7 @@ export function AppShell({ children }: AppShellProps) {
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
     setUnreadCount((c) => Math.max(0, c - 1));
     try {
-      await fetch("/api/trpc/notification.markRead", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ json: { id } }),
-      });
+      await api.notifications.markRead(id);
     } catch { /* ignore */ }
   };
 
@@ -93,7 +86,7 @@ export function AppShell({ children }: AppShellProps) {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     setUnreadCount(0);
     try {
-      await fetch("/api/trpc/notification.markAllRead", { method: "POST" });
+      await api.notifications.markAllRead();
     } catch { /* ignore */ }
   };
 
@@ -102,13 +95,18 @@ export function AppShell({ children }: AppShellProps) {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
     if (wasUnread) setUnreadCount((c) => Math.max(0, c - 1));
     try {
-      await fetch("/api/trpc/notification.delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ json: { id } }),
-      });
+      await api.notifications.delete(id);
     } catch { /* ignore */ }
   };
+
+  const userInitials = user?.name
+    ? user.name
+        .split(" ")
+        .map((p) => p[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : "??";
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -200,14 +198,19 @@ export function AppShell({ children }: AppShellProps) {
           <div className="flex items-center gap-3">
             <Avatar size="sm">
               <AvatarFallback className="bg-accent text-white text-xs">
-                JD
+                {userInitials}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">John Doe</p>
-              <p className="text-xs text-white/60 truncate">Administrator</p>
+              <p className="text-sm font-medium truncate">{user?.name ?? "User"}</p>
+              <p className="text-xs text-white/60 truncate">
+                {user?.role ? user.role.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : ""}
+              </p>
             </div>
-            <button className="text-white/60 hover:text-white transition-colors">
+            <button
+              onClick={logout}
+              className="text-white/60 hover:text-white transition-colors"
+            >
               <LogOut className="h-4 w-4" />
             </button>
           </div>
@@ -248,7 +251,7 @@ export function AppShell({ children }: AppShellProps) {
           {/* User avatar */}
           <Avatar size="sm">
             <AvatarFallback className="bg-primary text-white text-xs">
-              JD
+              {userInitials}
             </AvatarFallback>
           </Avatar>
         </header>
