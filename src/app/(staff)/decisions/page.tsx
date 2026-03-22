@@ -1,0 +1,262 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import {
+  Plus,
+  Search,
+  Filter,
+  FileText,
+} from "lucide-react";
+import { DECISION_STATUSES, DECISION_TYPES } from "@/lib/constants";
+
+const mockDecisions = [
+  {
+    id: "1",
+    reference: "DP-FIN-2026-0042",
+    title: "Financial Services Licensing Amendment",
+    status: "in_progress",
+    decisionType: "licensing",
+    currentStep: 4,
+    ministry: "Ministry of Finance",
+    assignedTo: "John Smith",
+    deadline: "2026-04-15",
+    createdAt: "2026-03-01",
+  },
+  {
+    id: "2",
+    reference: "DP-NAT-2026-0038",
+    title: "Environmental Protection Order — North Sound",
+    status: "under_review",
+    decisionType: "regulatory",
+    currentStep: 10,
+    ministry: "Ministry of Natural Resources",
+    assignedTo: "Sarah Johnson",
+    deadline: "2026-03-30",
+    createdAt: "2026-02-15",
+  },
+  {
+    id: "3",
+    reference: "DP-EDU-2026-0035",
+    title: "School Zoning Boundary Adjustment",
+    status: "approved",
+    decisionType: "planning",
+    currentStep: 10,
+    ministry: "Ministry of Education",
+    assignedTo: "Michael Chen",
+    deadline: null,
+    createdAt: "2026-02-01",
+  },
+  {
+    id: "4",
+    reference: "DP-HEA-2026-0041",
+    title: "Public Health Emergency Powers Activation",
+    status: "draft",
+    decisionType: "enforcement",
+    currentStep: 1,
+    ministry: "Ministry of Health",
+    assignedTo: "Lisa Brown",
+    deadline: "2026-04-01",
+    createdAt: "2026-03-15",
+  },
+  {
+    id: "5",
+    reference: "DP-FIN-2026-0040",
+    title: "Tax Exemption for Maritime Industry",
+    status: "published",
+    decisionType: "financial",
+    currentStep: 10,
+    ministry: "Ministry of Finance",
+    assignedTo: "John Smith",
+    deadline: null,
+    createdAt: "2026-01-10",
+  },
+];
+
+const statusColors: Record<string, string> = {
+  draft: "bg-surface text-text-secondary",
+  in_progress: "bg-accent/10 text-accent-dark",
+  under_review: "bg-warning/20 text-warning-dark",
+  approved: "bg-accent/10 text-accent",
+  published: "bg-primary/10 text-primary",
+  challenged: "bg-error/10 text-error",
+  withdrawn: "bg-surface text-text-muted",
+};
+
+function formatStatus(status: string): string {
+  return status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function formatType(type: string): string {
+  return type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+export default function DecisionsPage() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+
+  const filtered = mockDecisions.filter((d) => {
+    if (searchQuery && !d.title.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
+    }
+    if (statusFilter && d.status !== statusFilter) return false;
+    if (typeFilter && d.decisionType !== typeFilter) return false;
+    return true;
+  });
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-text">Decisions</h1>
+          <p className="mt-1 text-sm text-text-secondary">
+            Manage discretionary power decisions across all ministries.
+          </p>
+        </div>
+        <Link
+          href="/decisions/new"
+          className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent-dark transition-colors"
+        >
+          <Plus className="h-4 w-4" />
+          New Decision
+        </Link>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3">
+        <div className="relative flex-1 min-w-[200px] max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
+          <input
+            type="text"
+            placeholder="Search decisions..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full rounded-lg border border-border bg-white py-2 pl-10 pr-4 text-sm text-text placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+          />
+        </div>
+
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="rounded-lg border border-border bg-white px-3 py-2 text-sm text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+        >
+          <option value="">All Statuses</option>
+          {Object.values(DECISION_STATUSES).map((status) => (
+            <option key={status} value={status}>
+              {formatStatus(status)}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value)}
+          className="rounded-lg border border-border bg-white px-3 py-2 text-sm text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+        >
+          <option value="">All Types</option>
+          {Object.values(DECISION_TYPES).map((type) => (
+            <option key={type} value={type}>
+              {formatType(type)}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Table */}
+      <div className="rounded-lg border border-border bg-white overflow-hidden">
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-text-muted">
+            <FileText className="h-12 w-12 mb-3" />
+            <p className="font-medium">No decisions found</p>
+            <p className="text-sm mt-1">Try adjusting your search or filters.</p>
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border bg-surface">
+                <th className="px-4 py-3 text-left font-medium text-text-secondary">
+                  Reference
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-text-secondary">
+                  Title
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-text-secondary">
+                  Type
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-text-secondary">
+                  Ministry
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-text-secondary">
+                  Status
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-text-secondary">
+                  Step
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-text-secondary">
+                  Assigned To
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-text-secondary">
+                  Deadline
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((decision) => (
+                <tr
+                  key={decision.id}
+                  className="border-b border-border last:border-0 hover:bg-surface/50 transition-colors"
+                >
+                  <td className="px-4 py-3">
+                    <Link
+                      href={`/decisions/${decision.id}`}
+                      className="font-mono text-xs text-accent hover:underline"
+                    >
+                      {decision.reference}
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3 font-medium text-text max-w-xs truncate">
+                    <Link href={`/decisions/${decision.id}`} className="hover:text-accent">
+                      {decision.title}
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3 text-text-secondary">
+                    {formatType(decision.decisionType)}
+                  </td>
+                  <td className="px-4 py-3 text-text-secondary text-xs">
+                    {decision.ministry}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        statusColors[decision.status] ?? ""
+                      }`}
+                    >
+                      {formatStatus(decision.status)}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-text-secondary">
+                    <span className="inline-flex items-center gap-1">
+                      <span className="font-mono">{decision.currentStep}</span>
+                      <span className="text-text-muted">/10</span>
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-text-secondary">
+                    {decision.assignedTo}
+                  </td>
+                  <td className="px-4 py-3 text-text-secondary">
+                    {decision.deadline ?? "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      <p className="text-xs text-text-muted">
+        Showing {filtered.length} of {mockDecisions.length} decisions
+      </p>
+    </div>
+  );
+}
