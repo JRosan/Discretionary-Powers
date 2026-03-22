@@ -14,6 +14,7 @@ namespace DiscretionaryPowers.Api.Controllers;
 public class MinistriesController(AppDbContext db) : ControllerBase
 {
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> List()
     {
         var ministries = await db.Ministries

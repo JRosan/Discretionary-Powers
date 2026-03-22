@@ -90,10 +90,10 @@ export const api = {
     getStats: () => request<ApiDecisionStats>("/decisions/stats"),
     getPublicList: (params?: Record<string, unknown>) =>
       request<{ items: ApiDecision[]; hasMore: boolean; nextCursor: string | null }>(
-        `/public/decisions${qs(params)}`,
+        `/decisions/public${qs(params)}`,
       ),
     getPublicById: (id: string) =>
-      request<ApiDecisionDetail>(`/public/decisions/${id}`),
+      request<ApiDecisionDetail>(`/decisions/public/${id}`),
     exportDecision: (id: string, format: string) =>
       request<Blob>(`/decisions/${id}/export?format=${format}`),
   },
@@ -203,7 +203,7 @@ export const api = {
   },
 
   statistics: {
-    getPublic: () => request<Record<string, unknown>>("/public/statistics"),
+    getPublic: () => request<Record<string, unknown>>("/statistics"),
   },
 
   health: {
