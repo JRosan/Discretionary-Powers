@@ -69,15 +69,13 @@ builder.Services.AddRateLimiter(options =>
 });
 
 // CORS
-var frontendUrl = builder.Configuration["FrontendUrl"] ?? "http://localhost:5173";
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins(frontendUrl)
+        policy.AllowAnyOrigin()
             .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials();
+            .AllowAnyMethod();
     });
 });
 
@@ -123,7 +121,9 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Middleware pipeline
+// Middleware pipeline — CORS must be first for preflight OPTIONS requests
+app.UseCors();
+
 app.UseMiddleware<SecurityHeadersMiddleware>();
 app.UseMiddleware<RequestLoggingMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
@@ -133,8 +133,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
