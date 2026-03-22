@@ -11,11 +11,11 @@ import {
   Settings,
   ChevronDown,
   Search,
-  Bell,
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { NotificationBell } from "@/components/common/notification-panel";
 
 interface NavItem {
   label: string;
@@ -49,6 +49,66 @@ interface AppShellProps {
 export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const [adminOpen, setAdminOpen] = React.useState(false);
+  const [notifications, setNotifications] = React.useState<
+    { id: string; type: string; title: string; message: string; read: boolean | null; sentAt: string | Date | null; decisionId: string | null }[]
+  >([]);
+  const [unreadCount, setUnreadCount] = React.useState(0);
+
+  const fetchNotifications = React.useCallback(async () => {
+    try {
+      const res = await fetch("/api/trpc/notification.list", { method: "GET" });
+      if (res.ok) {
+        const data = await res.json();
+        setNotifications(data?.result?.data ?? []);
+      }
+    } catch { /* ignore fetch errors silently */ }
+    try {
+      const res = await fetch("/api/trpc/notification.getUnreadCount", { method: "GET" });
+      if (res.ok) {
+        const data = await res.json();
+        setUnreadCount(data?.result?.data ?? 0);
+      }
+    } catch { /* ignore fetch errors silently */ }
+  }, []);
+
+  React.useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [fetchNotifications]);
+
+  const handleMarkRead = async (id: string) => {
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+    setUnreadCount((c) => Math.max(0, c - 1));
+    try {
+      await fetch("/api/trpc/notification.markRead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ json: { id } }),
+      });
+    } catch { /* ignore */ }
+  };
+
+  const handleMarkAllRead = async () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    setUnreadCount(0);
+    try {
+      await fetch("/api/trpc/notification.markAllRead", { method: "POST" });
+    } catch { /* ignore */ }
+  };
+
+  const handleDelete = async (id: string) => {
+    const wasUnread = notifications.find((n) => n.id === id && !n.read);
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    if (wasUnread) setUnreadCount((c) => Math.max(0, c - 1));
+    try {
+      await fetch("/api/trpc/notification.delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ json: { id } }),
+      });
+    } catch { /* ignore */ }
+  };
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -176,9 +236,14 @@ export function AppShell({ children }: AppShellProps) {
           </div>
 
           {/* Notifications */}
-          <button className="relative rounded-md p-2 text-text-secondary hover:bg-surface transition-colors">
-            <Bell className="h-5 w-5" />
-          </button>
+          <NotificationBell
+            notifications={notifications}
+            unreadCount={unreadCount}
+            onMarkRead={handleMarkRead}
+            onMarkAllRead={handleMarkAllRead}
+            onDelete={handleDelete}
+            onRefresh={fetchNotifications}
+          />
 
           {/* User avatar */}
           <Avatar size="sm">

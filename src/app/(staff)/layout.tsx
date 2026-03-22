@@ -1,9 +1,14 @@
 import { AppShell } from "@/components/layout/app-shell";
+import { Providers } from "@/app/providers";
 
 export default function StaffLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <AppShell>{children}</AppShell>;
+  return (
+    <Providers>
+      <AppShell>{children}</AppShell>
+    </Providers>
+  );
 }

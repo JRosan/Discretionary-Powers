@@ -8,110 +8,82 @@ import {
   AlertTriangle,
   Plus,
   ArrowRight,
+  Loader2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { trpc } from "@/lib/trpc";
 
-const stats = [
-  {
-    label: "Total Decisions",
-    value: "47",
-    icon: FileText,
-    change: "+3 this week",
-  },
-  {
-    label: "In Progress",
-    value: "12",
-    icon: Clock,
-    change: "5 assigned to you",
-  },
-  {
-    label: "Completed",
-    value: "28",
-    icon: CheckCircle2,
-    change: "4 this month",
-  },
-  {
-    label: "Overdue",
-    value: "3",
-    icon: AlertTriangle,
-    change: "Needs attention",
-    alert: true,
-  },
-];
+const statusVariantMap: Record<string, "default" | "accent" | "warning" | "error" | "success" | "outline"> = {
+  draft: "outline",
+  in_progress: "default",
+  under_review: "accent",
+  approved: "success",
+  published: "accent",
+  challenged: "error",
+  withdrawn: "outline",
+};
 
-const recentDecisions = [
-  {
-    id: "1",
-    referenceNumber: "DP-2026-001",
-    title: "Telecommunications Licence Renewal — BVI Telecom",
-    status: "Under Review",
-    statusVariant: "accent" as const,
-    currentStep: 6,
-    assignedTo: "Jane Smith",
-    updatedAt: "2 hours ago",
-  },
-  {
-    id: "2",
-    referenceNumber: "DP-2026-002",
-    title: "Road Town Harbour Development Permit",
-    status: "In Progress",
-    statusVariant: "default" as const,
-    currentStep: 3,
-    assignedTo: "John Doe",
-    updatedAt: "5 hours ago",
-  },
-  {
-    id: "3",
-    referenceNumber: "DP-2026-003",
-    title: "Financial Services Regulatory Amendment",
-    status: "Draft",
-    statusVariant: "outline" as const,
-    currentStep: 1,
-    assignedTo: "Mary Johnson",
-    updatedAt: "1 day ago",
-  },
-  {
-    id: "4",
-    referenceNumber: "DP-2025-045",
-    title: "Environmental Impact Assessment — West End",
-    status: "Approved",
-    statusVariant: "success" as const,
-    currentStep: 10,
-    assignedTo: "Robert Williams",
-    updatedAt: "2 days ago",
-  },
-];
+function formatStatus(status: string): string {
+  return status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
-const overdueItems = [
-  {
-    id: "5",
-    referenceNumber: "DP-2025-039",
-    title: "Public School Zoning Reclassification",
-    deadline: "Mar 15, 2026",
-    daysOverdue: 7,
-    assignedTo: "Jane Smith",
-  },
-  {
-    id: "6",
-    referenceNumber: "DP-2025-041",
-    title: "Customs Duty Exemption — Hurricane Relief Materials",
-    deadline: "Mar 18, 2026",
-    daysOverdue: 4,
-    assignedTo: "John Doe",
-  },
-  {
-    id: "7",
-    referenceNumber: "DP-2025-044",
-    title: "Crown Land Lease Renewal — East End",
-    deadline: "Mar 20, 2026",
-    daysOverdue: 2,
-    assignedTo: "Mary Johnson",
-  },
-];
+function timeAgo(dateStr: string | Date): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
+}
 
 export default function DashboardPage() {
+  const statsQuery = trpc.decision.stats.useQuery(undefined, {
+    placeholderData: { total: 0, byStatus: {} },
+  });
+
+  const recentQuery = trpc.decision.list.useQuery(
+    { limit: 5 },
+    { placeholderData: { items: [], hasMore: false, nextCursor: null } }
+  );
+
+  const stats = statsQuery.data;
+  const recentDecisions = recentQuery.data?.items ?? [];
+
+  const statCards = [
+    {
+      label: "Total Decisions",
+      value: String(stats?.total ?? 0),
+      icon: FileText,
+      change: `${stats?.byStatus?.["published"] ?? 0} published`,
+    },
+    {
+      label: "In Progress",
+      value: String(stats?.byStatus?.["in_progress"] ?? 0),
+      icon: Clock,
+      change: `${stats?.byStatus?.["draft"] ?? 0} drafts`,
+    },
+    {
+      label: "Completed",
+      value: String((stats?.byStatus?.["approved"] ?? 0) + (stats?.byStatus?.["published"] ?? 0)),
+      icon: CheckCircle2,
+      change: `${stats?.byStatus?.["under_review"] ?? 0} under review`,
+    },
+    {
+      label: "Challenged",
+      value: String(stats?.byStatus?.["challenged"] ?? 0),
+      icon: AlertTriangle,
+      change: stats?.byStatus?.["challenged"] ? "Needs attention" : "None",
+      alert: (stats?.byStatus?.["challenged"] ?? 0) > 0,
+    },
+  ];
+
+  const isLoading = statsQuery.isLoading || recentQuery.isLoading;
+
   return (
     <div className="space-y-6">
       {/* Page header */}
@@ -132,7 +104,7 @@ export default function DashboardPage() {
 
       {/* Stats cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => {
+        {statCards.map((stat) => {
           const Icon = stat.icon;
           return (
             <Card key={stat.label}>
@@ -141,12 +113,18 @@ export default function DashboardPage() {
                   <div>
                     <p className="text-sm text-text-secondary">{stat.label}</p>
                     <p className="mt-1 text-2xl font-bold text-text">
-                      {stat.value}
+                      {isLoading ? (
+                        <Loader2 className="h-6 w-6 animate-spin text-text-muted" />
+                      ) : (
+                        stat.value
+                      )}
                     </p>
                   </div>
                   <div
                     className={`flex h-10 w-10 items-center justify-center rounded-lg ${
-                      stat.alert ? "bg-error/10 text-error" : "bg-accent/10 text-accent"
+                      stat.alert
+                        ? "bg-error/10 text-error"
+                        : "bg-accent/10 text-accent"
                     }`}
                   >
                     <Icon className="h-5 w-5" />
@@ -165,18 +143,27 @@ export default function DashboardPage() {
         })}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Recent decisions */}
-        <Card className="lg:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <CardTitle className="text-base">Recent Decisions</CardTitle>
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/decisions">
-                View all <ArrowRight className="ml-1 h-3 w-3" />
-              </Link>
-            </Button>
-          </CardHeader>
-          <CardContent>
+      {/* Recent decisions */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <CardTitle className="text-base">Recent Decisions</CardTitle>
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/decisions">
+              View all <ArrowRight className="ml-1 h-3 w-3" />
+            </Link>
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-text-muted" />
+            </div>
+          ) : recentDecisions.length === 0 ? (
+            <div className="text-center py-8 text-text-muted">
+              <FileText className="h-10 w-10 mx-auto mb-2" />
+              <p className="text-sm">No decisions yet. Create your first one.</p>
+            </div>
+          ) : (
             <div className="space-y-3">
               {recentDecisions.map((decision) => (
                 <Link
@@ -189,8 +176,8 @@ export default function DashboardPage() {
                       <span className="font-mono text-xs text-text-secondary">
                         {decision.referenceNumber}
                       </span>
-                      <Badge variant={decision.statusVariant}>
-                        {decision.status}
+                      <Badge variant={statusVariantMap[decision.status] ?? "outline"}>
+                        {formatStatus(decision.status)}
                       </Badge>
                     </div>
                     <p className="mt-1 truncate text-sm font-medium text-text">
@@ -198,54 +185,16 @@ export default function DashboardPage() {
                     </p>
                     <div className="mt-1 flex items-center gap-3 text-xs text-text-muted">
                       <span>Step {decision.currentStep}/10</span>
-                      <span>{decision.assignedTo}</span>
-                      <span>{decision.updatedAt}</span>
+                      <span>{decision.createdAt ? timeAgo(decision.createdAt) : ""}</span>
                     </div>
                   </div>
                   <ArrowRight className="ml-3 h-4 w-4 shrink-0 text-text-muted" />
                 </Link>
               ))}
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Overdue items */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <AlertTriangle className="h-4 w-4 text-error" />
-              Overdue Items
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {overdueItems.map((item) => (
-                <Link
-                  key={item.id}
-                  href={`/decisions/${item.id}`}
-                  className="block rounded-md border border-error/20 bg-error/5 p-3 transition-colors hover:bg-error/10"
-                >
-                  <div className="flex items-start justify-between">
-                    <span className="font-mono text-xs text-text-secondary">
-                      {item.referenceNumber}
-                    </span>
-                    <Badge variant="error">
-                      {item.daysOverdue}d overdue
-                    </Badge>
-                  </div>
-                  <p className="mt-1 text-sm font-medium text-text">
-                    {item.title}
-                  </p>
-                  <div className="mt-1 flex items-center gap-3 text-xs text-text-muted">
-                    <span>Due: {item.deadline}</span>
-                    <span>{item.assignedTo}</span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

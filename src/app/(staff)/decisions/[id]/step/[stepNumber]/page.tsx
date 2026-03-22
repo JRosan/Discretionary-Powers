@@ -3,10 +3,10 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, CheckCircle2, Save } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, Save, Loader2, SkipForward } from "lucide-react";
 import { DECISION_STEPS } from "@/lib/constants";
+import { trpc } from "@/lib/trpc";
 
-// Step-specific form fields for each of the 10 steps
 const stepFields: Record<
   number,
   Array<{
@@ -79,10 +79,49 @@ export default function StepPage() {
   const router = useRouter();
   const stepNumber = Number(params.stepNumber);
   const decisionId = params.id as string;
-  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const step = DECISION_STEPS.find((s) => s.number === stepNumber);
   const fields = stepFields[stepNumber] ?? [];
+
+  const utils = trpc.useUtils();
+
+  // Start step mutation (called when page loads if step is not_started)
+  const startMutation = trpc.decision.advanceStep.useMutation({
+    onSuccess: () => {
+      utils.decision.getById.invalidate({ id: decisionId });
+    },
+  });
+
+  // Complete step mutation
+  const completeMutation = trpc.decision.advanceStep.useMutation({
+    onSuccess: () => {
+      utils.decision.getById.invalidate({ id: decisionId });
+      if (stepNumber < 10) {
+        router.push(`/decisions/${decisionId}/step/${stepNumber + 1}`);
+      } else {
+        router.push(`/decisions/${decisionId}`);
+      }
+    },
+    onError: (err) => {
+      setError(err.message);
+    },
+  });
+
+  // Skip step mutation
+  const skipMutation = trpc.decision.advanceStep.useMutation({
+    onSuccess: () => {
+      utils.decision.getById.invalidate({ id: decisionId });
+      if (stepNumber < 10) {
+        router.push(`/decisions/${decisionId}/step/${stepNumber + 1}`);
+      } else {
+        router.push(`/decisions/${decisionId}`);
+      }
+    },
+    onError: (err) => {
+      setError(err.message);
+    },
+  });
 
   if (!step) {
     return (
@@ -92,23 +131,61 @@ export default function StepPage() {
     );
   }
 
+  const isPending = completeMutation.isPending || skipMutation.isPending;
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setIsSaving(true);
-    // TODO: Replace with tRPC mutation (advanceStep)
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsSaving(false);
+    setError(null);
 
-    if (stepNumber < 10) {
-      router.push(`/decisions/${decisionId}/step/${stepNumber + 1}`);
-    } else {
-      router.push(`/decisions/${decisionId}`);
+    const formData = new FormData(e.currentTarget);
+    const data: Record<string, unknown> = {};
+    const notes = formData.get("notes") as string;
+
+    for (const field of fields) {
+      if (field.type === "checkbox") {
+        data[field.name] = formData.get(field.name) === "on";
+      } else {
+        const value = formData.get(field.name) as string;
+        if (value) data[field.name] = value;
+      }
     }
+
+    // First start the step if needed, then complete it
+    try {
+      await startMutation.mutateAsync({
+        decisionId,
+        stepNumber,
+        action: "start",
+      }).catch(() => {
+        // Step may already be in_progress — that's fine
+      });
+    } catch {
+      // Ignore start errors (step may already be started)
+    }
+
+    completeMutation.mutate({
+      decisionId,
+      stepNumber,
+      action: "complete",
+      data,
+      notes: notes || undefined,
+    });
+  }
+
+  function handleSkip() {
+    const reason = prompt("Please provide a reason for skipping this step:");
+    if (!reason) return;
+
+    skipMutation.mutate({
+      decisionId,
+      stepNumber,
+      action: "skip",
+      skipReason: reason,
+    });
   }
 
   return (
     <div className="max-w-3xl space-y-6">
-      {/* Header */}
       <div>
         <Link
           href={`/decisions/${decisionId}`}
@@ -118,7 +195,7 @@ export default function StepPage() {
           Back to Decision
         </Link>
 
-        {/* Step Navigation */}
+        {/* Step progress bar */}
         <div className="flex items-center gap-1 mb-4">
           {DECISION_STEPS.map((s) => (
             <Link
@@ -136,14 +213,17 @@ export default function StepPage() {
           ))}
         </div>
 
-        <p className="text-xs text-text-muted mb-1">
-          Step {stepNumber} of 10
-        </p>
+        <p className="text-xs text-text-muted mb-1">Step {stepNumber} of 10</p>
         <h1 className="text-2xl font-semibold text-text">{step.name}</h1>
         <p className="mt-1 text-sm text-text-secondary">{step.description}</p>
       </div>
 
-      {/* Form */}
+      {error && (
+        <div className="rounded-lg bg-error/10 border border-error/20 p-4 text-sm text-error">
+          {error}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="rounded-lg border border-border bg-white p-6 space-y-5">
           {fields.map((field) => (
@@ -160,10 +240,7 @@ export default function StepPage() {
                 </label>
               ) : field.type === "select" ? (
                 <div>
-                  <label
-                    htmlFor={field.name}
-                    className="block text-sm font-medium text-text mb-1.5"
-                  >
+                  <label htmlFor={field.name} className="block text-sm font-medium text-text mb-1.5">
                     {field.label}
                     {field.required && <span className="text-error"> *</span>}
                   </label>
@@ -183,10 +260,7 @@ export default function StepPage() {
                 </div>
               ) : field.type === "textarea" ? (
                 <div>
-                  <label
-                    htmlFor={field.name}
-                    className="block text-sm font-medium text-text mb-1.5"
-                  >
+                  <label htmlFor={field.name} className="block text-sm font-medium text-text mb-1.5">
                     {field.label}
                     {field.required && <span className="text-error"> *</span>}
                   </label>
@@ -201,10 +275,7 @@ export default function StepPage() {
                 </div>
               ) : (
                 <div>
-                  <label
-                    htmlFor={field.name}
-                    className="block text-sm font-medium text-text mb-1.5"
-                  >
+                  <label htmlFor={field.name} className="block text-sm font-medium text-text mb-1.5">
                     {field.label}
                     {field.required && <span className="text-error"> *</span>}
                   </label>
@@ -224,10 +295,7 @@ export default function StepPage() {
 
         {/* Notes */}
         <div className="rounded-lg border border-border bg-white p-6">
-          <label
-            htmlFor="notes"
-            className="block text-sm font-medium text-text mb-1.5"
-          >
+          <label htmlFor="notes" className="block text-sm font-medium text-text mb-1.5">
             Additional Notes
           </label>
           <textarea
@@ -248,38 +316,41 @@ export default function StepPage() {
                 className="inline-flex items-center gap-1 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-text-secondary hover:bg-surface transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Previous Step
+                Previous
               </Link>
             )}
-          </div>
-          <div className="flex items-center gap-3">
             <button
               type="button"
-              className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-text-secondary hover:bg-surface transition-colors"
+              onClick={handleSkip}
+              disabled={isPending}
+              className="inline-flex items-center gap-1 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-text-muted hover:bg-surface transition-colors disabled:opacity-50"
             >
-              <Save className="h-4 w-4" />
-              Save Draft
-            </button>
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="inline-flex items-center gap-2 rounded-lg bg-accent px-6 py-2.5 text-sm font-medium text-white hover:bg-accent-dark transition-colors disabled:opacity-50"
-            >
-              {isSaving ? (
-                "Saving..."
-              ) : stepNumber < 10 ? (
-                <>
-                  Complete & Next
-                  <ArrowRight className="h-4 w-4" />
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="h-4 w-4" />
-                  Complete Final Step
-                </>
-              )}
+              <SkipForward className="h-4 w-4" />
+              Skip
             </button>
           </div>
+          <button
+            type="submit"
+            disabled={isPending}
+            className="inline-flex items-center gap-2 rounded-lg bg-accent px-6 py-2.5 text-sm font-medium text-white hover:bg-accent-dark transition-colors disabled:opacity-50"
+          >
+            {isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : stepNumber < 10 ? (
+              <>
+                Complete & Next
+                <ArrowRight className="h-4 w-4" />
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="h-4 w-4" />
+                Complete Final Step
+              </>
+            )}
+          </button>
         </div>
       </form>
     </div>

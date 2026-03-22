@@ -1,48 +1,21 @@
+"use client";
+
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
   FileText,
-  Clock,
   User,
   Building2,
   Calendar,
-  Shield,
   CheckCircle2,
   Circle,
-  AlertTriangle,
+  Loader2,
+  Download,
+  MessageSquare,
 } from "lucide-react";
 import { DECISION_STEPS } from "@/lib/constants";
-
-// Mock data — will be replaced with tRPC query
-const mockDecision = {
-  id: "1",
-  reference: "DP-FIN-2026-0042",
-  title: "Financial Services Licensing Amendment",
-  description:
-    "Amendment to the licensing requirements for financial services providers operating within the British Virgin Islands, in response to updated international regulatory standards.",
-  status: "in_progress",
-  decisionType: "licensing",
-  currentStep: 4,
-  ministry: "Ministry of Finance",
-  assignedTo: "John Smith",
-  createdBy: "Minister of Finance",
-  deadline: "2026-04-15",
-  createdAt: "2026-03-01",
-  updatedAt: "2026-03-20",
-};
-
-const stepStatuses: Record<number, string> = {
-  1: "completed",
-  2: "completed",
-  3: "completed",
-  4: "in_progress",
-  5: "not_started",
-  6: "not_started",
-  7: "not_started",
-  8: "not_started",
-  9: "not_started",
-  10: "not_started",
-};
+import { trpc } from "@/lib/trpc";
 
 const statusColors: Record<string, string> = {
   draft: "bg-surface text-text-secondary",
@@ -53,12 +26,12 @@ const statusColors: Record<string, string> = {
   challenged: "bg-error/10 text-error",
 };
 
-function formatStatus(status: string): string {
-  return status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+function formatLabel(value: string): string {
+  return value.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function StepIcon({ status }: { status: string }) {
-  if (status === "completed") {
+  if (status === "completed" || status === "skipped_with_reason") {
     return <CheckCircle2 className="h-6 w-6 text-accent" />;
   }
   if (status === "in_progress") {
@@ -72,7 +45,43 @@ function StepIcon({ status }: { status: string }) {
 }
 
 export default function DecisionDetailPage() {
-  const progress = (Object.values(stepStatuses).filter((s) => s === "completed").length / 10) * 100;
+  const params = useParams();
+  const decisionId = params.id as string;
+
+  const { data, isLoading, error } = trpc.decision.getById.useQuery(
+    { id: decisionId },
+    { enabled: !!decisionId }
+  );
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="h-8 w-8 animate-spin text-text-muted" />
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="text-center py-24">
+        <FileText className="h-12 w-12 mx-auto mb-3 text-text-muted" />
+        <p className="text-lg font-medium text-text">Decision not found</p>
+        <p className="text-sm text-text-secondary mt-1">
+          {error?.message ?? "This decision may have been removed."}
+        </p>
+        <Link href="/decisions" className="text-sm text-accent hover:underline mt-4 inline-block">
+          Back to Decisions
+        </Link>
+      </div>
+    );
+  }
+
+  const decision = data;
+  const steps = decision.steps ?? [];
+  const completedCount = steps.filter(
+    (s) => s.status === "completed" || s.status === "skipped_with_reason"
+  ).length;
+  const progress = (completedCount / 10) * 100;
 
   return (
     <div className="space-y-6">
@@ -89,52 +98,48 @@ export default function DecisionDetailPage() {
         <div className="flex items-start justify-between">
           <div>
             <p className="font-mono text-xs text-text-muted mb-1">
-              {mockDecision.reference}
+              {decision.referenceNumber}
             </p>
             <h1 className="text-2xl font-semibold text-text">
-              {mockDecision.title}
+              {decision.title}
             </h1>
-            <p className="mt-2 text-sm text-text-secondary max-w-2xl">
-              {mockDecision.description}
-            </p>
+            {decision.description && (
+              <p className="mt-2 text-sm text-text-secondary max-w-2xl">
+                {decision.description}
+              </p>
+            )}
           </div>
           <span
             className={`rounded-full px-3 py-1 text-sm font-medium ${
-              statusColors[mockDecision.status] ?? ""
+              statusColors[decision.status] ?? ""
             }`}
           >
-            {formatStatus(mockDecision.status)}
+            {formatLabel(decision.status)}
           </span>
         </div>
       </div>
 
-      {/* Metadata Grid */}
+      {/* Metadata */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="flex items-center gap-3 rounded-lg border border-border bg-white p-4">
           <Building2 className="h-5 w-5 text-text-muted" />
           <div>
             <p className="text-xs text-text-muted">Ministry</p>
-            <p className="text-sm font-medium text-text">
-              {mockDecision.ministry}
-            </p>
+            <p className="text-sm font-medium text-text">{decision.ministryId}</p>
           </div>
         </div>
         <div className="flex items-center gap-3 rounded-lg border border-border bg-white p-4">
           <User className="h-5 w-5 text-text-muted" />
           <div>
-            <p className="text-xs text-text-muted">Assigned To</p>
-            <p className="text-sm font-medium text-text">
-              {mockDecision.assignedTo}
-            </p>
+            <p className="text-xs text-text-muted">Created By</p>
+            <p className="text-sm font-medium text-text">{decision.createdBy}</p>
           </div>
         </div>
         <div className="flex items-center gap-3 rounded-lg border border-border bg-white p-4">
           <FileText className="h-5 w-5 text-text-muted" />
           <div>
             <p className="text-xs text-text-muted">Type</p>
-            <p className="text-sm font-medium text-text">
-              {formatStatus(mockDecision.decisionType)}
-            </p>
+            <p className="text-sm font-medium text-text">{formatLabel(decision.decisionType)}</p>
           </div>
         </div>
         <div className="flex items-center gap-3 rounded-lg border border-border bg-white p-4">
@@ -142,10 +147,37 @@ export default function DecisionDetailPage() {
           <div>
             <p className="text-xs text-text-muted">Deadline</p>
             <p className="text-sm font-medium text-text">
-              {mockDecision.deadline}
+              {decision.deadline
+                ? new Date(decision.deadline).toLocaleDateString()
+                : "No deadline set"}
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="flex gap-3">
+        <Link
+          href={`/decisions/${decision.id}/documents`}
+          className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-secondary hover:bg-surface transition-colors"
+        >
+          <Download className="h-4 w-4" />
+          Documents
+        </Link>
+        <Link
+          href={`/decisions/${decision.id}/audit`}
+          className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-secondary hover:bg-surface transition-colors"
+        >
+          <FileText className="h-4 w-4" />
+          Audit Trail
+        </Link>
+        <Link
+          href="#comments"
+          className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-secondary hover:bg-surface transition-colors"
+        >
+          <MessageSquare className="h-4 w-4" />
+          Comments
+        </Link>
       </div>
 
       {/* Progress Bar */}
@@ -153,7 +185,7 @@ export default function DecisionDetailPage() {
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-sm font-semibold text-text">Workflow Progress</h2>
           <span className="text-sm text-text-secondary">
-            {Math.round(progress)}% complete
+            {Math.round(progress)}% complete ({completedCount}/10 steps)
           </span>
         </div>
         <div className="h-2 rounded-full bg-surface overflow-hidden">
@@ -170,14 +202,15 @@ export default function DecisionDetailPage() {
           10-Step Decision Framework
         </h2>
         <div className="space-y-1">
-          {DECISION_STEPS.map((step) => {
-            const status = stepStatuses[step.number] ?? "not_started";
+          {DECISION_STEPS.map((stepDef) => {
+            const stepData = steps.find((s) => s.stepNumber === stepDef.number);
+            const status = stepData?.status ?? "not_started";
             const isCurrent = status === "in_progress";
 
             return (
               <Link
-                key={step.number}
-                href={`/decisions/${mockDecision.id}/step/${step.number}`}
+                key={stepDef.number}
+                href={`/decisions/${decision.id}/step/${stepDef.number}`}
                 className={`flex items-start gap-4 rounded-lg p-3 transition-colors ${
                   isCurrent
                     ? "bg-accent/5 border border-accent/20"
@@ -191,14 +224,14 @@ export default function DecisionDetailPage() {
                   <div className="flex items-center gap-2">
                     <p
                       className={`text-sm font-medium ${
-                        status === "completed"
+                        status === "completed" || status === "skipped_with_reason"
                           ? "text-text-secondary"
                           : isCurrent
                           ? "text-accent-dark"
                           : "text-text"
                       }`}
                     >
-                      Step {step.number}: {step.name}
+                      Step {stepDef.number}: {stepDef.name}
                     </p>
                     {isCurrent && (
                       <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
@@ -207,13 +240,17 @@ export default function DecisionDetailPage() {
                     )}
                   </div>
                   <p className="text-xs text-text-muted mt-0.5">
-                    {step.description}
+                    {stepDef.description}
                   </p>
                 </div>
                 <div className="text-xs text-text-muted whitespace-nowrap">
-                  {status === "completed" && "Completed"}
-                  {status === "in_progress" && "In Progress"}
-                  {status === "not_started" && "Pending"}
+                  {status === "completed" && stepData?.completedAt
+                    ? `Completed ${new Date(stepData.completedAt).toLocaleDateString()}`
+                    : status === "in_progress"
+                    ? "In Progress"
+                    : status === "skipped_with_reason"
+                    ? "Skipped"
+                    : "Pending"}
                 </div>
               </Link>
             );

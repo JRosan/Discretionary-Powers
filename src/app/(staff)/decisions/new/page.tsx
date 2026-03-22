@@ -3,33 +3,44 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { DECISION_TYPES } from "@/lib/constants";
+import { trpc } from "@/lib/trpc";
 
 function formatType(type: string): string {
   return type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-const mockMinistries = [
-  { id: "m1", name: "Ministry of Finance", code: "FIN" },
-  { id: "m2", name: "Ministry of Natural Resources", code: "NAT" },
-  { id: "m3", name: "Ministry of Education", code: "EDU" },
-  { id: "m4", name: "Ministry of Health", code: "HEA" },
-  { id: "m5", name: "Ministry of Communications", code: "COM" },
-];
-
 export default function NewDecisionPage() {
   const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const ministriesQuery = trpc.ministry.list.useQuery();
+  const ministries = ministriesQuery.data ?? [];
+
+  const createMutation = trpc.decision.create.useMutation({
+    onSuccess: (decision) => {
+      router.push(`/decisions/${decision.id}`);
+    },
+    onError: (err) => {
+      setError(err.message);
+    },
+  });
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setIsSubmitting(true);
+    setError(null);
 
-    // TODO: Replace with tRPC mutation
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const formData = new FormData(e.currentTarget);
+    const deadline = formData.get("deadline") as string;
 
-    router.push("/decisions");
+    createMutation.mutate({
+      title: formData.get("title") as string,
+      description: (formData.get("description") as string) || undefined,
+      ministryId: formData.get("ministryId") as string,
+      decisionType: formData.get("decisionType") as "regulatory" | "licensing" | "planning" | "financial" | "appointment" | "policy" | "enforcement" | "other",
+      deadline: deadline ? new Date(deadline).toISOString() : undefined,
+    });
   }
 
   return (
@@ -49,14 +60,16 @@ export default function NewDecisionPage() {
         </p>
       </div>
 
+      {error && (
+        <div className="rounded-lg bg-error/10 border border-error/20 p-4 text-sm text-error">
+          {error}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="rounded-lg border border-border bg-white p-6 space-y-5">
-          {/* Title */}
           <div>
-            <label
-              htmlFor="title"
-              className="block text-sm font-medium text-text mb-1.5"
-            >
+            <label htmlFor="title" className="block text-sm font-medium text-text mb-1.5">
               Decision Title <span className="text-error">*</span>
             </label>
             <input
@@ -69,12 +82,8 @@ export default function NewDecisionPage() {
             />
           </div>
 
-          {/* Description */}
           <div>
-            <label
-              htmlFor="description"
-              className="block text-sm font-medium text-text mb-1.5"
-            >
+            <label htmlFor="description" className="block text-sm font-medium text-text mb-1.5">
               Description
             </label>
             <textarea
@@ -86,12 +95,8 @@ export default function NewDecisionPage() {
             />
           </div>
 
-          {/* Ministry */}
           <div>
-            <label
-              htmlFor="ministry"
-              className="block text-sm font-medium text-text mb-1.5"
-            >
+            <label htmlFor="ministry" className="block text-sm font-medium text-text mb-1.5">
               Ministry <span className="text-error">*</span>
             </label>
             <select
@@ -101,7 +106,7 @@ export default function NewDecisionPage() {
               className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
             >
               <option value="">Select a ministry</option>
-              {mockMinistries.map((m) => (
+              {ministries.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.name}
                 </option>
@@ -109,12 +114,8 @@ export default function NewDecisionPage() {
             </select>
           </div>
 
-          {/* Decision Type */}
           <div>
-            <label
-              htmlFor="type"
-              className="block text-sm font-medium text-text mb-1.5"
-            >
+            <label htmlFor="type" className="block text-sm font-medium text-text mb-1.5">
               Decision Type <span className="text-error">*</span>
             </label>
             <select
@@ -132,12 +133,8 @@ export default function NewDecisionPage() {
             </select>
           </div>
 
-          {/* Deadline */}
           <div>
-            <label
-              htmlFor="deadline"
-              className="block text-sm font-medium text-text mb-1.5"
-            >
+            <label htmlFor="deadline" className="block text-sm font-medium text-text mb-1.5">
               Deadline
             </label>
             <input
@@ -152,7 +149,6 @@ export default function NewDecisionPage() {
           </div>
         </div>
 
-        {/* Info Banner */}
         <div className="rounded-lg bg-primary/5 border border-primary/10 p-4">
           <p className="text-sm text-primary">
             Once created, this decision will begin at Step 1 (Confirm Authority)
@@ -162,14 +158,14 @@ export default function NewDecisionPage() {
           </p>
         </div>
 
-        {/* Actions */}
         <div className="flex items-center gap-3">
           <button
             type="submit"
-            disabled={isSubmitting}
-            className="rounded-lg bg-accent px-6 py-2.5 text-sm font-medium text-white hover:bg-accent-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={createMutation.isPending}
+            className="inline-flex items-center gap-2 rounded-lg bg-accent px-6 py-2.5 text-sm font-medium text-white hover:bg-accent-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? "Creating..." : "Create Decision"}
+            {createMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+            {createMutation.isPending ? "Creating..." : "Create Decision"}
           </button>
           <Link
             href="/decisions"

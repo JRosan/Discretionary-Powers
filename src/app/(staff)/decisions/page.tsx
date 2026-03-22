@@ -2,76 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import {
-  Plus,
-  Search,
-  Filter,
-  FileText,
-} from "lucide-react";
+import { Plus, Search, FileText, Loader2 } from "lucide-react";
 import { DECISION_STATUSES, DECISION_TYPES } from "@/lib/constants";
-
-const mockDecisions = [
-  {
-    id: "1",
-    reference: "DP-FIN-2026-0042",
-    title: "Financial Services Licensing Amendment",
-    status: "in_progress",
-    decisionType: "licensing",
-    currentStep: 4,
-    ministry: "Ministry of Finance",
-    assignedTo: "John Smith",
-    deadline: "2026-04-15",
-    createdAt: "2026-03-01",
-  },
-  {
-    id: "2",
-    reference: "DP-NAT-2026-0038",
-    title: "Environmental Protection Order — North Sound",
-    status: "under_review",
-    decisionType: "regulatory",
-    currentStep: 10,
-    ministry: "Ministry of Natural Resources",
-    assignedTo: "Sarah Johnson",
-    deadline: "2026-03-30",
-    createdAt: "2026-02-15",
-  },
-  {
-    id: "3",
-    reference: "DP-EDU-2026-0035",
-    title: "School Zoning Boundary Adjustment",
-    status: "approved",
-    decisionType: "planning",
-    currentStep: 10,
-    ministry: "Ministry of Education",
-    assignedTo: "Michael Chen",
-    deadline: null,
-    createdAt: "2026-02-01",
-  },
-  {
-    id: "4",
-    reference: "DP-HEA-2026-0041",
-    title: "Public Health Emergency Powers Activation",
-    status: "draft",
-    decisionType: "enforcement",
-    currentStep: 1,
-    ministry: "Ministry of Health",
-    assignedTo: "Lisa Brown",
-    deadline: "2026-04-01",
-    createdAt: "2026-03-15",
-  },
-  {
-    id: "5",
-    reference: "DP-FIN-2026-0040",
-    title: "Tax Exemption for Maritime Industry",
-    status: "published",
-    decisionType: "financial",
-    currentStep: 10,
-    ministry: "Ministry of Finance",
-    assignedTo: "John Smith",
-    deadline: null,
-    createdAt: "2026-01-10",
-  },
-];
+import { trpc } from "@/lib/trpc";
 
 const statusColors: Record<string, string> = {
   draft: "bg-surface text-text-secondary",
@@ -83,27 +16,23 @@ const statusColors: Record<string, string> = {
   withdrawn: "bg-surface text-text-muted",
 };
 
-function formatStatus(status: string): string {
-  return status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-function formatType(type: string): string {
-  return type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+function formatLabel(value: string): string {
+  return value.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 export default function DecisionsPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [typeFilter, setTypeFilter] = useState<string>("");
 
-  const filtered = mockDecisions.filter((d) => {
-    if (searchQuery && !d.title.toLowerCase().includes(searchQuery.toLowerCase())) {
-      return false;
-    }
-    if (statusFilter && d.status !== statusFilter) return false;
-    if (typeFilter && d.decisionType !== typeFilter) return false;
-    return true;
+  const { data, isLoading } = trpc.decision.list.useQuery({
+    search: searchQuery || undefined,
+    status: (statusFilter || undefined) as "draft" | "in_progress" | "under_review" | "approved" | "published" | "challenged" | "withdrawn" | undefined,
+    decisionType: (typeFilter || undefined) as "regulatory" | "licensing" | "planning" | "financial" | "appointment" | "policy" | "enforcement" | "other" | undefined,
+    limit: 50,
   });
+
+  const decisions = data?.items ?? [];
 
   return (
     <div className="space-y-6">
@@ -144,7 +73,7 @@ export default function DecisionsPage() {
           <option value="">All Statuses</option>
           {Object.values(DECISION_STATUSES).map((status) => (
             <option key={status} value={status}>
-              {formatStatus(status)}
+              {formatLabel(status)}
             </option>
           ))}
         </select>
@@ -157,7 +86,7 @@ export default function DecisionsPage() {
           <option value="">All Types</option>
           {Object.values(DECISION_TYPES).map((type) => (
             <option key={type} value={type}>
-              {formatType(type)}
+              {formatLabel(type)}
             </option>
           ))}
         </select>
@@ -165,44 +94,34 @@ export default function DecisionsPage() {
 
       {/* Table */}
       <div className="rounded-lg border border-border bg-white overflow-hidden">
-        {filtered.length === 0 ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="h-8 w-8 animate-spin text-text-muted" />
+          </div>
+        ) : decisions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-text-muted">
             <FileText className="h-12 w-12 mb-3" />
             <p className="font-medium">No decisions found</p>
-            <p className="text-sm mt-1">Try adjusting your search or filters.</p>
+            <p className="text-sm mt-1">
+              {searchQuery || statusFilter || typeFilter
+                ? "Try adjusting your search or filters."
+                : "Create your first decision to get started."}
+            </p>
           </div>
         ) : (
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-surface">
-                <th className="px-4 py-3 text-left font-medium text-text-secondary">
-                  Reference
-                </th>
-                <th className="px-4 py-3 text-left font-medium text-text-secondary">
-                  Title
-                </th>
-                <th className="px-4 py-3 text-left font-medium text-text-secondary">
-                  Type
-                </th>
-                <th className="px-4 py-3 text-left font-medium text-text-secondary">
-                  Ministry
-                </th>
-                <th className="px-4 py-3 text-left font-medium text-text-secondary">
-                  Status
-                </th>
-                <th className="px-4 py-3 text-left font-medium text-text-secondary">
-                  Step
-                </th>
-                <th className="px-4 py-3 text-left font-medium text-text-secondary">
-                  Assigned To
-                </th>
-                <th className="px-4 py-3 text-left font-medium text-text-secondary">
-                  Deadline
-                </th>
+                <th className="px-4 py-3 text-left font-medium text-text-secondary">Reference</th>
+                <th className="px-4 py-3 text-left font-medium text-text-secondary">Title</th>
+                <th className="px-4 py-3 text-left font-medium text-text-secondary">Type</th>
+                <th className="px-4 py-3 text-left font-medium text-text-secondary">Status</th>
+                <th className="px-4 py-3 text-left font-medium text-text-secondary">Step</th>
+                <th className="px-4 py-3 text-left font-medium text-text-secondary">Deadline</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((decision) => (
+              {decisions.map((decision) => (
                 <tr
                   key={decision.id}
                   className="border-b border-border last:border-0 hover:bg-surface/50 transition-colors"
@@ -212,7 +131,7 @@ export default function DecisionsPage() {
                       href={`/decisions/${decision.id}`}
                       className="font-mono text-xs text-accent hover:underline"
                     >
-                      {decision.reference}
+                      {decision.referenceNumber}
                     </Link>
                   </td>
                   <td className="px-4 py-3 font-medium text-text max-w-xs truncate">
@@ -221,10 +140,7 @@ export default function DecisionsPage() {
                     </Link>
                   </td>
                   <td className="px-4 py-3 text-text-secondary">
-                    {formatType(decision.decisionType)}
-                  </td>
-                  <td className="px-4 py-3 text-text-secondary text-xs">
-                    {decision.ministry}
+                    {formatLabel(decision.decisionType)}
                   </td>
                   <td className="px-4 py-3">
                     <span
@@ -232,20 +148,17 @@ export default function DecisionsPage() {
                         statusColors[decision.status] ?? ""
                       }`}
                     >
-                      {formatStatus(decision.status)}
+                      {formatLabel(decision.status)}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-text-secondary">
-                    <span className="inline-flex items-center gap-1">
-                      <span className="font-mono">{decision.currentStep}</span>
-                      <span className="text-text-muted">/10</span>
-                    </span>
+                    <span className="font-mono">{decision.currentStep}</span>
+                    <span className="text-text-muted">/10</span>
                   </td>
                   <td className="px-4 py-3 text-text-secondary">
-                    {decision.assignedTo}
-                  </td>
-                  <td className="px-4 py-3 text-text-secondary">
-                    {decision.deadline ?? "—"}
+                    {decision.deadline
+                      ? new Date(decision.deadline).toLocaleDateString()
+                      : "—"}
                   </td>
                 </tr>
               ))}
@@ -255,7 +168,8 @@ export default function DecisionsPage() {
       </div>
 
       <p className="text-xs text-text-muted">
-        Showing {filtered.length} of {mockDecisions.length} decisions
+        Showing {decisions.length} decisions
+        {data?.hasMore && " (more available)"}
       </p>
     </div>
   );
