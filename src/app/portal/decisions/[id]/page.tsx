@@ -56,7 +56,7 @@ export default function PublicDecisionDetailPage({
           This decision may not be published or does not exist.
         </p>
         <Link
-          href="/decisions"
+          href="/portal/decisions"
           className="inline-flex items-center gap-2 text-sm font-medium text-accent hover:text-accent/80"
         >
           <ArrowLeft className="h-4 w-4" /> Back to decisions
@@ -84,11 +84,11 @@ export default function PublicDecisionDetailPage({
     <div>
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1 text-sm text-text-muted mb-6">
-        <Link href="/" className="hover:text-accent transition-colors">
+        <Link href="/portal" className="hover:text-accent transition-colors">
           Home
         </Link>
         <ChevronRight className="h-4 w-4" />
-        <Link href="/decisions" className="hover:text-accent transition-colors">
+        <Link href="/portal/decisions" className="hover:text-accent transition-colors">
           Decisions
         </Link>
         <ChevronRight className="h-4 w-4" />
@@ -222,7 +222,7 @@ export default function PublicDecisionDetailPage({
         <p className="text-sm text-text-secondary">
           This decision was made following the Government&apos;s 10-step framework for the
           proper and lawful exercise of discretionary powers.{" "}
-          <Link href="/about" className="text-accent hover:text-accent/80 transition-colors">
+          <Link href="/portal/about" className="text-accent hover:text-accent/80 transition-colors">
             Learn more about the framework
           </Link>
           .

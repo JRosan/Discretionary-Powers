@@ -267,7 +267,7 @@ export default function PublicDecisionsPage() {
           {items.map((decision: ApiDecision) => (
             <Link
               key={decision.id}
-              href={`/decisions/${decision.id}`}
+              href={`/portal/decisions/${decision.id}`}
               className="block rounded-lg border border-border bg-white p-6 hover:border-accent hover:shadow-sm transition-all"
             >
               <div className="flex items-start justify-between mb-2">

@@ -135,7 +135,7 @@ export default function PublicHomePage() {
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-text">Recent Published Decisions</h2>
           <Link
-            href="/decisions"
+            href="/portal/decisions"
             className="flex items-center gap-1 text-sm font-medium text-accent hover:text-accent/80 transition-colors"
           >
             View all <ArrowRight className="h-4 w-4" />
@@ -158,7 +158,7 @@ export default function PublicHomePage() {
             {recentDecisions.items.map((decision: ApiDecision) => (
               <Link
                 key={decision.id}
-                href={`/decisions/${decision.id}`}
+                href={`/portal/decisions/${decision.id}`}
                 className="block rounded-lg border border-border bg-white p-6 hover:border-accent hover:shadow-sm transition-all"
               >
                 <div className="flex items-start justify-between mb-2">
@@ -189,7 +189,7 @@ export default function PublicHomePage() {
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-text">Browse by Ministry</h2>
           <Link
-            href="/ministries"
+            href="/portal/ministries"
             className="flex items-center gap-1 text-sm font-medium text-accent hover:text-accent/80 transition-colors"
           >
             View all <ArrowRight className="h-4 w-4" />
@@ -212,7 +212,7 @@ export default function PublicHomePage() {
             {ministries.map((ministry: ApiMinistry) => (
               <Link
                 key={ministry.id}
-                href={`/decisions?ministry=${ministry.id}`}
+                href={`/portal/decisions?ministry=${ministry.id}`}
                 className="block"
               >
                 <Card className="h-full hover:border-accent hover:shadow-sm transition-all">
@@ -239,7 +239,7 @@ export default function PublicHomePage() {
             <h3 className="font-semibold text-text mb-3">Learn More</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/about" className="text-accent hover:text-accent/80 transition-colors">
+                <Link href="/portal/about" className="text-accent hover:text-accent/80 transition-colors">
                   About the 10-Step Framework
                 </Link>
               </li>

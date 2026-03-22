@@ -260,7 +260,7 @@ export default function AboutPage() {
             </li>
             <li>
               <Link
-                href="/decisions"
+                href="/portal/decisions"
                 className="text-accent hover:text-accent/80 transition-colors"
               >
                 Browse Published Decisions

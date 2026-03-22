@@ -47,7 +47,7 @@ export default function MinistriesPage() {
             .map((ministry: ApiMinistry) => (
               <Link
                 key={ministry.id}
-                href={`/decisions?ministry=${ministry.id}`}
+                href={`/portal/decisions?ministry=${ministry.id}`}
               >
                 <Card className="h-full hover:border-accent hover:shadow-sm transition-all group">
                   <CardContent className="p-6">

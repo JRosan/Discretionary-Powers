@@ -6,10 +6,10 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
-  { label: "Home", href: "/" },
-  { label: "Decisions", href: "/decisions" },
-  { label: "Ministries", href: "/ministries" },
-  { label: "About", href: "/about" },
+  { label: "Home", href: "/portal" },
+  { label: "Decisions", href: "/portal/decisions" },
+  { label: "Ministries", href: "/portal/ministries" },
+  { label: "About", href: "/portal/about" },
 ];
 
 interface PublicLayoutProps {
@@ -25,7 +25,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
       <header className="bg-primary text-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
-            <Link href="/" className="flex flex-col">
+            <Link href="/portal" className="flex flex-col">
               <span className="text-lg font-bold leading-tight">
                 Government of the Virgin Islands
               </span>

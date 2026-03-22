@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Public portal', () => {
   test('landing page loads with hero and search', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/portal');
 
     // Hero section
     await expect(page.locator('h1')).toContainText('Discretionary Powers Transparency Portal');
@@ -17,7 +17,7 @@ test.describe('Public portal', () => {
   });
 
   test('published decisions page loads with search and filters', async ({ page }) => {
-    await page.goto('/decisions');
+    await page.goto('/portal/decisions');
 
     // Search input should be present
     await expect(
@@ -29,7 +29,7 @@ test.describe('Public portal', () => {
   });
 
   test('about page loads with 10-step framework section', async ({ page }) => {
-    await page.goto('/about');
+    await page.goto('/portal/about');
 
     await expect(page.locator('h1')).toContainText('About the Discretionary Powers Management System');
 
