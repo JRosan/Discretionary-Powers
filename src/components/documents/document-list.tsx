@@ -11,8 +11,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Download, Trash2, FileText } from "lucide-react";
+import { Download, Trash2, FileText, ShieldAlert } from "lucide-react";
 import { api, type ApiDocument } from "@/lib/api";
+import { RedactionPanel } from "@/components/documents/redaction-panel";
 
 const CLASSIFICATION_LABELS: Record<string, string> = {
   evidence: "Evidence",
@@ -42,6 +43,7 @@ export function DocumentList({ decisionId }: DocumentListProps) {
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<ApiDocument | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [redactTarget, setRedactTarget] = useState<ApiDocument | null>(null);
 
   const fetchDocuments = useCallback(async () => {
     try {
@@ -157,6 +159,9 @@ export function DocumentList({ decisionId }: DocumentListProps) {
                     <span className="truncate font-medium">
                       {doc.originalFilename}
                     </span>
+                    {doc.isRedacted && (
+                      <Badge variant="error">Redacted</Badge>
+                    )}
                   </div>
                 </td>
                 <td className="px-4 py-3">
@@ -187,6 +192,14 @@ export function DocumentList({ decisionId }: DocumentListProps) {
                     </button>
                     <button
                       type="button"
+                      onClick={() => setRedactTarget(doc)}
+                      className="rounded p-1.5 text-text-muted hover:bg-warning/10 hover:text-warning"
+                      title="Redact"
+                    >
+                      <ShieldAlert className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => setDeleteTarget(doc)}
                       className="rounded p-1.5 text-text-muted hover:bg-error/10 hover:text-error"
                       title="Delete"
@@ -200,6 +213,39 @@ export function DocumentList({ decisionId }: DocumentListProps) {
           </tbody>
         </table>
       </div>
+
+      {/* Redaction dialog */}
+      <Dialog
+        open={!!redactTarget}
+        onOpenChange={(open) => !open && setRedactTarget(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Document Redaction</DialogTitle>
+            <DialogDescription>
+              Manage redaction status for &quot;{redactTarget?.originalFilename}&quot;
+            </DialogDescription>
+          </DialogHeader>
+          {redactTarget && (
+            <RedactionPanel
+              documentId={redactTarget.id}
+              isRedacted={redactTarget.isRedacted ?? false}
+              redactionNotes={redactTarget.redactionNotes}
+              onSave={async (data) => {
+                await api.documents.redact(redactTarget.id, data);
+                setDocuments((prev) =>
+                  prev.map((d) =>
+                    d.id === redactTarget.id
+                      ? { ...d, isRedacted: data.isRedacted, redactionNotes: data.redactionNotes }
+                      : d,
+                  ),
+                );
+                setRedactTarget(null);
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Delete confirmation dialog */}
       <Dialog

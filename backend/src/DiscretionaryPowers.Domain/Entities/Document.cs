@@ -15,6 +15,7 @@ public class Document
     public Guid UploadedBy { get; set; }
     public int Version { get; set; } = 1;
     public bool IsRedacted { get; set; }
+    public string? RedactionNotes { get; set; }
     public DateTime CreatedAt { get; set; }
 
     // Navigation properties

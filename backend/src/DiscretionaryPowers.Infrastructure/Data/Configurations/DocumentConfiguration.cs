@@ -22,6 +22,7 @@ public class DocumentConfiguration : IEntityTypeConfiguration<Document>
         builder.Property(d => d.UploadedBy).HasColumnName("uploaded_by").IsRequired();
         builder.Property(d => d.Version).HasColumnName("version").IsRequired().HasDefaultValue(1);
         builder.Property(d => d.IsRedacted).HasColumnName("is_redacted").HasDefaultValue(false);
+        builder.Property(d => d.RedactionNotes).HasColumnName("redaction_notes");
         builder.Property(d => d.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
 
         builder.HasOne(d => d.Decision)

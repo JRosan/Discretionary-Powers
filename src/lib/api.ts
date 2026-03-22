@@ -115,6 +115,16 @@ export const api = {
       request<{ url: string; filename: string }>(`/documents/${id}/download-url`),
     delete: (id: string) =>
       request<void>(`/documents/${id}`, { method: "DELETE" }),
+    redact: (id: string, data: { isRedacted: boolean; redactionNotes?: string }) =>
+      request<void>(`/documents/${id}/redact`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+  },
+
+  search: {
+    query: (params: { q: string; type?: string; limit?: number }) =>
+      request<SearchResult>(`/search${qs(params as Record<string, unknown>)}`),
   },
 
   comments: {
@@ -183,6 +193,13 @@ export const api = {
     getAll: (params?: Record<string, unknown>) =>
       request<ApiAuditEntry[]>(`/audit${qs(params)}`),
     verifyChain: () => request<{ valid: boolean; details: string }>("/audit/verify"),
+  },
+
+  reports: {
+    getDashboard: (params?: Record<string, unknown>) =>
+      request<Record<string, unknown>>(`/reports/dashboard${qs(params)}`),
+    exportData: (params?: Record<string, unknown>) =>
+      request<Blob>(`/reports/export${qs(params)}`),
   },
 
   statistics: {
@@ -258,7 +275,24 @@ export interface ApiDocument {
   sizeBytes: number;
   classification: string;
   uploadedBy: string;
+  isRedacted?: boolean;
+  redactionNotes?: string | null;
   createdAt: string | null;
+}
+
+export interface SearchResult {
+  decisions: Array<{
+    id: string;
+    referenceNumber: string;
+    title: string;
+    status: string;
+  }>;
+  documents: Array<{
+    id: string;
+    filename: string;
+    classification: string;
+    decisionId: string;
+  }>;
 }
 
 export interface ApiComment {

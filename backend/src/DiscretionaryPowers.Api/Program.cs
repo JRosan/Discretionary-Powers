@@ -41,7 +41,9 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy(PermissionPolicies.CanViewAuditTrail, policy =>
         policy.RequireRole(UserRole.PermanentSecretary.ToString(), UserRole.LegalAdvisor.ToString(), UserRole.Auditor.ToString()))
     .AddPolicy(PermissionPolicies.CanViewAllAudit, policy =>
-        policy.RequireRole(UserRole.Auditor.ToString()));
+        policy.RequireRole(UserRole.Auditor.ToString()))
+    .AddPolicy(PermissionPolicies.CanRedactDocument, policy =>
+        policy.RequireRole(UserRole.PermanentSecretary.ToString(), UserRole.LegalAdvisor.ToString()));
 
 // CORS
 var frontendUrl = builder.Configuration["FrontendUrl"] ?? "http://localhost:5173";

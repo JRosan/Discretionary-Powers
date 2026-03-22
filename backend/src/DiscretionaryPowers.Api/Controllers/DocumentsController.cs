@@ -1,10 +1,13 @@
 using System.Text.Json;
+using DiscretionaryPowers.Api.Auth;
 using DiscretionaryPowers.Application.DTOs.Documents;
 using DiscretionaryPowers.Domain.Auth;
 using DiscretionaryPowers.Domain.Interfaces;
+using DiscretionaryPowers.Infrastructure.Data;
 using DiscretionaryPowers.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace DiscretionaryPowers.Api.Controllers;
 
@@ -14,7 +17,8 @@ namespace DiscretionaryPowers.Api.Controllers;
 public class DocumentsController(
     DocumentService documentService,
     IAuditService auditService,
-    ICurrentUserService currentUser) : ControllerBase
+    ICurrentUserService currentUser,
+    AppDbContext db) : ControllerBase
 {
     [HttpPost("upload-url")]
     public async Task<IActionResult> GetUploadUrl([FromBody] GetUploadUrlRequest request)
@@ -65,6 +69,25 @@ public class DocumentsController(
     {
         var result = await documentService.Delete(documentId);
         if (!result.Success) return NotFound(new { message = result.Error });
+        return Ok(new { success = true });
+    }
+
+    [HttpPut("{documentId:guid}/redact")]
+    [Authorize(Policy = PermissionPolicies.CanRedactDocument)]
+    public async Task<IActionResult> Redact(Guid documentId, [FromBody] RedactDocumentRequest request)
+    {
+        var doc = await db.Documents.FirstOrDefaultAsync(d => d.Id == documentId);
+        if (doc is null) return NotFound(new { message = "Document not found." });
+
+        doc.IsRedacted = request.IsRedacted;
+        doc.RedactionNotes = request.RedactionNotes;
+        await db.SaveChangesAsync();
+
+        await auditService.Log(doc.DecisionId, currentUser.UserId,
+            request.IsRedacted ? "document.redacted" : "document.unredacted", null,
+            JsonDocument.Parse(JsonSerializer.Serialize(new { documentId, request.IsRedacted, request.RedactionNotes })),
+            HttpContext.Connection.RemoteIpAddress?.ToString());
+
         return Ok(new { success = true });
     }
 }

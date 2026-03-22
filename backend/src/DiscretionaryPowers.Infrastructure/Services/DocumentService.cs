@@ -151,6 +151,7 @@ public class DocumentService(AppDbContext db, IStorageAdapter storage) : IDocume
         UploadedBy = d.UploadedBy,
         Version = d.Version,
         IsRedacted = d.IsRedacted,
+        RedactionNotes = d.RedactionNotes,
         CreatedAt = d.CreatedAt,
     };
 }

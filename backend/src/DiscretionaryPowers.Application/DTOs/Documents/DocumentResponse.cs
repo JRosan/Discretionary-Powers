@@ -13,5 +13,6 @@ public class DocumentResponse
     public Guid UploadedBy { get; set; }
     public int Version { get; set; }
     public bool IsRedacted { get; set; }
+    public string? RedactionNotes { get; set; }
     public DateTime CreatedAt { get; set; }
 }

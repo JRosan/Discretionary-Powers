@@ -1,156 +1,442 @@
 "use client";
 
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
-  BarChart3,
-  Download,
   FileText,
   Clock,
   CheckCircle2,
   AlertTriangle,
-  Building2,
+  Download,
+  Calendar,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { StatusChart } from "@/components/dashboard/status-chart";
+import { MinistryChart } from "@/components/dashboard/ministry-chart";
+import { TimelineChart } from "@/components/dashboard/timeline-chart";
+import { StepBottleneckChart } from "@/components/dashboard/step-bottleneck-chart";
+import { DECISION_STEPS } from "@/lib/constants";
 
-const SUMMARY_STATS = [
-  { label: "Total Decisions", value: 47, icon: FileText, color: "text-primary" },
-  { label: "Avg. Completion Time", value: "18 days", icon: Clock, color: "text-accent" },
-  { label: "Completion Rate", value: "89%", icon: CheckCircle2, color: "text-success" },
-  { label: "Overdue Rate", value: "8.5%", icon: AlertTriangle, color: "text-error" },
+// ── Mock data (replace with real API calls) ─────────────────────────
+
+const MOCK_STATUS_DATA: Record<string, number> = {
+  draft: 8,
+  in_progress: 12,
+  under_review: 7,
+  approved: 5,
+  published: 14,
+  challenged: 1,
+  withdrawn: 0,
+};
+
+const MOCK_MINISTRY_DATA = [
+  { name: "Ministry of Finance", count: 12 },
+  { name: "Ministry of Natural Resources", count: 8 },
+  { name: "Ministry of Education", count: 7 },
+  { name: "Ministry of Health", count: 6 },
+  { name: "Ministry of Communications", count: 5 },
+  { name: "Ministry of Labour", count: 5 },
+  { name: "Ministry of Trade & Commerce", count: 4 },
 ];
 
-const MINISTRY_DATA = [
-  { name: "Ministry of Finance", total: 12, completed: 9, inProgress: 2, overdue: 1 },
-  { name: "Ministry of Natural Resources", total: 8, completed: 5, inProgress: 2, overdue: 1 },
-  { name: "Ministry of Education", total: 7, completed: 6, inProgress: 1, overdue: 0 },
-  { name: "Ministry of Health", total: 6, completed: 4, inProgress: 1, overdue: 1 },
-  { name: "Ministry of Communications", total: 5, completed: 3, inProgress: 2, overdue: 0 },
-  { name: "Ministry of Labour", total: 5, completed: 4, inProgress: 1, overdue: 0 },
-  { name: "Ministry of Trade & Commerce", total: 4, completed: 2, inProgress: 1, overdue: 1 },
+const MOCK_MINISTRY_BREAKDOWN = [
+  { name: "Ministry of Finance", total: 12, draft: 2, inProgress: 3, underReview: 2, approved: 1, published: 4 },
+  { name: "Ministry of Natural Resources", total: 8, draft: 1, inProgress: 2, underReview: 1, approved: 1, published: 3 },
+  { name: "Ministry of Education", total: 7, draft: 1, inProgress: 1, underReview: 1, approved: 1, published: 3 },
+  { name: "Ministry of Health", total: 6, draft: 1, inProgress: 2, underReview: 1, approved: 0, published: 2 },
+  { name: "Ministry of Communications", total: 5, draft: 1, inProgress: 1, underReview: 1, approved: 1, published: 1 },
+  { name: "Ministry of Labour", total: 5, draft: 1, inProgress: 1, underReview: 0, approved: 1, published: 2 },
+  { name: "Ministry of Trade & Commerce", total: 4, draft: 1, inProgress: 1, underReview: 1, approved: 0, published: 1 },
 ];
 
-const STEP_BOTTLENECKS = [
-  { step: 4, name: "Evaluate Evidence", avgDays: 4.2, decisions: 6 },
-  { step: 7, name: "Ensure Procedural Fairness", avgDays: 3.8, decisions: 4 },
-  { step: 3, name: "Gather Information", avgDays: 3.5, decisions: 5 },
-  { step: 6, name: "Act Fairly Without Bias", avgDays: 2.9, decisions: 3 },
-  { step: 8, name: "Consider Merits", avgDays: 2.7, decisions: 4 },
+const MOCK_TIMELINE_DATA = [
+  { month: "Oct 2025", count: 3 },
+  { month: "Nov 2025", count: 5 },
+  { month: "Dec 2025", count: 4 },
+  { month: "Jan 2026", count: 7 },
+  { month: "Feb 2026", count: 9 },
+  { month: "Mar 2026", count: 6 },
 ];
+
+const MOCK_STEP_BOTTLENECK_DATA = DECISION_STEPS.map((step) => ({
+  step: `${step.number}. ${step.name}`,
+  avgDays: [1.2, 1.8, 3.5, 4.2, 2.1, 2.9, 3.8, 2.7, 1.5, 0.9][step.number - 1],
+}));
+
+const MOCK_STEP_TABLE_DATA = DECISION_STEPS.map((step) => {
+  const avgDays = [1.2, 1.8, 3.5, 4.2, 2.1, 2.9, 3.8, 2.7, 1.5, 0.9][step.number - 1];
+  const completionRate = [98, 95, 88, 82, 91, 85, 80, 87, 93, 97][step.number - 1];
+  const issues = [
+    "Missing delegation letters",
+    "Incomplete checklists",
+    "Delayed responses from stakeholders",
+    "Insufficient supporting evidence",
+    "Inconsistent proof standards",
+    "Undisclosed conflicts of interest",
+    "Late stakeholder consultations",
+    "Incomplete merit assessments",
+    "Delayed notification to parties",
+    "Incomplete record filing",
+  ][step.number - 1];
+  return { step, avgDays, completionRate, commonIssue: issues };
+});
+
+const MOCK_RECENT_ACTIVITY = [
+  { id: "1", title: "Coastal Development Permit", status: "published", date: "2 hours ago" },
+  { id: "2", title: "Import License Renewal", status: "approved", date: "5 hours ago" },
+  { id: "3", title: "Financial Aid Distribution", status: "under_review", date: "1 day ago" },
+  { id: "4", title: "Environmental Impact Assessment", status: "in_progress", date: "1 day ago" },
+  { id: "5", title: "Teacher Certification Review", status: "draft", date: "2 days ago" },
+];
+
+const STATUS_BADGE_VARIANT: Record<string, "default" | "accent" | "warning" | "error" | "success" | "outline"> = {
+  draft: "outline",
+  in_progress: "accent",
+  under_review: "warning",
+  approved: "success",
+  published: "default",
+  challenged: "error",
+  withdrawn: "outline",
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  draft: "Draft",
+  in_progress: "In Progress",
+  under_review: "Under Review",
+  approved: "Approved",
+  published: "Published",
+  challenged: "Challenged",
+  withdrawn: "Withdrawn",
+};
+
+// ── Component ────────────────────────────────────────────────────────
 
 export default function ReportsPage() {
+  const [dateRange, setDateRange] = useState("this_quarter");
+
+  const { data: reportData } = useQuery({
+    queryKey: ["reports", dateRange],
+    queryFn: async () => {
+      // TODO: Replace with real API call — api.reports.getDashboard({ dateRange })
+      return {
+        totalDecisions: 47,
+        avgCompletionDays: 18,
+        publishedThisMonth: 6,
+        overdueCount: 4,
+        byStatus: MOCK_STATUS_DATA,
+        byMinistry: MOCK_MINISTRY_DATA,
+        ministryBreakdown: MOCK_MINISTRY_BREAKDOWN,
+        timeline: MOCK_TIMELINE_DATA,
+        stepBottlenecks: MOCK_STEP_BOTTLENECK_DATA,
+        stepTable: MOCK_STEP_TABLE_DATA,
+        recentActivity: MOCK_RECENT_ACTIVITY,
+      };
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const handleExport = (format: "csv" | "json") => {
+    // TODO: Replace with real API call — api.reports.export({ dateRange, format })
+    const blob = new Blob(
+      [JSON.stringify(reportData, null, 2)],
+      { type: format === "json" ? "application/json" : "text/csv" },
+    );
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `report-${dateRange}.${format}`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const stats = [
+    {
+      label: "Total Decisions",
+      value: reportData?.totalDecisions ?? "--",
+      icon: FileText,
+      color: "text-primary",
+    },
+    {
+      label: "Avg. Completion Time",
+      value: reportData ? `${reportData.avgCompletionDays} days` : "--",
+      icon: Clock,
+      color: "text-accent",
+    },
+    {
+      label: "Published This Month",
+      value: reportData?.publishedThisMonth ?? "--",
+      icon: CheckCircle2,
+      color: "text-success",
+    },
+    {
+      label: "Overdue",
+      value: reportData?.overdueCount ?? "--",
+      icon: AlertTriangle,
+      color: "text-error",
+    },
+  ];
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-text">Reports</h1>
+          <h1 className="text-2xl font-semibold text-text">Reports & Analytics</h1>
           <p className="mt-1 text-sm text-text-secondary">
-            Analytics and insights on discretionary powers activity
+            Insights and metrics on discretionary powers activity
           </p>
         </div>
-        <Button variant="outline">
-          <Download className="h-4 w-4" />
-          Export Report
-        </Button>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-text-muted" />
+            <Select value={dateRange} onValueChange={setDateRange}>
+              <SelectTrigger className="w-[170px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="this_month">This Month</SelectItem>
+                <SelectItem value="this_quarter">This Quarter</SelectItem>
+                <SelectItem value="this_year">This Year</SelectItem>
+                <SelectItem value="all_time">All Time</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => handleExport("csv")}>
+              <Download className="h-4 w-4" />
+              CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => handleExport("json")}>
+              <Download className="h-4 w-4" />
+              JSON
+            </Button>
+          </div>
+        </div>
       </div>
 
-      {/* Summary stats */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {SUMMARY_STATS.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <Card key={stat.label}>
-              <CardContent className="p-5">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-text-secondary">{stat.label}</p>
-                    <p className="mt-1 text-2xl font-bold text-text">
-                      {stat.value}
-                    </p>
-                  </div>
-                  <Icon className={`h-8 w-8 ${stat.color} opacity-80`} />
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+      {/* Tabs */}
+      <Tabs defaultValue="overview">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="ministry">By Ministry</TabsTrigger>
+          <TabsTrigger value="workflow">Workflow Analysis</TabsTrigger>
+        </TabsList>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Ministry breakdown */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Building2 className="h-4 w-4 text-primary" />
-              Decisions by Ministry
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {MINISTRY_DATA.map((m) => {
-                const pct = Math.round((m.completed / m.total) * 100);
+        {/* ── Overview Tab ─────────────────────────────────────── */}
+        <TabsContent value="overview">
+          <div className="space-y-6">
+            {/* Stat cards */}
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {stats.map((stat) => {
+                const Icon = stat.icon;
                 return (
-                  <div key={m.name}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm text-text">{m.name}</span>
-                      <span className="text-xs text-text-muted">
-                        {m.completed}/{m.total} completed
-                      </span>
-                    </div>
-                    <div className="h-2 rounded-full bg-surface overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-accent transition-all"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                    <div className="flex gap-3 mt-1 text-xs text-text-muted">
-                      <span>{m.inProgress} in progress</span>
-                      {m.overdue > 0 && (
-                        <span className="text-error">{m.overdue} overdue</span>
-                      )}
-                    </div>
-                  </div>
+                  <Card key={stat.label}>
+                    <CardContent className="p-5">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-text-secondary">{stat.label}</p>
+                          <p className="mt-1 text-2xl font-bold text-text">
+                            {stat.value}
+                          </p>
+                        </div>
+                        <Icon className={`h-8 w-8 ${stat.color} opacity-80`} />
+                      </div>
+                    </CardContent>
+                  </Card>
                 );
               })}
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Step bottlenecks */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <BarChart3 className="h-4 w-4 text-primary" />
-              Workflow Bottlenecks
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-text-muted mb-4">
-              Steps where decisions spend the most time
-            </p>
-            <div className="space-y-4">
-              {STEP_BOTTLENECKS.map((b) => (
-                <div key={b.step} className="flex items-center gap-4">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
-                    {b.step}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-text">{b.name}</p>
-                    <p className="text-xs text-text-muted">
-                      {b.decisions} decisions currently at this step
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-semibold text-text">
-                      {b.avgDays} days
-                    </p>
-                    <p className="text-xs text-text-muted">avg. duration</p>
-                  </div>
-                </div>
-              ))}
+            {/* Charts row */}
+            <div className="grid gap-6 lg:grid-cols-2">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Decisions by Status</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <StatusChart data={reportData?.byStatus ?? {}} />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Decisions Over Time</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <TimelineChart data={reportData?.timeline ?? []} />
+                </CardContent>
+              </Card>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+
+            {/* Recent activity */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Recent Activity</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="divide-y divide-border">
+                  {(reportData?.recentActivity ?? []).map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between py-3 first:pt-0 last:pb-0"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-text truncate">
+                          {item.title}
+                        </p>
+                        <p className="text-xs text-text-muted">{item.date}</p>
+                      </div>
+                      <Badge variant={STATUS_BADGE_VARIANT[item.status] ?? "outline"}>
+                        {STATUS_LABEL[item.status] ?? item.status}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* ── By Ministry Tab ──────────────────────────────────── */}
+        <TabsContent value="ministry">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Decisions by Ministry</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <MinistryChart data={reportData?.byMinistry ?? []} />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Ministry Breakdown</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border text-left">
+                        <th className="pb-3 pr-4 font-medium text-text-secondary">Ministry</th>
+                        <th className="pb-3 px-4 font-medium text-text-secondary text-right">Total</th>
+                        <th className="pb-3 px-4 font-medium text-text-secondary text-right">Draft</th>
+                        <th className="pb-3 px-4 font-medium text-text-secondary text-right">In Progress</th>
+                        <th className="pb-3 px-4 font-medium text-text-secondary text-right">Under Review</th>
+                        <th className="pb-3 px-4 font-medium text-text-secondary text-right">Approved</th>
+                        <th className="pb-3 pl-4 font-medium text-text-secondary text-right">Published</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(reportData?.ministryBreakdown ?? []).map((row) => (
+                        <tr key={row.name} className="border-b border-border last:border-0">
+                          <td className="py-3 pr-4 font-medium text-text">{row.name}</td>
+                          <td className="py-3 px-4 text-right text-text">{row.total}</td>
+                          <td className="py-3 px-4 text-right text-text-secondary">{row.draft}</td>
+                          <td className="py-3 px-4 text-right text-text-secondary">{row.inProgress}</td>
+                          <td className="py-3 px-4 text-right text-text-secondary">{row.underReview}</td>
+                          <td className="py-3 px-4 text-right text-text-secondary">{row.approved}</td>
+                          <td className="py-3 pl-4 text-right text-text-secondary">{row.published}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* ── Workflow Analysis Tab ────────────────────────────── */}
+        <TabsContent value="workflow">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Average Time per Step</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <StepBottleneckChart data={reportData?.stepBottlenecks ?? []} />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Step Performance Details</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border text-left">
+                        <th className="pb-3 pr-4 font-medium text-text-secondary">Step</th>
+                        <th className="pb-3 px-4 font-medium text-text-secondary text-right">Avg. Time</th>
+                        <th className="pb-3 px-4 font-medium text-text-secondary text-right">Completion Rate</th>
+                        <th className="pb-3 pl-4 font-medium text-text-secondary">Most Common Issues</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(reportData?.stepTable ?? []).map((row) => (
+                        <tr
+                          key={row.step.number}
+                          className="border-b border-border last:border-0"
+                        >
+                          <td className="py-3 pr-4">
+                            <div className="flex items-center gap-2">
+                              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                                {row.step.number}
+                              </span>
+                              <span className="font-medium text-text">{row.step.name}</span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <span
+                              className={
+                                row.avgDays >= 4
+                                  ? "font-semibold text-error"
+                                  : row.avgDays >= 3
+                                    ? "font-medium text-warning-dark"
+                                    : "text-text"
+                              }
+                            >
+                              {row.avgDays} days
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <span
+                              className={
+                                row.completionRate >= 90
+                                  ? "text-accent"
+                                  : row.completionRate >= 80
+                                    ? "text-warning-dark"
+                                    : "text-error"
+                              }
+                            >
+                              {row.completionRate}%
+                            </span>
+                          </td>
+                          <td className="py-3 pl-4 text-text-secondary">
+                            {row.commonIssue}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

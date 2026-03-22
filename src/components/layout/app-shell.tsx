@@ -16,6 +16,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { NotificationBell } from "@/components/common/notification-panel";
+import { GlobalSearch } from "@/components/common/global-search";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
 
@@ -52,6 +53,7 @@ export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const [adminOpen, setAdminOpen] = React.useState(false);
+  const [searchOpen, setSearchOpen] = React.useState(false);
   const [notifications, setNotifications] = React.useState<
     { id: string; type: string; title: string; message: string; read: boolean | null; sentAt: string | Date | null; decisionId: string | null }[]
   >([]);
@@ -229,14 +231,18 @@ export function AppShell({ children }: AppShellProps) {
           </div>
 
           {/* Search */}
-          <div className="relative">
+          <button
+            type="button"
+            onClick={() => setSearchOpen(true)}
+            className="relative flex h-9 w-64 items-center rounded-md border border-border bg-surface pl-9 pr-3 text-sm text-text-muted hover:border-accent transition-colors"
+          >
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
-            <input
-              type="text"
-              placeholder="Search..."
-              className="h-9 w-64 rounded-md border border-border bg-surface pl-9 pr-3 text-sm placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
-            />
-          </div>
+            <span>Search...</span>
+            <kbd className="ml-auto hidden rounded border border-border bg-white px-1.5 py-0.5 text-[10px] font-medium sm:inline-block">
+              Ctrl+K
+            </kbd>
+          </button>
+          <GlobalSearch />
 
           {/* Notifications */}
           <NotificationBell
