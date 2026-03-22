@@ -5,4 +5,8 @@
     <Project Path="src/DiscretionaryPowers.Domain/DiscretionaryPowers.Domain.csproj" />
     <Project Path="src/DiscretionaryPowers.Infrastructure/DiscretionaryPowers.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DiscretionaryPowers.Application.Tests/DiscretionaryPowers.Application.Tests.csproj" />
+    <Project Path="tests/DiscretionaryPowers.Domain.Tests/DiscretionaryPowers.Domain.Tests.csproj" />
+  </Folder>
 </Solution>

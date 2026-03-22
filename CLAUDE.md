@@ -89,6 +89,33 @@ npm install && npm run dev
 - **Backend**: `dotnet test` (xUnit)
 - **Frontend**: `npm test` (Vitest), `npm run test:e2e` (Playwright)
 
+## Test Commands
+
+### Backend
+```bash
+cd backend && dotnet test                    # Run all xUnit tests
+```
+
+### Frontend
+```bash
+npm test                                     # Run Vitest unit tests
+npm run test:e2e                             # Run Playwright E2E tests
+```
+
+## Phase Completion Status
+
+- **Phase 1**: Core backend API (entities, controllers, services, EF Core, auth) -- Complete
+- **Phase 2**: Frontend application (Next.js, dashboard, decisions, documents, public portal) -- Complete
+- **Phase 3**: Advanced features (notifications, search, export, audit verification, PWA) -- Complete
+- **Phase 4**: Quality assurance (backend tests, frontend tests, security hardening, documentation) -- In Progress
+
+## Documentation
+
+- [User Guide](docs/user-guide.md) -- Guide for government staff
+- [Admin Guide](docs/admin-guide.md) -- Deployment, database, monitoring, security
+- [API Reference](docs/api-reference.md) -- Complete REST API documentation
+- [Security Checklist](docs/security-checklist.md) -- Pre-deployment security review
+
 ## Design System
 
 GOV.BVI — minimalist, professional, WCAG 2.2 AA compliant:

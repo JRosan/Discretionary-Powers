@@ -1,9 +1,11 @@
 using System.Text;
+using System.Threading.RateLimiting;
 using DiscretionaryPowers.Api.Auth;
 using DiscretionaryPowers.Api.Middleware;
 using DiscretionaryPowers.Domain.Enums;
 using DiscretionaryPowers.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -45,6 +47,24 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy(PermissionPolicies.CanRedactDocument, policy =>
         policy.RequireRole(UserRole.PermanentSecretary.ToString(), UserRole.LegalAdvisor.ToString()));
 
+// Rate limiting
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter("authenticated", opt =>
+    {
+        opt.PermitLimit = 100;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueLimit = 10;
+    });
+    options.AddFixedWindowLimiter("public", opt =>
+    {
+        opt.PermitLimit = 30;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueLimit = 5;
+    });
+    options.RejectionStatusCode = 429;
+});
+
 // CORS
 var frontendUrl = builder.Configuration["FrontendUrl"] ?? "http://localhost:5173";
 builder.Services.AddCors(options =>
@@ -73,6 +93,8 @@ builder.Services.AddScoped<JwtTokenService>();
 var app = builder.Build();
 
 // Middleware pipeline
+app.UseMiddleware<SecurityHeadersMiddleware>();
+app.UseMiddleware<RequestLoggingMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 if (app.Environment.IsDevelopment())
@@ -84,6 +106,7 @@ if (app.Environment.IsDevelopment())
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 app.MapControllers();
 
 app.Run();

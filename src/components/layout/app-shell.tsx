@@ -19,6 +19,7 @@ import { NotificationBell } from "@/components/common/notification-panel";
 import { GlobalSearch } from "@/components/common/global-search";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
+import { OfflineIndicator } from "@/components/common/offline-indicator";
 
 interface NavItem {
   label: string;
@@ -261,6 +262,9 @@ export function AppShell({ children }: AppShellProps) {
             </AvatarFallback>
           </Avatar>
         </header>
+
+        {/* Offline indicator */}
+        <OfflineIndicator />
 
         {/* Content */}
         <main className="flex-1 overflow-y-auto p-6">{children}</main>

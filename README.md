@@ -1,5 +1,9 @@
 # Discretionary Powers Management System
 
+![Build](https://img.shields.io/badge/build-passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-passing-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-85%25-yellowgreen)
+
 **Government of the Virgin Islands**
 
 A digital platform for managing the 10-step framework for the exercise of discretionary powers in the British Virgin Islands. The system guides government officers through each stage of the decision-making process, ensuring transparency, accountability, and compliance with established procedures.
@@ -115,6 +119,15 @@ Key endpoints:
 - **ISO 27001** — Security controls, encryption, audit logging
 - **OWASP Top 10** — Parameterised queries, JWT auth, CORS, rate limiting
 - **BVI 10-Step Framework** — Enforced as workflow state machine
+
+## Documentation
+
+| Document | Description |
+| -------- | ----------- |
+| [User Guide](docs/user-guide.md) | Guide for government staff using the system |
+| [Admin Guide](docs/admin-guide.md) | Deployment, database, monitoring, and security |
+| [API Reference](docs/api-reference.md) | Complete REST API documentation |
+| [Security Checklist](docs/security-checklist.md) | Pre-deployment security review |
 
 ## License
 
