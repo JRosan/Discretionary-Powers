@@ -4,8 +4,11 @@ using DiscretionaryPowers.Api.Auth;
 using DiscretionaryPowers.Api.Middleware;
 using DiscretionaryPowers.Domain.Enums;
 using DiscretionaryPowers.Infrastructure;
+using DiscretionaryPowers.Infrastructure.Data;
+using DiscretionaryPowers.Infrastructure.Data.Seed;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -78,6 +81,10 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Health checks
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<AppDbContext>("database");
+
 // Controllers & Swagger
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -91,6 +98,22 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<JwtTokenService>();
 
 var app = builder.Build();
+
+// Database initialization
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+    if (app.Configuration.GetValue<bool>("Database:AutoMigrate"))
+    {
+        await dbContext.Database.MigrateAsync();
+    }
+
+    if (app.Configuration.GetValue<bool>("Database:Seed"))
+    {
+        await DataSeeder.SeedAsync(dbContext);
+    }
+}
 
 // Middleware pipeline
 app.UseMiddleware<SecurityHeadersMiddleware>();
@@ -108,5 +131,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
 app.MapControllers();
+app.MapHealthChecks("/api/health");
 
 app.Run();

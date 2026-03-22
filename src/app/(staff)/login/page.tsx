@@ -5,12 +5,15 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth-context";
+import { useTranslations } from "@/i18n";
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const { login } = useAuth();
+  const tAuth = useTranslations('auth');
+  const tCommon = useTranslations('common');
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,7 +30,7 @@ export default function LoginPage() {
       router.push(callbackUrl);
       router.refresh();
     } catch {
-      setError("Invalid email or password.");
+      setError(tAuth('invalidCredentials'));
     } finally {
       setLoading(false);
     }
@@ -38,10 +41,10 @@ export default function LoginPage() {
       <div className="w-full max-w-md overflow-hidden rounded-lg border border-border bg-background shadow-sm">
         <div className="bg-primary px-6 py-8 text-center text-white">
           <h1 className="text-xl font-semibold">
-            Government of the Virgin Islands
+            {tCommon('government')}
           </h1>
           <p className="mt-1 text-sm text-white/80">
-            Discretionary Powers Management System
+            {tCommon('appName')}
           </p>
         </div>
 
@@ -53,7 +56,7 @@ export default function LoginPage() {
           )}
 
           <Input
-            label="Email"
+            label={tAuth('email')}
             type="email"
             placeholder="you@gov.vg"
             value={email}
@@ -63,7 +66,7 @@ export default function LoginPage() {
           />
 
           <Input
-            label="Password"
+            label={tAuth('password')}
             type="password"
             placeholder="Enter your password"
             value={password}
@@ -78,7 +81,7 @@ export default function LoginPage() {
             className="w-full"
             loading={loading}
           >
-            Sign In
+            {loading ? tAuth('signingIn') : tAuth('signIn')}
           </Button>
         </form>
       </div>

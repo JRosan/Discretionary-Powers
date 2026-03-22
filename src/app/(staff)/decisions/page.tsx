@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Plus, Search, FileText, Loader2 } from "lucide-react";
 import { DECISION_STATUSES, DECISION_TYPES } from "@/lib/constants";
 import { api } from "@/lib/api";
+import { queryConfig } from "@/lib/query-config";
 
 const statusColors: Record<string, string> = {
   draft: "bg-surface text-text-secondary",
@@ -35,6 +36,7 @@ export default function DecisionsPage() {
         decisionType: typeFilter || undefined,
         limit: 50,
       }),
+    ...queryConfig.decisions,
   });
 
   const decisions = data?.items ?? [];

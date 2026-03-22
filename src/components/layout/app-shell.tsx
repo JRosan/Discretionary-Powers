@@ -15,33 +15,39 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import dynamic from "next/dynamic";
 import { NotificationBell } from "@/components/common/notification-panel";
-import { GlobalSearch } from "@/components/common/global-search";
 import { useAuth } from "@/lib/auth-context";
+
+const GlobalSearch = dynamic(
+  () => import("@/components/common/global-search").then((m) => ({ default: m.GlobalSearch })),
+  { ssr: false },
+);
 import { api } from "@/lib/api";
 import { OfflineIndicator } from "@/components/common/offline-indicator";
+import { useTranslations } from "@/i18n";
 
-interface NavItem {
-  label: string;
+interface NavItemDef {
+  labelKey: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
-  children?: { label: string; href: string }[];
+  children?: { labelKey: string; href: string }[];
 }
 
-const navItems: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Decisions", href: "/decisions", icon: FileText },
-  { label: "Reports", href: "/reports", icon: BarChart3 },
-  { label: "Judicial Reviews", href: "/judicial-reviews", icon: Scale },
+const navItemDefs: NavItemDef[] = [
+  { labelKey: "dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { labelKey: "decisions", href: "/decisions", icon: FileText },
+  { labelKey: "reports", href: "/reports", icon: BarChart3 },
+  { labelKey: "judicialReviews", href: "/judicial-reviews", icon: Scale },
   {
-    label: "Admin",
+    labelKey: "admin",
     href: "/admin",
     icon: Settings,
     children: [
-      { label: "Users", href: "/admin/users" },
-      { label: "Ministries", href: "/admin/ministries" },
-      { label: "Templates", href: "/admin/templates" },
-      { label: "Settings", href: "/admin/settings" },
+      { labelKey: "users", href: "/admin/users" },
+      { labelKey: "ministries", href: "/admin/ministries" },
+      { labelKey: "templates", href: "/admin/templates" },
+      { labelKey: "settings", href: "/admin/settings" },
     ],
   },
 ];
@@ -53,6 +59,8 @@ interface AppShellProps {
 export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const tNav = useTranslations('nav');
+  const tCommon = useTranslations('common');
   const [adminOpen, setAdminOpen] = React.useState(false);
   const [searchOpen, setSearchOpen] = React.useState(false);
   const [notifications, setNotifications] = React.useState<
@@ -119,16 +127,17 @@ export function AppShell({ children }: AppShellProps) {
         <div className="flex flex-col items-start px-6 py-5 border-b border-primary-light">
           <span className="text-xl font-bold tracking-wide">DPMS</span>
           <span className="text-xs text-white/70 mt-0.5">
-            Government of the Virgin Islands
+            {tCommon('government')}
           </span>
         </div>
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-          {navItems.map((item) => {
+          {navItemDefs.map((item) => {
             const isActive =
               pathname === item.href || pathname.startsWith(item.href + "/");
             const Icon = item.icon;
+            const label = tNav(item.labelKey as Parameters<typeof tNav>[0]);
 
             if (item.children) {
               const isChildActive = item.children.some(
@@ -148,7 +157,7 @@ export function AppShell({ children }: AppShellProps) {
                     )}
                   >
                     <Icon className="h-4 w-4" />
-                    <span className="flex-1 text-left">{item.label}</span>
+                    <span className="flex-1 text-left">{label}</span>
                     <ChevronDown
                       className={cn(
                         "h-4 w-4 transition-transform",
@@ -169,7 +178,7 @@ export function AppShell({ children }: AppShellProps) {
                               : "text-white/70 hover:bg-primary-light hover:text-white"
                           )}
                         >
-                          {child.label}
+                          {tNav(child.labelKey as Parameters<typeof tNav>[0])}
                         </Link>
                       ))}
                     </div>
@@ -190,7 +199,7 @@ export function AppShell({ children }: AppShellProps) {
                 )}
               >
                 <Icon className="h-4 w-4" />
-                {item.label}
+                {label}
               </Link>
             );
           })}
@@ -213,6 +222,7 @@ export function AppShell({ children }: AppShellProps) {
             <button
               onClick={logout}
               className="text-white/60 hover:text-white transition-colors"
+              title={tNav('signOut')}
             >
               <LogOut className="h-4 w-4" />
             </button>

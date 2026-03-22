@@ -21,11 +21,26 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { StatusChart } from "@/components/dashboard/status-chart";
-import { MinistryChart } from "@/components/dashboard/ministry-chart";
-import { TimelineChart } from "@/components/dashboard/timeline-chart";
-import { StepBottleneckChart } from "@/components/dashboard/step-bottleneck-chart";
+import dynamic from "next/dynamic";
+import { SkeletonChart } from "@/components/common/loading-skeleton";
 import { DECISION_STEPS } from "@/lib/constants";
+
+const StatusChart = dynamic(
+  () => import("@/components/dashboard/status-chart").then((m) => ({ default: m.StatusChart })),
+  { ssr: false, loading: () => <SkeletonChart /> },
+);
+const MinistryChart = dynamic(
+  () => import("@/components/dashboard/ministry-chart").then((m) => ({ default: m.MinistryChart })),
+  { ssr: false, loading: () => <SkeletonChart /> },
+);
+const TimelineChart = dynamic(
+  () => import("@/components/dashboard/timeline-chart").then((m) => ({ default: m.TimelineChart })),
+  { ssr: false, loading: () => <SkeletonChart /> },
+);
+const StepBottleneckChart = dynamic(
+  () => import("@/components/dashboard/step-bottleneck-chart").then((m) => ({ default: m.StepBottleneckChart })),
+  { ssr: false, loading: () => <SkeletonChart /> },
+);
 
 // ── Mock data (replace with real API calls) ─────────────────────────
 

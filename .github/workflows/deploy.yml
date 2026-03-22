@@ -1,0 +1,23 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy
+        run: echo "Deployment to ${{ inputs.environment }} would happen here"
+        # TODO: Add actual deployment steps (Docker push, Azure/AWS deployment, etc.)

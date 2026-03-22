@@ -15,6 +15,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
+import { queryConfig } from "@/lib/query-config";
+import { useTranslations } from "@/i18n";
 
 const statusVariantMap: Record<string, "default" | "accent" | "warning" | "error" | "success" | "outline"> = {
   draft: "outline",
@@ -43,16 +45,20 @@ function timeAgo(dateStr: string | Date): string {
 }
 
 export default function DashboardPage() {
+  const t = useTranslations('dashboard');
+
   const statsQuery = useQuery({
     queryKey: ["decision-stats"],
     queryFn: () => api.decisions.getStats(),
     placeholderData: { total: 0, byStatus: {} },
+    ...queryConfig.stats,
   });
 
   const recentQuery = useQuery({
     queryKey: ["decisions", "recent"],
     queryFn: () => api.decisions.list({ limit: 5 }),
     placeholderData: { items: [], hasMore: false, nextCursor: null },
+    ...queryConfig.decisions,
   });
 
   const stats = statsQuery.data;
@@ -60,25 +66,25 @@ export default function DashboardPage() {
 
   const statCards = [
     {
-      label: "Total Decisions",
+      label: t('totalDecisions'),
       value: String(stats?.total ?? 0),
       icon: FileText,
       change: `${stats?.byStatus?.["published"] ?? 0} published`,
     },
     {
-      label: "In Progress",
+      label: t('inProgress'),
       value: String(stats?.byStatus?.["in_progress"] ?? 0),
       icon: Clock,
       change: `${stats?.byStatus?.["draft"] ?? 0} drafts`,
     },
     {
-      label: "Completed",
+      label: t('completed'),
       value: String((stats?.byStatus?.["approved"] ?? 0) + (stats?.byStatus?.["published"] ?? 0)),
       icon: CheckCircle2,
       change: `${stats?.byStatus?.["under_review"] ?? 0} under review`,
     },
     {
-      label: "Challenged",
+      label: t('overdue'),
       value: String(stats?.byStatus?.["challenged"] ?? 0),
       icon: AlertTriangle,
       change: stats?.byStatus?.["challenged"] ? "Needs attention" : "None",
@@ -93,15 +99,15 @@ export default function DashboardPage() {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-text">Dashboard</h1>
+          <h1 className="text-2xl font-semibold text-text">{t('title')}</h1>
           <p className="mt-1 text-sm text-text-secondary">
-            Overview of discretionary powers activity
+            {t('subtitle')}
           </p>
         </div>
         <Button asChild variant="accent">
           <Link href="/decisions/new">
             <Plus className="h-4 w-4" />
-            New Decision
+            {t('newDecision')}
           </Link>
         </Button>
       </div>
@@ -150,7 +156,7 @@ export default function DashboardPage() {
       {/* Recent decisions */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-3">
-          <CardTitle className="text-base">Recent Decisions</CardTitle>
+          <CardTitle className="text-base">{t('recentDecisions')}</CardTitle>
           <Button variant="ghost" size="sm" asChild>
             <Link href="/decisions">
               View all <ArrowRight className="ml-1 h-3 w-3" />

@@ -120,10 +120,17 @@ The database consists of 9 tables:
 | `audit_entries`   | Cryptographically chained audit trail                |
 | `judicial_reviews`| Judicial review records for challenged decisions     |
 
-### Running EF Core Migrations
+### Database Migrations
+
+#### EF Core Migrations (Recommended)
+
+EF Core migrations are the primary mechanism for managing schema changes.
 
 ```bash
 cd backend
+
+# Install the EF Core CLI tool (if not already installed)
+dotnet tool install --global dotnet-ef
 
 # Create a new migration
 dotnet ef migrations add <MigrationName> \
@@ -134,11 +141,58 @@ dotnet ef migrations add <MigrationName> \
 dotnet ef database update \
   --project src/DiscretionaryPowers.Infrastructure \
   --startup-project src/DiscretionaryPowers.Api
+
+# Revert the last migration
+dotnet ef migrations remove \
+  --project src/DiscretionaryPowers.Infrastructure \
+  --startup-project src/DiscretionaryPowers.Api
 ```
+
+#### Auto-Migration in Development
+
+In development, the API automatically applies pending migrations and seeds data on startup. This is controlled by settings in `appsettings.Development.json`:
+
+```json
+{
+  "Database": {
+    "AutoMigrate": true,
+    "Seed": true
+  }
+}
+```
+
+In production, `AutoMigrate` is `false` by default. Migrations should be applied manually before deploying a new version to avoid unexpected schema changes during startup.
+
+#### Manual SQL Migration (Fallback)
+
+For environments where EF Core migrations are not available (e.g., DBA-managed databases), a manual SQL script is provided:
+
+```bash
+# Apply the initial schema
+psql -h localhost -U postgres -d discretionary_powers \
+  -f backend/migrations/001_initial_schema.sql
+```
+
+The SQL scripts are located in `backend/migrations/` and create the complete schema including all PostgreSQL enum types, tables, indexes, and constraints.
+
+#### Creating New Migrations
+
+When modifying entity classes or configurations:
+
+1. Make changes to the entity classes in `DiscretionaryPowers.Domain`
+2. Update EF configurations in `DiscretionaryPowers.Infrastructure/Data/Configurations/` if needed
+3. Generate the migration:
+   ```bash
+   dotnet ef migrations add DescriptiveMigrationName \
+     --project src/DiscretionaryPowers.Infrastructure \
+     --startup-project src/DiscretionaryPowers.Api
+   ```
+4. Review the generated migration in `Infrastructure/Migrations/`
+5. Apply and test locally before committing
 
 ### Seeding Initial Data
 
-The application seeds initial data (demo users, ministries) on first startup when the database is empty. To re-seed:
+The application seeds initial data (demo users, ministries) on first startup when the database is empty. Seeding is controlled by the `Database:Seed` configuration setting. To re-seed:
 
 1. Drop the database: `dotnet ef database drop --force`
 2. Re-apply migrations: `dotnet ef database update`

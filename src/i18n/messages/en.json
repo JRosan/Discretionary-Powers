@@ -1,0 +1,113 @@
+{
+  "common": {
+    "appName": "Discretionary Powers Management System",
+    "government": "Government of the Virgin Islands",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "search": "Search",
+    "noResults": "No results found",
+    "backTo": "Back to {page}",
+    "showingOf": "Showing {count} of {total}"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "decisions": "Decisions",
+    "reports": "Reports & Analytics",
+    "judicialReviews": "Judicial Reviews",
+    "admin": "Administration",
+    "users": "User Management",
+    "ministries": "Ministries",
+    "templates": "Templates",
+    "settings": "System Settings",
+    "signOut": "Sign out"
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "signInTitle": "Sign in to your account",
+    "email": "Email address",
+    "password": "Password",
+    "invalidCredentials": "Invalid email or password",
+    "signingIn": "Signing in..."
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Overview of discretionary powers activity",
+    "totalDecisions": "Total Decisions",
+    "inProgress": "In Progress",
+    "completed": "Completed",
+    "overdue": "Overdue",
+    "recentDecisions": "Recent Decisions",
+    "newDecision": "New Decision"
+  },
+  "decisions": {
+    "title": "Decisions",
+    "subtitle": "Manage discretionary power decisions across all ministries.",
+    "newDecision": "New Decision",
+    "searchPlaceholder": "Search decisions...",
+    "allStatuses": "All Statuses",
+    "allTypes": "All Types",
+    "reference": "Reference",
+    "decisionTitle": "Title",
+    "type": "Type",
+    "ministry": "Ministry",
+    "status": "Status",
+    "step": "Step",
+    "deadline": "Deadline",
+    "assignedTo": "Assigned To",
+    "createdBy": "Created By",
+    "noDecisions": "No decisions found",
+    "createFirst": "Create your first decision to get started."
+  },
+  "newDecision": {
+    "title": "New Decision",
+    "subtitle": "Create a new discretionary power decision. This will initiate the 10-step review framework.",
+    "decisionTitle": "Decision Title",
+    "titlePlaceholder": "e.g., Financial Services Licensing Amendment",
+    "description": "Description",
+    "descriptionPlaceholder": "Provide a brief description of the decision and its context...",
+    "selectMinistry": "Select a ministry",
+    "selectType": "Select a type",
+    "deadlineHelp": "Optional. Set a target date for completing this decision.",
+    "infoText": "Once created, this decision will begin at Step 1 (Confirm Authority) of the 10-step discretionary powers framework.",
+    "creating": "Creating...",
+    "createDecision": "Create Decision"
+  },
+  "steps": {
+    "stepOf": "Step {current} of {total}",
+    "completePrevious": "Complete previous steps first",
+    "completeAndNext": "Complete & Next",
+    "completeFinal": "Complete Final Step",
+    "saveDraft": "Save Draft",
+    "skip": "Skip",
+    "skipReason": "Please provide a reason for skipping this step:",
+    "previousStep": "Previous",
+    "additionalNotes": "Additional Notes",
+    "notesPlaceholder": "Any additional notes or observations for this step..."
+  },
+  "status": {
+    "draft": "Draft",
+    "in_progress": "In Progress",
+    "under_review": "Under Review",
+    "approved": "Approved",
+    "published": "Published",
+    "challenged": "Challenged",
+    "withdrawn": "Withdrawn"
+  },
+  "publicPortal": {
+    "heroTitle": "Discretionary Powers Transparency Portal",
+    "heroSubtitle": "Access published decisions made by the Government of the Virgin Islands under the 10-step discretionary powers framework.",
+    "searchPlaceholder": "Search published decisions...",
+    "publishedDecisions": "Published Decisions",
+    "browseByMinistry": "Browse by Ministry",
+    "recentPublished": "Recently Published Decisions",
+    "viewDecisions": "View decisions"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all as read",
+    "noNotifications": "No notifications",
+    "allCaughtUp": "You're all caught up"
+  }
+}

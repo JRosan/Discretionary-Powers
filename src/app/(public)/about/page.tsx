@@ -1,5 +1,12 @@
+import type { Metadata } from "next";
 import { DECISION_STEPS } from "@/lib/constants";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "About the DPMS | Government of the Virgin Islands",
+  description:
+    "Learn about the Discretionary Powers Management System, the 10-step decision framework, your rights to judicial review, and how to request information.",
+};
 
 export default function AboutPage() {
   return (
