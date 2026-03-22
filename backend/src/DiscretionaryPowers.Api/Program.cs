@@ -106,12 +106,20 @@ using (var scope = app.Services.CreateScope())
 
     if (app.Configuration.GetValue<bool>("Database:AutoMigrate"))
     {
-        await dbContext.Database.MigrateAsync();
+        await dbContext.Database.EnsureCreatedAsync();
     }
 
     if (app.Configuration.GetValue<bool>("Database:Seed"))
     {
-        await DataSeeder.SeedAsync(dbContext);
+        try
+        {
+            await DataSeeder.SeedAsync(dbContext);
+        }
+        catch (Exception ex)
+        {
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+            logger.LogWarning(ex, "Database seeding failed — tables may not exist yet");
+        }
     }
 }
 

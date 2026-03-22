@@ -1,4 +1,5 @@
 using DiscretionaryPowers.Domain.Entities;
+using DiscretionaryPowers.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -14,7 +15,12 @@ public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
         builder.Property(n => n.Id).HasColumnName("id").HasDefaultValueSql("gen_random_uuid()");
         builder.Property(n => n.UserId).HasColumnName("user_id").IsRequired();
         builder.Property(n => n.DecisionId).HasColumnName("decision_id");
-        builder.Property(n => n.Type).HasColumnName("type").IsRequired();
+        builder.Property(n => n.Type)
+            .HasColumnName("type")
+            .HasConversion(
+                v => EnumConverter.ToSnakeCase(v.ToString()),
+                v => Enum.Parse<NotificationType>(EnumConverter.ToPascalCase(v)))
+            .IsRequired();
         builder.Property(n => n.Title).HasColumnName("title").IsRequired();
         builder.Property(n => n.Message).HasColumnName("message").IsRequired();
         builder.Property(n => n.Read).HasColumnName("read").HasDefaultValue(false);

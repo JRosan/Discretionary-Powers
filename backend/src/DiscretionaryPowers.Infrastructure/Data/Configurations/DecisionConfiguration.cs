@@ -1,4 +1,5 @@
 using DiscretionaryPowers.Domain.Entities;
+using DiscretionaryPowers.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -16,8 +17,19 @@ public class DecisionConfiguration : IEntityTypeConfiguration<Decision>
         builder.Property(d => d.Title).HasColumnName("title").IsRequired();
         builder.Property(d => d.Description).HasColumnName("description");
         builder.Property(d => d.MinistryId).HasColumnName("ministry_id").IsRequired();
-        builder.Property(d => d.DecisionType).HasColumnName("decision_type").IsRequired();
-        builder.Property(d => d.Status).HasColumnName("status").IsRequired().HasDefaultValue(Domain.Enums.DecisionStatus.Draft);
+        builder.Property(d => d.DecisionType)
+            .HasColumnName("decision_type")
+            .HasConversion(
+                v => EnumConverter.ToSnakeCase(v.ToString()),
+                v => Enum.Parse<DecisionType>(EnumConverter.ToPascalCase(v)))
+            .IsRequired();
+        builder.Property(d => d.Status)
+            .HasColumnName("status")
+            .HasConversion(
+                v => EnumConverter.ToSnakeCase(v.ToString()),
+                v => Enum.Parse<DecisionStatus>(EnumConverter.ToPascalCase(v)))
+            .IsRequired()
+            .HasDefaultValueSql("'draft'");
         builder.Property(d => d.CurrentStep).HasColumnName("current_step").IsRequired().HasDefaultValue(1);
         builder.Property(d => d.CreatedBy).HasColumnName("created_by").IsRequired();
         builder.Property(d => d.AssignedTo).HasColumnName("assigned_to");

@@ -1,4 +1,5 @@
 using DiscretionaryPowers.Domain.Entities;
+using DiscretionaryPowers.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -14,7 +15,13 @@ public class DecisionStepConfiguration : IEntityTypeConfiguration<DecisionStep>
         builder.Property(s => s.Id).HasColumnName("id").HasDefaultValueSql("gen_random_uuid()");
         builder.Property(s => s.DecisionId).HasColumnName("decision_id").IsRequired();
         builder.Property(s => s.StepNumber).HasColumnName("step_number").IsRequired();
-        builder.Property(s => s.Status).HasColumnName("status").IsRequired().HasDefaultValue(Domain.Enums.StepStatus.NotStarted);
+        builder.Property(s => s.Status)
+            .HasColumnName("status")
+            .HasConversion(
+                v => EnumConverter.ToSnakeCase(v.ToString()),
+                v => Enum.Parse<StepStatus>(EnumConverter.ToPascalCase(v)))
+            .IsRequired()
+            .HasDefaultValueSql("'not_started'");
         builder.Property(s => s.StartedAt).HasColumnName("started_at");
         builder.Property(s => s.CompletedAt).HasColumnName("completed_at");
         builder.Property(s => s.CompletedBy).HasColumnName("completed_by");

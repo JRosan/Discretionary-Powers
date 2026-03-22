@@ -1,4 +1,5 @@
 using DiscretionaryPowers.Domain.Entities;
+using DiscretionaryPowers.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -18,7 +19,12 @@ public class DocumentConfiguration : IEntityTypeConfiguration<Document>
         builder.Property(d => d.MimeType).HasColumnName("mime_type").IsRequired();
         builder.Property(d => d.SizeBytes).HasColumnName("size_bytes").IsRequired();
         builder.Property(d => d.StorageKey).HasColumnName("storage_key").IsRequired();
-        builder.Property(d => d.Classification).HasColumnName("classification").IsRequired();
+        builder.Property(d => d.Classification)
+            .HasColumnName("classification")
+            .HasConversion(
+                v => EnumConverter.ToSnakeCase(v.ToString()),
+                v => Enum.Parse<DocumentClassification>(EnumConverter.ToPascalCase(v)))
+            .IsRequired();
         builder.Property(d => d.UploadedBy).HasColumnName("uploaded_by").IsRequired();
         builder.Property(d => d.Version).HasColumnName("version").IsRequired().HasDefaultValue(1);
         builder.Property(d => d.IsRedacted).HasColumnName("is_redacted").HasDefaultValue(false);

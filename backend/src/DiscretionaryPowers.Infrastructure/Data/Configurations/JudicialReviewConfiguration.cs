@@ -1,4 +1,5 @@
 using DiscretionaryPowers.Domain.Entities;
+using DiscretionaryPowers.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -13,7 +14,12 @@ public class JudicialReviewConfiguration : IEntityTypeConfiguration<JudicialRevi
         builder.HasKey(j => j.Id);
         builder.Property(j => j.Id).HasColumnName("id").HasDefaultValueSql("gen_random_uuid()");
         builder.Property(j => j.DecisionId).HasColumnName("decision_id").IsRequired();
-        builder.Property(j => j.Ground).HasColumnName("ground").IsRequired();
+        builder.Property(j => j.Ground)
+            .HasColumnName("ground")
+            .HasConversion(
+                v => EnumConverter.ToSnakeCase(v.ToString()),
+                v => Enum.Parse<JudicialReviewGround>(EnumConverter.ToPascalCase(v)))
+            .IsRequired();
         builder.Property(j => j.Status).HasColumnName("status").IsRequired().HasDefaultValue("filed");
         builder.Property(j => j.FiledDate).HasColumnName("filed_date").IsRequired();
         builder.Property(j => j.CourtReference).HasColumnName("court_reference");

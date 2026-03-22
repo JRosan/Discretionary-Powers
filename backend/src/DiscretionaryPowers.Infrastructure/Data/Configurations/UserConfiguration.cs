@@ -1,4 +1,5 @@
 using DiscretionaryPowers.Domain.Entities;
+using DiscretionaryPowers.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -15,7 +16,12 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.Email).HasColumnName("email").IsRequired();
         builder.Property(u => u.Name).HasColumnName("name").IsRequired();
         builder.Property(u => u.PasswordHash).HasColumnName("password_hash");
-        builder.Property(u => u.Role).HasColumnName("role").IsRequired();
+        builder.Property(u => u.Role)
+            .HasColumnName("role")
+            .HasConversion(
+                v => EnumConverter.ToSnakeCase(v.ToString()),
+                v => Enum.Parse<UserRole>(EnumConverter.ToPascalCase(v)))
+            .IsRequired();
         builder.Property(u => u.MinistryId).HasColumnName("ministry_id");
         builder.Property(u => u.MfaEnabled).HasColumnName("mfa_enabled").HasDefaultValue(false);
         builder.Property(u => u.Active).HasColumnName("active").HasDefaultValue(true);
