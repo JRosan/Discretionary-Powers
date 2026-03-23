@@ -302,22 +302,64 @@ export default function StepPage() {
           Back to Decision
         </Link>
 
-        {/* Step progress bar */}
-        <div className="flex items-center gap-1 mb-4">
-          {DECISION_STEPS.map((s) => (
-            <Link
-              key={s.number}
-              href={`/decisions/${decisionId}/step/${s.number}`}
-              className={`h-2 flex-1 rounded-full transition-colors ${
-                s.number === stepNumber
-                  ? "bg-accent"
-                  : s.number < stepNumber
-                  ? "bg-accent/40"
-                  : "bg-border"
-              }`}
-              title={`Step ${s.number}: ${s.name}`}
-            />
-          ))}
+        {/* Step progress stepper */}
+        <div className="rounded-lg border border-border bg-white p-4 mb-6">
+          <div className="flex items-center">
+            {DECISION_STEPS.map((s, i) => {
+              const sd = decision?.steps?.find((st: { stepNumber: number }) => st.stepNumber === s.number);
+              const st = sd?.status ?? "not_started";
+              const isActive = s.number === stepNumber;
+              const isDone = st === "completed" || st === "skipped_with_reason";
+              const isPast = s.number < stepNumber;
+
+              return (
+                <div key={s.number} className="flex items-center flex-1 last:flex-none">
+                  <Link
+                    href={`/decisions/${decisionId}/step/${s.number}`}
+                    title={`Step ${s.number}: ${s.name}`}
+                    className="flex flex-col items-center group relative"
+                  >
+                    {/* Circle */}
+                    <div
+                      className={`flex items-center justify-center rounded-full text-xs font-bold transition-all ${
+                        isDone
+                          ? "h-8 w-8 bg-accent text-white"
+                          : isActive
+                          ? "h-8 w-8 border-2 border-accent bg-accent/10 text-accent ring-4 ring-accent/10"
+                          : "h-7 w-7 border-2 border-border bg-white text-text-muted group-hover:border-accent/50"
+                      }`}
+                    >
+                      {isDone ? (
+                        <CheckCircle2 className="h-4 w-4" />
+                      ) : (
+                        s.number
+                      )}
+                    </div>
+                    {/* Label — only show on active and adjacent steps on larger screens */}
+                    <span
+                      className={`mt-1 text-[10px] leading-tight text-center max-w-[60px] truncate hidden sm:block ${
+                        isActive
+                          ? "text-accent-dark font-semibold"
+                          : isDone
+                          ? "text-accent"
+                          : "text-text-muted"
+                      }`}
+                    >
+                      {s.name.split(" ").slice(0, 2).join(" ")}
+                    </span>
+                  </Link>
+                  {/* Connecting line */}
+                  {i < DECISION_STEPS.length - 1 && (
+                    <div
+                      className={`flex-1 h-0.5 mx-1 rounded-full ${
+                        isDone || isPast ? "bg-accent/40" : "bg-border"
+                      }`}
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         <p className="text-xs text-text-muted mb-1">Step {stepNumber} of 10</p>
