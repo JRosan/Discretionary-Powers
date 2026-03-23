@@ -46,11 +46,11 @@ function formatLabel(value: string): string {
   return value.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function StepIcon({ status }: { status: string }) {
+function StepIcon({ status, isCurrent }: { status: string; isCurrent?: boolean }) {
   if (status === "completed" || status === "skipped_with_reason") {
     return <CheckCircle2 className="h-6 w-6 text-accent" />;
   }
-  if (status === "in_progress") {
+  if (status === "in_progress" || isCurrent) {
     return (
       <div className="h-6 w-6 rounded-full border-2 border-accent bg-accent/10 flex items-center justify-center">
         <div className="h-2 w-2 rounded-full bg-accent animate-pulse" />
@@ -380,7 +380,7 @@ export default function DecisionDetailPage() {
           {DECISION_STEPS.map((stepDef) => {
             const stepData = steps.find((s) => s.stepNumber === stepDef.number);
             const status = stepData?.status ?? "not_started";
-            const isCurrent = status === "in_progress";
+            const isCurrent = status === "in_progress" || (stepDef.number === decision.currentStep && status === "not_started" && decision.status !== "published" && decision.status !== "withdrawn");
 
             return (
               <Link
@@ -393,7 +393,7 @@ export default function DecisionDetailPage() {
                 }`}
               >
                 <div className="mt-0.5">
-                  <StepIcon status={status} />
+                  <StepIcon status={status} isCurrent={isCurrent} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
@@ -425,6 +425,8 @@ export default function DecisionDetailPage() {
                     ? "In Progress"
                     : status === "skipped_with_reason"
                     ? "Skipped"
+                    : isCurrent
+                    ? "Ready to Start"
                     : "Pending"}
                 </div>
               </Link>
