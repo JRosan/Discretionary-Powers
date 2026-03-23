@@ -1,4 +1,3 @@
-using DiscretionaryPowers.Domain.Enums;
 using DiscretionaryPowers.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,11 +11,14 @@ namespace DiscretionaryPowers.Api.Controllers;
 public class ReportsController(AppDbContext db) : ControllerBase
 {
     [HttpGet("dashboard")]
-    public async Task<IActionResult> GetDashboard([FromQuery] DateTime? from, [FromQuery] DateTime? to)
+    public async Task<IActionResult> GetDashboard([FromQuery] string? from, [FromQuery] string? to)
     {
+        DateTime? fromDate = from != null ? DateTime.Parse(from).ToUniversalTime() : null;
+        DateTime? toDate = to != null ? DateTime.Parse(to).ToUniversalTime() : null;
+
         var baseQuery = db.Decisions.AsNoTracking();
-        if (from.HasValue) baseQuery = baseQuery.Where(d => d.CreatedAt >= from.Value);
-        if (to.HasValue) baseQuery = baseQuery.Where(d => d.CreatedAt <= to.Value);
+        if (fromDate.HasValue) baseQuery = baseQuery.Where(d => d.CreatedAt >= fromDate.Value);
+        if (toDate.HasValue) baseQuery = baseQuery.Where(d => d.CreatedAt <= toDate.Value);
 
         var byStatus = await baseQuery
             .GroupBy(d => d.Status)
@@ -29,20 +31,18 @@ public class ReportsController(AppDbContext db) : ControllerBase
             .Select(g => new { Ministry = g.Key, Count = g.Count() })
             .ToListAsync();
 
-        var overTime = await baseQuery
+        var overTimeRaw = await baseQuery
             .GroupBy(d => new { d.CreatedAt.Year, d.CreatedAt.Month })
-            .Select(g => new
-            {
-                Month = $"{g.Key.Year}-{g.Key.Month:D2}",
-                Count = g.Count()
-            })
-            .OrderBy(x => x.Month)
+            .Select(g => new { g.Key.Year, g.Key.Month, Count = g.Count() })
+            .OrderBy(x => x.Year).ThenBy(x => x.Month)
             .ToListAsync();
+
+        var overTime = overTimeRaw.Select(x => new { month = $"{x.Year}-{x.Month:D2}", count = x.Count });
 
         // Step completion times — fetch completed steps and compute averages in memory
         // because TimeSpan arithmetic doesn't translate to SQL in Npgsql
         var stepQuery = db.DecisionSteps.AsNoTracking();
-        if (from.HasValue || to.HasValue)
+        if (fromDate.HasValue || toDate.HasValue)
         {
             var decisionIds = await baseQuery.Select(d => d.Id).ToListAsync();
             stepQuery = stepQuery.Where(s => decisionIds.Contains(s.DecisionId));
@@ -67,9 +67,9 @@ public class ReportsController(AppDbContext db) : ControllerBase
 
         var overdueCount = await baseQuery
             .Where(d => d.Deadline != null && d.Deadline < DateTime.UtcNow
-                && d.Status != DecisionStatus.Published
-                && d.Status != DecisionStatus.Withdrawn
-                && d.Status != DecisionStatus.Approved)
+                && d.Status != Domain.Enums.DecisionStatus.Published
+                && d.Status != Domain.Enums.DecisionStatus.Withdrawn
+                && d.Status != Domain.Enums.DecisionStatus.Approved)
             .CountAsync();
 
         return Ok(new
@@ -78,7 +78,7 @@ public class ReportsController(AppDbContext db) : ControllerBase
             overdueCount,
             byStatus = byStatus.ToDictionary(x => x.Status.ToString(), x => x.Count),
             byMinistry = byMinistry.Select(x => new { name = x.Ministry, count = x.Count }),
-            overTime = overTime.Select(x => new { month = x.Month, count = x.Count }),
+            overTime,
             stepTimes = stepTimes.Select(x => new { step = x.Step, avgDays = x.AvgDays })
         });
     }
