@@ -9,6 +9,7 @@ import {
   ArrowRight,
   CheckCircle2,
 } from "lucide-react";
+import { PublicFooter } from "@/components/layout/public-footer";
 
 const features = [
   {
@@ -217,26 +218,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-border bg-white">
-        <div className="mx-auto max-w-7xl px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-text-muted">
-            &copy; {new Date().getFullYear()} Government of the Virgin Islands.
-            Crown Copyright. All rights reserved.
-          </p>
-          <div className="flex items-center gap-4 text-xs text-text-muted">
-            <Link href="/portal/accessibility" className="hover:text-accent transition-colors">
-              Accessibility
-            </Link>
-            <Link href="/portal/privacy" className="hover:text-accent transition-colors">
-              Privacy Policy
-            </Link>
-            <Link href="/portal/about" className="hover:text-accent transition-colors">
-              About
-            </Link>
-          </div>
-        </div>
-      </footer>
+      <PublicFooter />
     </div>
   );
 }
