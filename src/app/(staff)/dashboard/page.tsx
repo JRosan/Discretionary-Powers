@@ -11,6 +11,7 @@ import {
   ArrowRight,
   Loader2,
   Calendar,
+  BarChart3,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +20,8 @@ import { api } from "@/lib/api";
 import { queryConfig } from "@/lib/query-config";
 import { useTranslations } from "@/i18n";
 import { DeadlineTimeline } from "@/components/dashboard/deadline-timeline";
+import { DecisionCalendar } from "@/components/dashboard/decision-calendar";
+import { DecisionGantt } from "@/components/dashboard/decision-gantt";
 
 const statusVariantMap: Record<string, "default" | "accent" | "warning" | "error" | "success" | "outline"> = {
   draft: "outline",
@@ -230,6 +233,33 @@ export default function DashboardPage() {
           <DeadlineTimeline decisions={deadlineDecisions} />
         </CardContent>
       </Card>
+
+      {/* Calendar & Timeline */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Calendar className="h-4 w-4 text-accent" />
+              Decision Calendar
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DecisionCalendar decisions={deadlineDecisions} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <BarChart3 className="h-4 w-4 text-accent" />
+              Decision Timeline
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DecisionGantt decisions={deadlineDecisions} />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
