@@ -6,12 +6,14 @@ import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
+  ArrowRight,
   FileText,
   User,
   Building2,
   Calendar,
   CheckCircle2,
   Circle,
+  Clock,
   Loader2,
   Download,
   MessageSquare,
@@ -133,6 +135,31 @@ export default function DecisionDetailPage() {
     (s) => s.status === "completed" || s.status === "skipped_with_reason"
   ).length;
   const progress = (completedCount / 10) * 100;
+
+  // Determine the next action for the user
+  const currentStepDef = DECISION_STEPS.find((s) => s.number === decision.currentStep);
+  const currentStepData = steps.find((s) => s.stepNumber === decision.currentStep);
+  const currentStepStatus = currentStepData?.status ?? "not_started";
+
+  function getNextAction(): { label: string; description: string; href?: string; status: "action" | "waiting" | "done" } | null {
+    if (decision.status === "published") return { label: "Published", description: "This decision has been published to the public transparency portal.", status: "done" };
+    if (decision.status === "withdrawn") return { label: "Withdrawn", description: "This decision has been withdrawn.", status: "done" };
+    if (decision.status === "challenged") return { label: "Under Judicial Review", description: "This decision has been flagged for judicial review.", status: "waiting" };
+    if (decision.status === "approved") return { label: "Ready to Publish", description: "All steps are complete and the decision is approved. It can now be published to the public portal.", status: "waiting" };
+    if (decision.status === "under_review") return { label: "Awaiting Approval", description: `All 10 steps are complete. This decision is awaiting ministerial approval.`, status: "waiting" };
+    if (currentStepDef) {
+      const stepAction = currentStepStatus === "in_progress" ? "Continue" : "Begin";
+      return {
+        label: `${stepAction} Step ${decision.currentStep}: ${currentStepDef.name}`,
+        description: currentStepDef.description,
+        href: `/decisions/${decision.id}/step/${decision.currentStep}`,
+        status: "action",
+      };
+    }
+    return null;
+  }
+
+  const nextAction = getNextAction();
 
   return (
     <div className="space-y-6">
@@ -311,6 +338,38 @@ export default function DecisionDetailPage() {
           />
         </div>
       </div>
+
+      {/* Next Action Banner */}
+      {nextAction && (
+        <div className={`rounded-lg border p-5 ${
+          nextAction.status === "action"
+            ? "border-accent bg-accent/5"
+            : nextAction.status === "waiting"
+            ? "border-warning bg-warning/5"
+            : "border-primary/20 bg-primary/5"
+        }`}>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                {nextAction.status === "action" && <ArrowRight className="h-4 w-4 text-accent" />}
+                {nextAction.status === "waiting" && <Clock className="h-4 w-4 text-warning-dark" />}
+                {nextAction.status === "done" && <CheckCircle2 className="h-4 w-4 text-primary" />}
+                <p className="text-sm font-semibold text-text">{nextAction.label}</p>
+              </div>
+              <p className="text-sm text-text-secondary">{nextAction.description}</p>
+            </div>
+            {nextAction.href && (
+              <Link
+                href={nextAction.href}
+                className="shrink-0 inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-white hover:bg-accent-dark transition-colors"
+              >
+                {currentStepStatus === "in_progress" ? "Continue" : "Start"}
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* 10-Step Workflow */}
       <div className="rounded-lg border border-border bg-white p-6">
