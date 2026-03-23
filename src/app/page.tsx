@@ -88,10 +88,22 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-3">
             <Link
+              href="/demo"
+              className="text-sm text-text-secondary hover:text-accent transition-colors"
+            >
+              Live Demo
+            </Link>
+            <Link
               href="/pricing"
               className="text-sm text-text-secondary hover:text-accent transition-colors"
             >
               Pricing
+            </Link>
+            <Link
+              href="/book-demo"
+              className="text-sm text-text-secondary hover:text-accent transition-colors"
+            >
+              Book a Demo
             </Link>
             <Link
               href="/portal"

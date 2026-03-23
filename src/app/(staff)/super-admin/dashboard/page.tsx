@@ -14,6 +14,9 @@ import {
   Loader2,
   CheckCircle2,
   XCircle,
+  PlayCircle,
+  RotateCcw,
+  ExternalLink,
 } from "lucide-react";
 
 interface DashboardData {
@@ -38,6 +41,8 @@ export default function PlatformDashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [apiHealth, setApiHealth] = useState<"up" | "down" | "checking">("checking");
+  const [sandbox, setSandbox] = useState<{ exists: boolean; isActive?: boolean; userCount?: number; decisionCount?: number } | null>(null);
+  const [sandboxLoading, setSandboxLoading] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -60,9 +65,45 @@ export default function PlatformDashboardPage() {
       }
     };
 
+    const fetchSandbox = async () => {
+      try {
+        const result = await api.superAdmin.getSandboxStatus();
+        setSandbox(result);
+      } catch {
+        /* ignore */
+      }
+    };
+
     fetchData();
     checkHealth();
+    fetchSandbox();
   }, []);
+
+  const handleCreateSandbox = async () => {
+    setSandboxLoading(true);
+    try {
+      await api.superAdmin.createSandbox();
+      const result = await api.superAdmin.getSandboxStatus();
+      setSandbox(result);
+    } catch {
+      /* ignore */
+    } finally {
+      setSandboxLoading(false);
+    }
+  };
+
+  const handleResetSandbox = async () => {
+    setSandboxLoading(true);
+    try {
+      await api.superAdmin.resetSandbox();
+      const result = await api.superAdmin.getSandboxStatus();
+      setSandbox(result);
+    } catch {
+      /* ignore */
+    } finally {
+      setSandboxLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -251,6 +292,70 @@ export default function PlatformDashboardPage() {
               </span>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Sandbox Environment */}
+      <div className="rounded-lg border border-border bg-background p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10">
+              <PlayCircle className="h-5 w-5 text-accent" />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold text-text">Sandbox Environment</h2>
+              <p className="text-xs text-text-muted">Pre-populated demo for prospects</p>
+            </div>
+          </div>
+          {sandbox?.exists ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+              <CheckCircle2 className="h-3 w-3" />
+              Active
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 rounded-full bg-surface px-2 py-0.5 text-xs font-medium text-text-muted">
+              Not Created
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
+          {sandbox?.exists ? (
+            <>
+              <button
+                onClick={handleResetSandbox}
+                disabled={sandboxLoading}
+                className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-text hover:bg-surface transition-colors disabled:opacity-50"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                Reset Sandbox
+              </button>
+              <Link
+                href="/demo"
+                className="inline-flex items-center gap-2 rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-light transition-colors"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                Open Demo Page
+              </Link>
+              {sandbox.userCount !== undefined && (
+                <span className="text-xs text-text-muted ml-auto">
+                  {sandbox.userCount} users, {sandbox.decisionCount} decisions
+                </span>
+              )}
+            </>
+          ) : (
+            <button
+              onClick={handleCreateSandbox}
+              disabled={sandboxLoading}
+              className="inline-flex items-center gap-2 rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-light transition-colors disabled:opacity-50"
+            >
+              {sandboxLoading ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <PlayCircle className="h-3.5 w-3.5" />
+              )}
+              Create Sandbox
+            </button>
+          )}
         </div>
       </div>
 

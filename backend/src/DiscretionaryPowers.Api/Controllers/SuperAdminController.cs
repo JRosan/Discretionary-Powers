@@ -779,6 +779,408 @@ public class SuperAdminController(
         });
     }
 
+    // ── Sandbox ───────────────────────────────────────────────────────
+
+    [HttpPost("create-sandbox")]
+    public async Task<IActionResult> CreateSandbox()
+    {
+        var existing = await db.Organizations.FirstOrDefaultAsync(o => o.Slug == "sandbox");
+        if (existing is not null)
+            return Conflict(new { message = "Sandbox organization already exists.", id = existing.Id });
+
+        var now = DateTime.UtcNow;
+        var orgId = Guid.NewGuid();
+
+        // Create sandbox organization
+        var org = new Organization
+        {
+            Id = orgId,
+            Name = "Sandbox Government (Demo)",
+            Slug = "sandbox",
+            IsActive = true,
+            OnboardingCompleted = true,
+            PrimaryColor = "#1D3557",
+            AccentColor = "#2A9D8F",
+            CreatedAt = now,
+            UpdatedAt = now,
+        };
+        db.Organizations.Add(org);
+
+        // Create 5 ministries
+        var ministries = new[]
+        {
+            (Id: Guid.NewGuid(), Name: "Ministry of Finance", Code: "FIN"),
+            (Id: Guid.NewGuid(), Name: "Ministry of Education", Code: "EDU"),
+            (Id: Guid.NewGuid(), Name: "Ministry of Health", Code: "HLT"),
+            (Id: Guid.NewGuid(), Name: "Ministry of Natural Resources", Code: "NTR"),
+            (Id: Guid.NewGuid(), Name: "Ministry of Justice", Code: "JUS"),
+        };
+        foreach (var m in ministries)
+        {
+            db.Ministries.Add(new Ministry
+            {
+                Id = m.Id,
+                Name = m.Name,
+                Code = m.Code,
+                OrganizationId = orgId,
+                Active = true,
+                CreatedAt = now,
+                UpdatedAt = now,
+            });
+        }
+
+        // Create 4 demo users
+        var passwordHash = BCrypt.Net.BCrypt.HashPassword("demo", 12);
+        var demoUsers = new[]
+        {
+            (Id: Guid.NewGuid(), Email: "demo-minister@sandbox.govdecision.com", Name: "Sarah Mitchell", Role: UserRole.Minister, MinistryId: ministries[0].Id),
+            (Id: Guid.NewGuid(), Email: "demo-secretary@sandbox.govdecision.com", Name: "James Rodriguez", Role: UserRole.PermanentSecretary, MinistryId: ministries[0].Id),
+            (Id: Guid.NewGuid(), Email: "demo-legal@sandbox.govdecision.com", Name: "Emily Chen", Role: UserRole.LegalAdvisor, MinistryId: ministries[4].Id),
+            (Id: Guid.NewGuid(), Email: "demo-auditor@sandbox.govdecision.com", Name: "Robert Williams", Role: UserRole.Auditor, MinistryId: ministries[0].Id),
+        };
+        foreach (var u in demoUsers)
+        {
+            db.Users.Add(new User
+            {
+                Id = u.Id,
+                Email = u.Email,
+                Name = u.Name,
+                Role = u.Role,
+                OrganizationId = orgId,
+                MinistryId = u.MinistryId,
+                PasswordHash = passwordHash,
+                Active = true,
+                EmailVerified = true,
+                CreatedAt = now,
+                UpdatedAt = now,
+            });
+        }
+
+        // Create workflow template
+        var workflowId = Guid.NewGuid();
+        db.WorkflowTemplates.Add(new WorkflowTemplate
+        {
+            Id = workflowId,
+            OrganizationId = orgId,
+            Name = "Standard 10-Step Framework",
+            IsDefault = true,
+            IsActive = true,
+            CreatedAt = now,
+            UpdatedAt = now,
+        });
+
+        var stepDefs = new (int Num, string Name, string Desc)[]
+        {
+            (1, "Confirm Authority", "Confirm the legal authority to make this decision"),
+            (2, "Follow Procedures", "Follow all required procedures and protocols"),
+            (3, "Gather Information", "Gather all relevant information and evidence"),
+            (4, "Evaluate Evidence", "Evaluate the evidence objectively"),
+            (5, "Standard of Proof", "Apply the appropriate standard of proof"),
+            (6, "Fairness", "Ensure fairness in the decision-making process"),
+            (7, "Procedural Fairness", "Ensure procedural fairness requirements are met"),
+            (8, "Consider Merits", "Consider the merits of the case"),
+            (9, "Communicate", "Communicate the decision appropriately"),
+            (10, "Record", "Record the decision and reasoning"),
+        };
+        foreach (var (num, name, desc) in stepDefs)
+        {
+            db.WorkflowStepTemplates.Add(new WorkflowStepTemplate
+            {
+                Id = Guid.NewGuid(),
+                WorkflowTemplateId = workflowId,
+                StepNumber = num,
+                Name = name,
+                Description = desc,
+                IsRequired = true,
+            });
+        }
+
+        // Create 8 decision types
+        var decisionTypes = new (string Code, string TypeName, string Desc)[]
+        {
+            ("REG", "Regulatory Decision", "Decisions related to regulatory matters"),
+            ("FIN", "Financial Decision", "Decisions involving financial matters"),
+            ("ADM", "Administrative Decision", "General administrative decisions"),
+            ("LIC", "Licensing Decision", "Decisions related to licensing and permits"),
+            ("POL", "Policy Decision", "Decisions related to policy changes"),
+            ("PLN", "Planning Decision", "Decisions related to development planning"),
+            ("ENF", "Enforcement Decision", "Enforcement and compliance decisions"),
+            ("ENV", "Environmental Decision", "Environmental impact decisions"),
+        };
+        foreach (var (code, typeName, desc) in decisionTypes)
+        {
+            db.DecisionTypeConfigs.Add(new DecisionTypeConfig
+            {
+                Id = Guid.NewGuid(),
+                OrganizationId = orgId,
+                Code = code,
+                Name = typeName,
+                Description = desc,
+                DefaultWorkflowId = workflowId,
+                IsActive = true,
+                CreatedAt = now,
+            });
+        }
+
+        // Create 6 sample decisions in various states
+        var minister = demoUsers[0];
+        var secretary = demoUsers[1];
+        var legalAdvisor = demoUsers[2];
+
+        var sampleDecisions = new[]
+        {
+            new { Title = "Trade License Renewal — Island Water Sports Ltd", Type = DecisionType.TradeLicense, Status = DecisionStatus.Draft, CurrentStep = 1, Ministry = ministries[0], CreatedBy = secretary.Id, AssignedTo = (Guid?)null },
+            new { Title = "Crown Land Lease Application — Nanny Cay Expansion", Type = DecisionType.CrownLand, Status = DecisionStatus.InProgress, CurrentStep = 4, Ministry = ministries[3], CreatedBy = secretary.Id, AssignedTo = (Guid?)minister.Id },
+            new { Title = "Work Permit Appeal — Construction Sector Review", Type = DecisionType.WorkPermit, Status = DecisionStatus.UnderReview, CurrentStep = 8, Ministry = ministries[1], CreatedBy = secretary.Id, AssignedTo = (Guid?)legalAdvisor.Id },
+            new { Title = "Financial Aid Grant — Hurricane Recovery Fund", Type = DecisionType.Financial, Status = DecisionStatus.Approved, CurrentStep = 10, Ministry = ministries[0], CreatedBy = minister.Id, AssignedTo = (Guid?)secretary.Id },
+            new { Title = "Environmental Impact Assessment — Marina Development", Type = DecisionType.Environmental, Status = DecisionStatus.Published, CurrentStep = 10, Ministry = ministries[3], CreatedBy = secretary.Id, AssignedTo = (Guid?)null },
+            new { Title = "Customs Exemption — Medical Equipment Import", Type = DecisionType.CustomsExemption, Status = DecisionStatus.Challenged, CurrentStep = 10, Ministry = ministries[0], CreatedBy = minister.Id, AssignedTo = (Guid?)legalAdvisor.Id },
+        };
+
+        var refCounter = 1;
+        foreach (var sd in sampleDecisions)
+        {
+            var decisionId = Guid.NewGuid();
+            var refNum = $"DEMO-{now.Year}-{refCounter:D4}";
+            refCounter++;
+
+            var isPublic = sd.Status is DecisionStatus.Published or DecisionStatus.Challenged;
+
+            db.Decisions.Add(new Decision
+            {
+                Id = decisionId,
+                ReferenceNumber = refNum,
+                Title = sd.Title,
+                Description = $"Sample decision for demonstration purposes: {sd.Title}",
+                MinistryId = sd.Ministry.Id,
+                OrganizationId = orgId,
+                DecisionType = sd.Type,
+                Status = sd.Status,
+                CurrentStep = sd.CurrentStep,
+                CreatedBy = sd.CreatedBy,
+                AssignedTo = sd.AssignedTo,
+                IsPublic = isPublic,
+                Deadline = now.AddDays(30),
+                CreatedAt = now.AddDays(-15 + refCounter),
+                UpdatedAt = now,
+            });
+
+            // Create completed steps
+            for (int s = 1; s <= sd.CurrentStep; s++)
+            {
+                var stepStatus = s < sd.CurrentStep
+                    ? Domain.Enums.StepStatus.Completed
+                    : (sd.Status == DecisionStatus.Draft ? Domain.Enums.StepStatus.NotStarted : Domain.Enums.StepStatus.InProgress);
+
+                if (s < sd.CurrentStep || sd.Status is DecisionStatus.Approved or DecisionStatus.Published or DecisionStatus.Challenged)
+                    stepStatus = Domain.Enums.StepStatus.Completed;
+
+                db.DecisionSteps.Add(new DecisionStep
+                {
+                    Id = Guid.NewGuid(),
+                    DecisionId = decisionId,
+                    StepNumber = s,
+                    Status = stepStatus,
+                    StartedAt = now.AddDays(-14 + s),
+                    CompletedAt = stepStatus == Domain.Enums.StepStatus.Completed ? now.AddDays(-14 + s + 1) : null,
+                    CompletedBy = stepStatus == Domain.Enums.StepStatus.Completed ? secretary.Id : null,
+                    Notes = stepStatus == Domain.Enums.StepStatus.Completed ? $"Step {s} completed with all requirements satisfied." : null,
+                    CreatedAt = now.AddDays(-14 + s),
+                    UpdatedAt = now,
+                });
+            }
+
+            // Create remaining steps as not started
+            for (int s = sd.CurrentStep + 1; s <= 10; s++)
+            {
+                db.DecisionSteps.Add(new DecisionStep
+                {
+                    Id = Guid.NewGuid(),
+                    DecisionId = decisionId,
+                    StepNumber = s,
+                    Status = Domain.Enums.StepStatus.NotStarted,
+                    CreatedAt = now,
+                    UpdatedAt = now,
+                });
+            }
+
+            // Add sample comments
+            if (sd.CurrentStep >= 3)
+            {
+                db.Comments.Add(new Comment
+                {
+                    Id = Guid.NewGuid(),
+                    DecisionId = decisionId,
+                    UserId = secretary.Id,
+                    OrganizationId = orgId,
+                    Content = "All supporting documentation has been gathered and verified.",
+                    IsInternal = true,
+                    CreatedAt = now.AddDays(-10),
+                    UpdatedAt = now.AddDays(-10),
+                });
+            }
+
+            if (sd.CurrentStep >= 6)
+            {
+                db.Comments.Add(new Comment
+                {
+                    Id = Guid.NewGuid(),
+                    DecisionId = decisionId,
+                    UserId = legalAdvisor.Id,
+                    OrganizationId = orgId,
+                    Content = "Legal review completed. All procedural requirements have been met.",
+                    IsInternal = true,
+                    CreatedAt = now.AddDays(-5),
+                    UpdatedAt = now.AddDays(-5),
+                });
+            }
+
+            // Add audit entries
+            db.AuditEntries.Add(new AuditEntry
+            {
+                DecisionId = decisionId,
+                UserId = sd.CreatedBy,
+                OrganizationId = orgId,
+                Action = "decision_created",
+                IpAddress = "127.0.0.1",
+                EntryHash = Guid.NewGuid().ToString("N"),
+                CreatedAt = now.AddDays(-15 + refCounter),
+            });
+        }
+
+        // Create trial subscription
+        db.Subscriptions.Add(new Subscription
+        {
+            Id = Guid.NewGuid(),
+            OrganizationId = orgId,
+            Plan = "professional",
+            Status = "active",
+            MonthlyPrice = 0m,
+            Currency = "USD",
+            CurrentPeriodStart = now,
+            CurrentPeriodEnd = now.AddYears(1),
+            CreatedAt = now,
+            UpdatedAt = now,
+        });
+
+        await db.SaveChangesAsync();
+
+        return Ok(new
+        {
+            message = "Sandbox environment created successfully.",
+            organizationId = orgId,
+            slug = "sandbox",
+            users = demoUsers.Select(u => new { u.Email, Role = u.Role.ToString() }),
+        });
+    }
+
+    [HttpPost("reset-sandbox")]
+    public async Task<IActionResult> ResetSandbox()
+    {
+        var org = await db.Organizations.FirstOrDefaultAsync(o => o.Slug == "sandbox");
+        if (org is null)
+            return NotFound(new { message = "Sandbox organization not found." });
+
+        var orgId = org.Id;
+
+        // Get sandbox user emails to preserve
+        var sandboxEmails = new[]
+        {
+            "demo-minister@sandbox.govdecision.com",
+            "demo-secretary@sandbox.govdecision.com",
+            "demo-legal@sandbox.govdecision.com",
+            "demo-auditor@sandbox.govdecision.com",
+        };
+
+        // Delete all data except the demo users
+        var decisionIds = await db.Decisions.IgnoreQueryFilters().Where(d => d.OrganizationId == orgId).Select(d => d.Id).ToListAsync();
+
+        await db.AuditEntries.IgnoreQueryFilters().Where(a => a.OrganizationId == orgId).ExecuteDeleteAsync();
+        await db.Comments.IgnoreQueryFilters().Where(c => c.OrganizationId == orgId).ExecuteDeleteAsync();
+        await db.Notifications.IgnoreQueryFilters().Where(n => n.OrganizationId == orgId).ExecuteDeleteAsync();
+        await db.Documents.IgnoreQueryFilters().Where(d => d.OrganizationId == orgId).ExecuteDeleteAsync();
+        await db.DecisionSteps.IgnoreQueryFilters().Where(s => decisionIds.Contains(s.DecisionId)).ExecuteDeleteAsync();
+        await db.JudicialReviews.IgnoreQueryFilters().Where(j => j.OrganizationId == orgId).ExecuteDeleteAsync();
+        await db.Decisions.IgnoreQueryFilters().Where(d => d.OrganizationId == orgId).ExecuteDeleteAsync();
+
+        // Delete non-demo users only
+        await db.Users.IgnoreQueryFilters()
+            .Where(u => u.OrganizationId == orgId && !sandboxEmails.Contains(u.Email))
+            .ExecuteDeleteAsync();
+
+        return Ok(new { message = "Sandbox data reset successfully. Demo users preserved." });
+    }
+
+    [HttpGet("sandbox-status")]
+    public async Task<IActionResult> GetSandboxStatus()
+    {
+        var org = await db.Organizations.AsNoTracking().FirstOrDefaultAsync(o => o.Slug == "sandbox");
+        if (org is null)
+            return Ok(new { exists = false });
+
+        var userCount = await db.Users.IgnoreQueryFilters().CountAsync(u => u.OrganizationId == org.Id);
+        var decisionCount = await db.Decisions.IgnoreQueryFilters().CountAsync(d => d.OrganizationId == org.Id);
+
+        return Ok(new
+        {
+            exists = true,
+            organizationId = org.Id,
+            isActive = org.IsActive,
+            userCount,
+            decisionCount,
+        });
+    }
+
+    // ── Demo Requests ────────────────────────────────────────────────────
+
+    [HttpGet("demo-requests")]
+    public async Task<IActionResult> GetDemoRequests(
+        [FromQuery] int limit = 50,
+        [FromQuery] int offset = 0,
+        [FromQuery] string? status = null)
+    {
+        var query = db.DemoRequests.AsNoTracking().AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(status))
+            query = query.Where(d => d.Status == status);
+
+        var total = await query.CountAsync();
+
+        var items = await query
+            .OrderByDescending(d => d.CreatedAt)
+            .Skip(offset)
+            .Take(limit)
+            .Select(d => new
+            {
+                d.Id,
+                d.Name,
+                d.Email,
+                d.Organization,
+                d.JobTitle,
+                d.Country,
+                d.UserRange,
+                d.Message,
+                d.PreferredDate,
+                d.Status,
+                d.CreatedAt,
+            })
+            .ToListAsync();
+
+        return Ok(new { items, total, hasMore = offset + limit < total });
+    }
+
+    [HttpPut("demo-requests/{id:guid}/status")]
+    public async Task<IActionResult> UpdateDemoRequestStatus(Guid id, [FromBody] UpdateDemoRequestStatusDto request)
+    {
+        var demoRequest = await db.DemoRequests.FindAsync(id);
+        if (demoRequest is null) return NotFound();
+
+        demoRequest.Status = request.Status;
+        await db.SaveChangesAsync();
+
+        return Ok(new { demoRequest.Id, demoRequest.Status });
+    }
+
     // ── Announcements ───────────────────────────────────────────────────
 
     [HttpPost("announcements")]
@@ -877,4 +1279,9 @@ public class UpdatePlatformConfigRequest
 {
     public string Key { get; set; } = null!;
     public string Value { get; set; } = null!;
+}
+
+public class UpdateDemoRequestStatusDto
+{
+    public string Status { get; set; } = null!;
 }

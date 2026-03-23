@@ -22,6 +22,7 @@ import { useTranslations } from "@/i18n";
 import { DeadlineTimeline } from "@/components/dashboard/deadline-timeline";
 import { DecisionCalendar } from "@/components/dashboard/decision-calendar";
 import { DecisionGantt } from "@/components/dashboard/decision-gantt";
+import { TakeTourButton } from "@/components/common/product-tour";
 
 const statusVariantMap: Record<string, "default" | "accent" | "warning" | "error" | "success" | "outline"> = {
   draft: "outline",
@@ -117,13 +118,16 @@ export default function DashboardPage() {
             {t('subtitle')}
           </p>
         </div>
-        <Link
-          href="/decisions/new"
-          className="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-light transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          {t('newDecision')}
-        </Link>
+        <div className="flex items-center gap-3">
+          <TakeTourButton />
+          <Link
+            href="/decisions/new"
+            className="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-light transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            {t('newDecision')}
+          </Link>
+        </div>
       </div>
 
       {/* Stats cards */}

@@ -155,6 +155,12 @@ export default function PricingPage() {
           </div>
           <div className="flex items-center gap-4">
             <Link
+              href="/demo"
+              className="text-sm text-text-secondary hover:text-accent transition-colors"
+            >
+              Live Demo
+            </Link>
+            <Link
               href="/portal"
               className="text-sm text-text-secondary hover:text-accent transition-colors"
             >
@@ -292,25 +298,41 @@ export default function PricingPage() {
                     )}
                   </div>
 
-                  <div className="mt-8">
+                  <div className="mt-8 space-y-2">
                     {isEnterprise ? (
-                      <a
-                        href="mailto:sales@govdecision.com?subject=Enterprise Plan Inquiry"
-                        className="flex w-full items-center justify-center rounded-lg border border-border bg-white px-4 py-3 text-sm font-semibold text-text hover:border-accent hover:shadow-sm transition-all"
-                      >
-                        Contact Sales
-                      </a>
+                      <>
+                        <a
+                          href="mailto:sales@govdecision.com?subject=Enterprise Plan Inquiry"
+                          className="flex w-full items-center justify-center rounded-lg border border-border bg-white px-4 py-3 text-sm font-semibold text-text hover:border-accent hover:shadow-sm transition-all"
+                        >
+                          Contact Sales
+                        </a>
+                        <Link
+                          href="/book-demo"
+                          className="flex w-full items-center justify-center rounded-lg border border-border bg-white px-4 py-2.5 text-sm font-medium text-text-secondary hover:text-accent hover:border-accent transition-all"
+                        >
+                          Book a Demo
+                        </Link>
+                      </>
                     ) : (
-                      <Link
-                        href={`/signup?plan=${plan.id}`}
-                        className={`flex w-full items-center justify-center rounded-lg px-4 py-3 text-sm font-semibold transition-colors ${
-                          isProfessional
-                            ? "bg-accent text-white hover:bg-accent-light"
-                            : "bg-primary text-white hover:bg-primary-light"
-                        }`}
-                      >
-                        Get Started
-                      </Link>
+                      <>
+                        <Link
+                          href={`/signup?plan=${plan.id}`}
+                          className={`flex w-full items-center justify-center rounded-lg px-4 py-3 text-sm font-semibold transition-colors ${
+                            isProfessional
+                              ? "bg-accent text-white hover:bg-accent-light"
+                              : "bg-primary text-white hover:bg-primary-light"
+                          }`}
+                        >
+                          Get Started
+                        </Link>
+                        <Link
+                          href="/demo"
+                          className="flex w-full items-center justify-center rounded-lg border border-border bg-white px-4 py-2.5 text-sm font-medium text-text-secondary hover:text-accent hover:border-accent transition-all"
+                        >
+                          Try Live Demo
+                        </Link>
+                      </>
                     )}
                   </div>
                 </div>

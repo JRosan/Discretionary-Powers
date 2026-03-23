@@ -34,6 +34,7 @@ public class AppDbContext : DbContext
     public DbSet<LoginEvent> LoginEvents => Set<LoginEvent>();
     public DbSet<PlatformAnnouncement> PlatformAnnouncements => Set<PlatformAnnouncement>();
     public DbSet<PlatformConfig> PlatformConfigs => Set<PlatformConfig>();
+    public DbSet<DemoRequest> DemoRequests => Set<DemoRequest>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

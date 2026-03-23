@@ -455,11 +455,32 @@ export const api = {
       }),
     deleteAnnouncement: (id: string) =>
       request<void>(`/super-admin/announcements/${id}`, { method: "DELETE" }),
+    createSandbox: () =>
+      request<Record<string, unknown>>("/super-admin/create-sandbox", { method: "POST" }),
+    resetSandbox: () =>
+      request<Record<string, unknown>>("/super-admin/reset-sandbox", { method: "POST" }),
+    getSandboxStatus: () =>
+      request<{ exists: boolean; organizationId?: string; isActive?: boolean; userCount?: number; decisionCount?: number }>("/super-admin/sandbox-status"),
+    getDemoRequests: (params?: Record<string, unknown>) =>
+      request<{ items: ApiDemoRequest[]; total: number; hasMore: boolean }>(`/super-admin/demo-requests${qs(params)}`),
+    updateDemoRequestStatus: (id: string, status: string) =>
+      request<void>(`/super-admin/demo-requests/${id}/status`, {
+        method: "PUT",
+        body: JSON.stringify({ status }),
+      }),
   },
 
   announcements: {
     getActive: () =>
       request<ApiAnnouncement[]>("/announcements/active"),
+  },
+
+  demoRequests: {
+    submit: (data: Record<string, unknown>) =>
+      request<{ message: string; id: string }>("/demo-requests", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
   },
 };
 
@@ -721,6 +742,20 @@ export interface ApiAnnouncement {
   type: string;
   isActive?: boolean;
   expiresAt: string | null;
+  createdAt: string;
+}
+
+export interface ApiDemoRequest {
+  id: string;
+  name: string;
+  email: string;
+  organization: string;
+  jobTitle: string;
+  country: string;
+  userRange: string | null;
+  message: string | null;
+  preferredDate: string | null;
+  status: string;
   createdAt: string;
 }
 

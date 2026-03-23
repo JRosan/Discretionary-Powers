@@ -29,6 +29,8 @@ const GlobalSearch = dynamic(
 import { api } from "@/lib/api";
 import { OfflineIndicator } from "@/components/common/offline-indicator";
 import { PlatformBanner } from "@/components/common/platform-banner";
+import { DemoBanner } from "@/components/common/demo-banner";
+import { ProductTour } from "@/components/common/product-tour";
 import { TrialBanner } from "@/components/common/trial-banner";
 import { useTranslations } from "@/i18n";
 import { useTenant } from "@/lib/tenant-context";
@@ -77,6 +79,7 @@ const navItemDefs: NavItemDef[] = [
       { labelKey: "health", href: "/super-admin/health" },
       { labelKey: "announcements", href: "/super-admin/announcements" },
       { labelKey: "platformAudit", href: "/super-admin/audit" },
+      { labelKey: "demoRequests", href: "/super-admin/demo-requests" },
       { labelKey: "platformSettings", href: "/super-admin/settings" },
     ],
   },
@@ -188,6 +191,7 @@ export function AppShell({ children }: AppShellProps) {
               return (
                 <div key={item.href}>
                   <button
+                    data-tour={item.labelKey}
                     onClick={() => setOpenMenus((prev) => {
                       const next = new Set(prev);
                       if (next.has(item.href)) next.delete(item.href);
@@ -238,6 +242,7 @@ export function AppShell({ children }: AppShellProps) {
                 key={item.href}
                 href={item.href}
                 aria-current={isActive ? "page" : undefined}
+                data-tour={item.labelKey}
                 className={cn(
                   "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                   isActive
@@ -300,6 +305,7 @@ export function AppShell({ children }: AppShellProps) {
           {/* Search */}
           <button
             type="button"
+            data-tour="search"
             onClick={() => setSearchOpen(true)}
             aria-label="Search"
             className="relative flex h-9 w-64 items-center rounded-md border border-border bg-surface pl-9 pr-3 text-sm text-text-muted hover:border-accent transition-colors"
@@ -316,6 +322,7 @@ export function AppShell({ children }: AppShellProps) {
           <LanguageSwitcher />
 
           {/* Notifications */}
+          <div data-tour="notifications">
           <NotificationBell
             notifications={notifications}
             unreadCount={unreadCount}
@@ -324,6 +331,7 @@ export function AppShell({ children }: AppShellProps) {
             onDelete={handleDelete}
             onRefresh={fetchNotifications}
           />
+          </div>
 
           {/* User avatar */}
           <Avatar size="sm">
@@ -332,6 +340,9 @@ export function AppShell({ children }: AppShellProps) {
             </AvatarFallback>
           </Avatar>
         </header>
+
+        {/* Demo banner (sandbox users) */}
+        <DemoBanner />
 
         {/* Platform announcements */}
         <PlatformBanner />
@@ -345,6 +356,9 @@ export function AppShell({ children }: AppShellProps) {
         {/* Content */}
         <main id="main-content" className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
+
+      {/* Product Tour overlay */}
+      <ProductTour />
     </div>
   );
 }

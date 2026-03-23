@@ -35,6 +35,7 @@
     "compliance": "Compliance",
     "health": "System Health",
     "announcements": "Announcements",
+    "demoRequests": "Demo Requests",
     "signOut": "Sign out"
   },
   "auth": {

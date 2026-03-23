@@ -13,6 +13,7 @@ const navLinks = [
   { label: "Decisions", href: "/portal/decisions" },
   { label: "Ministries", href: "/portal/ministries" },
   { label: "Pricing", href: "/pricing" },
+  { label: "Demo", href: "/demo" },
   { label: "About", href: "/portal/about" },
 ];
 
