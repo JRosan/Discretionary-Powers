@@ -1,4 +1,5 @@
 using DiscretionaryPowers.Infrastructure.Data;
+using static DiscretionaryPowers.Infrastructure.Data.EnumConverter;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -76,7 +77,7 @@ public class ReportsController(AppDbContext db) : ControllerBase
         {
             total,
             overdueCount,
-            byStatus = byStatus.ToDictionary(x => x.Status.ToString(), x => x.Count),
+            byStatus = byStatus.ToDictionary(x => ToSnakeCase(x.Status.ToString()), x => x.Count),
             byMinistry = byMinistry.Select(x => new { name = x.Ministry, count = x.Count }),
             overTime,
             stepTimes = stepTimes.Select(x => new { step = x.Step, avgDays = x.AvgDays })

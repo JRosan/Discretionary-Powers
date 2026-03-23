@@ -56,7 +56,7 @@ export const api = {
         body: JSON.stringify({ email, password }),
       }),
     getCurrentUser: () => request<ApiUser>("/auth/me"),
-    logout: () => request<void>("/auth/logout", { method: "POST" }),
+    logout: () => Promise.resolve(),
   },
 
   mfa: {
@@ -127,7 +127,7 @@ export const api = {
         body: JSON.stringify(data),
       }),
     confirmUpload: (id: string, data: Record<string, unknown>) =>
-      request<void>(`/documents/${id}/confirm`, {
+      request<void>(`/documents/${id}/confirm-upload`, {
         method: "POST",
         body: JSON.stringify(data),
       }),
@@ -169,9 +169,9 @@ export const api = {
     getUnreadCount: () =>
       request<{ count: number }>("/notifications/unread-count"),
     markRead: (id: string) =>
-      request<void>(`/notifications/${id}/read`, { method: "POST" }),
+      request<void>(`/notifications/${id}/read`, { method: "PUT" }),
     markAllRead: () =>
-      request<void>("/notifications/read-all", { method: "POST" }),
+      request<void>("/notifications/read-all", { method: "PUT" }),
     delete: (id: string) =>
       request<void>(`/notifications/${id}`, { method: "DELETE" }),
   },
@@ -214,7 +214,7 @@ export const api = {
       request<ApiAuditEntry[]>(`/audit/decisions/${decisionId}${qs(params)}`),
     getAll: (params?: Record<string, unknown>) =>
       request<ApiAuditEntry[]>(`/audit${qs(params)}`),
-    verifyChain: () => request<{ valid: boolean; details: string }>("/audit/verify"),
+    verifyChain: () => request<{ valid: boolean; details: string }>("/audit/verify-chain", { method: "POST" }),
   },
 
   reports: {
