@@ -50,7 +50,9 @@ function VerifyEmailPage() {
       <div className="w-full max-w-md">
         <div className="rounded-xl border border-border bg-background shadow-sm overflow-hidden">
           <div className="px-8 pt-8 pb-2 text-center">
-            <img src="/images/logos/crest-bw.png" alt="GovDecision logo" className="mx-auto mb-4 h-16 w-auto" />
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10">
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+            </div>
           </div>
 
           <div className="px-8 py-8 text-center space-y-4">

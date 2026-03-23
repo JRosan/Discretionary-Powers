@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
-import { Check, Building2, User, CreditCard } from "lucide-react";
+import { Check, Building2, User, CreditCard, Shield } from "lucide-react";
 
 export default function SignupPageWrapper() {
   return (
@@ -133,11 +133,13 @@ function SignupPage() {
 
   if (success) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-surface px-4 py-12 h-screen overflow-y-auto">
-        <div className="w-full max-w-md">
+      <div className="flex min-h-screen items-center justify-center bg-background h-screen overflow-y-auto">
+        <div className="w-full max-w-md px-4">
           <div className="rounded-xl border border-border bg-background shadow-sm overflow-hidden">
             <div className="px-8 pt-8 pb-2 text-center">
-              <img src="/images/logos/crest-bw.png" alt="GovDecision logo" className="mx-auto mb-4 h-16 w-auto" />
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-accent/10">
+                <Check className="h-7 w-7 text-accent" />
+              </div>
             </div>
             <div className="px-8 py-8 text-center space-y-4">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-accent/10">
@@ -163,15 +165,45 @@ function SignupPage() {
     );
   }
 
+  const stepGuidance = [
+    {
+      title: "Set up your organization",
+      points: [
+        "Your organization name will appear on all official documents and the public transparency portal",
+        "The URL slug is used to create your unique portal address",
+        "You can change these settings later from the admin panel",
+      ],
+    },
+    {
+      title: "Create your admin account",
+      points: [
+        "This account will have Permanent Secretary privileges — full administrative access",
+        "Use a secure password (minimum 8 characters)",
+        "You can invite more team members after setup",
+      ],
+    },
+    {
+      title: "Choose your plan",
+      points: [
+        "All plans include a 14-day free trial — no payment required today",
+        "You can upgrade or downgrade at any time",
+        "Enterprise plans include dedicated support and SLA guarantees",
+      ],
+    },
+  ];
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-surface px-4 py-12 h-screen overflow-y-auto">
-      <div className="w-full max-w-lg">
-        <div className="rounded-xl border border-border bg-background shadow-sm overflow-hidden">
-          {/* Logo */}
-          <div className="px-8 pt-8 pb-2 text-center">
-            <img src="/images/logos/crest-bw.png" alt="GovDecision logo" className="mx-auto mb-4 h-16 w-auto" />
-            <h1 className="text-lg font-semibold text-text">Create your organization</h1>
-            <p className="mt-0.5 text-xs text-text-muted">GovDecision - Discretionary Powers Management</p>
+    <div className="flex h-screen overflow-hidden">
+      {/* Left: Form */}
+      <div className="flex-1 overflow-y-auto bg-background">
+        <div className="mx-auto max-w-lg px-8 py-12">
+          {/* Logo + header */}
+          <div className="mb-8">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+              <Shield className="h-6 w-6 text-primary" />
+            </div>
+            <h1 className="text-2xl font-bold text-text">Create your organization</h1>
+            <p className="mt-1 text-sm text-text-secondary">Start your 14-day free trial. No payment required.</p>
           </div>
 
           {/* Step Indicator */}
@@ -391,12 +423,81 @@ function SignupPage() {
           </div>
 
           {/* Footer */}
-          <div className="border-t border-border px-8 py-4 text-center bg-surface/50">
+          <div className="pt-6 text-center">
             <p className="text-xs text-text-muted">
               Already have an account?{" "}
               <Link href="/login" className="text-accent hover:underline font-medium">
                 Sign in
               </Link>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Right: Branding + Guidance */}
+      <div
+        className="hidden lg:flex lg:w-[480px] flex-col text-white relative"
+        style={{
+          backgroundImage: "url('/images/hero-bg.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        <div className="absolute inset-0 bg-primary/80" />
+
+        <div className="relative flex-1 flex flex-col justify-between p-10">
+          {/* Top: Branding */}
+          <div>
+            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-white/10">
+              <Shield className="h-6 w-6 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold leading-tight mb-2">
+              Transparent governance starts here
+            </h2>
+            <p className="text-sm text-white/70">
+              Join governments worldwide using GovDecision to manage discretionary powers with accountability, transparency, and compliance.
+            </p>
+          </div>
+
+          {/* Middle: Step-specific guidance */}
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 my-8">
+            <h3 className="text-sm font-semibold mb-3">
+              Step {step}: {stepGuidance[step - 1].title}
+            </h3>
+            <ul className="space-y-2">
+              {stepGuidance[step - 1].points.map((point, i) => (
+                <li key={i} className="flex items-start gap-2 text-xs text-white/80">
+                  <Check className="h-3.5 w-3.5 mt-0.5 shrink-0 text-accent" />
+                  {point}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Bottom: Trust signals */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-6 text-xs text-white/60">
+              <div className="flex items-center gap-1.5">
+                <Check className="h-3.5 w-3.5 text-accent" />
+                14-day free trial
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Check className="h-3.5 w-3.5 text-accent" />
+                No credit card required
+              </div>
+            </div>
+            <div className="flex items-center gap-6 text-xs text-white/60">
+              <div className="flex items-center gap-1.5">
+                <Check className="h-3.5 w-3.5 text-accent" />
+                WCAG 2.2 AA accessible
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Check className="h-3.5 w-3.5 text-accent" />
+                SHA-256 audit trail
+              </div>
+            </div>
+            <p className="text-[10px] text-white/40 pt-2">
+              Trusted by governments worldwide. Built for accountability, transparency, and compliance with administrative law.
             </p>
           </div>
         </div>
