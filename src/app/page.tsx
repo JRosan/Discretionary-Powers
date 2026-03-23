@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background h-screen overflow-y-auto">
       <header className="bg-primary text-white">
         <div className="mx-auto max-w-7xl px-6 py-4">
           <p className="text-sm font-medium tracking-wide uppercase">

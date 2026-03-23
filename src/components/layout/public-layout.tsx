@@ -20,7 +20,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
   const pathname = usePathname();
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col h-screen overflow-y-auto">
       {/* Top bar */}
       <header className="bg-primary text-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

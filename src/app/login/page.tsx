@@ -118,7 +118,7 @@ function LoginPage() {
 
   if (mfaToken) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-surface px-4 py-12">
+      <div className="flex min-h-screen items-center justify-center bg-surface px-4 py-12 h-screen overflow-y-auto">
         <div className="w-full max-w-lg space-y-6">
           <div className="overflow-hidden rounded-lg border border-border bg-background shadow-sm">
             <div className="bg-primary px-6 py-8 text-center text-white">
@@ -181,7 +181,7 @@ function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-surface px-4 py-12">
+    <div className="flex min-h-screen items-center justify-center bg-surface px-4 py-12 h-screen overflow-y-auto">
       <div className="w-full max-w-lg space-y-6">
         {/* Login Card */}
         <div className="overflow-hidden rounded-lg border border-border bg-background shadow-sm">
