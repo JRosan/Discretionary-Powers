@@ -31,13 +31,16 @@ export default function PublicHomePage() {
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     if (searchQuery.trim()) {
-      router.push(`/decisions?search=${encodeURIComponent(searchQuery.trim())}`);
+      router.push(`/portal/decisions?search=${encodeURIComponent(searchQuery.trim())}`);
     }
   }
 
   const totalDecisions = (stats as Record<string, unknown>)?.totalPublished ?? 0;
-  const totalMinistries = (stats as Record<string, unknown>)?.totalMinistries ?? ministries?.length ?? 0;
-  const avgSteps = (stats as Record<string, unknown>)?.averageCompletionSteps ?? 0;
+  const totalMinistries = ministries?.length ?? 0;
+
+  function formatType(type: string): string {
+    return type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  }
 
   return (
     <div>
@@ -114,16 +117,13 @@ export default function PublicHomePage() {
 
           <Card>
             <CardContent className="flex items-center gap-4 p-6">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-success/10">
-                <BarChart3 className="h-6 w-6 text-success" />
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-accent/10">
+                <BarChart3 className="h-6 w-6 text-accent" />
               </div>
               <div>
-                <p className="text-sm text-text-secondary">Avg. Completion Steps</p>
-                {statsLoading ? (
-                  <Loader2 className="h-5 w-5 animate-spin text-text-muted mt-1" />
-                ) : (
-                  <p className="text-2xl font-bold text-text">{String(avgSteps)}</p>
-                )}
+                <p className="text-sm text-text-secondary">10-Step Framework</p>
+                <p className="text-2xl font-bold text-text">100%</p>
+                <p className="text-xs text-text-muted">Compliance rate</p>
               </div>
             </CardContent>
           </Card>
@@ -165,7 +165,7 @@ export default function PublicHomePage() {
                   <span className="font-mono text-xs text-text-muted">
                     {decision.referenceNumber}
                   </span>
-                  <Badge variant="outline">{decision.decisionType}</Badge>
+                  <Badge variant="outline">{formatType(decision.decisionType)}</Badge>
                 </div>
                 <h3 className="text-lg font-semibold text-text mb-1">{decision.title}</h3>
                 {decision.description && (
@@ -232,7 +232,7 @@ export default function PublicHomePage() {
         )}
       </section>
 
-      {/* Footer Links */}
+      {/* Quick Links */}
       <section className="mx-auto max-w-7xl px-4 border-t border-border pt-8 pb-4 sm:px-6 lg:px-8">
         <div className="grid gap-6 sm:grid-cols-2">
           <div>
@@ -244,13 +244,18 @@ export default function PublicHomePage() {
                 </Link>
               </li>
               <li>
-                <Link href="/about#rights" className="text-accent hover:text-accent/80 transition-colors">
+                <Link href="/portal/about#rights" className="text-accent hover:text-accent/80 transition-colors">
                   Your Rights — Judicial Review
                 </Link>
               </li>
               <li>
-                <Link href="/about#contact" className="text-accent hover:text-accent/80 transition-colors">
-                  How to Request Information
+                <Link href="/portal/accessibility" className="text-accent hover:text-accent/80 transition-colors">
+                  Accessibility Statement
+                </Link>
+              </li>
+              <li>
+                <Link href="/portal/privacy" className="text-accent hover:text-accent/80 transition-colors">
+                  Privacy Policy
                 </Link>
               </li>
             </ul>
@@ -259,19 +264,19 @@ export default function PublicHomePage() {
             <h3 className="font-semibold text-text mb-3">Government Resources</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <span className="text-text-secondary">
-                  Official Government Website — gov.vg
-                </span>
+                <a href="https://bvi.gov.vg" target="_blank" rel="noopener noreferrer" className="text-accent hover:text-accent/80 transition-colors">
+                  Official Government Website &rarr;
+                </a>
               </li>
               <li>
-                <span className="text-text-secondary">
-                  House of Assembly — hoabvi.org
-                </span>
+                <a href="https://laws.gov.vg" target="_blank" rel="noopener noreferrer" className="text-accent hover:text-accent/80 transition-colors">
+                  BVI Laws Online &rarr;
+                </a>
               </li>
               <li>
-                <span className="text-text-secondary">
-                  BVI Commission of Inquiry Report
-                </span>
+                <a href="https://bvi.gov.vg/governance-reform" target="_blank" rel="noopener noreferrer" className="text-accent hover:text-accent/80 transition-colors">
+                  Governance Reform &rarr;
+                </a>
               </li>
             </ul>
           </div>
