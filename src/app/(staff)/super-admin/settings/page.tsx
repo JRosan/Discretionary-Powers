@@ -179,7 +179,7 @@ export default function PlatformSettingsPage() {
   const getVal = (key: string) => values[key] ?? "";
   const isSecret = (key: string) => !!secretMeta[key];
   const getDesc = (key: string) => {
-    for (const cat of categories) {
+    for (const cat of (categories ?? [])) {
       const s = cat.settings.find((s) => s.key === key);
       if (s) return s.description;
     }
