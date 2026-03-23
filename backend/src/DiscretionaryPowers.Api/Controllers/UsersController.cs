@@ -1,6 +1,7 @@
 using DiscretionaryPowers.Api.Auth;
 using DiscretionaryPowers.Application.DTOs.Users;
 using DiscretionaryPowers.Domain.Enums;
+using static DiscretionaryPowers.Infrastructure.Data.EnumConverter;
 using DiscretionaryPowers.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -35,7 +36,7 @@ public class UsersController(AppDbContext db) : ControllerBase
             Id = u.Id,
             Email = u.Email,
             Name = u.Name,
-            Role = u.Role.ToString().ToLowerInvariant(),
+            Role = ToSnakeCase(u.Role.ToString()),
             MinistryId = u.MinistryId,
             Active = u.Active,
             MinistryName = u.Ministry?.Name,
@@ -58,7 +59,7 @@ public class UsersController(AppDbContext db) : ControllerBase
             Id = user.Id,
             Email = user.Email,
             Name = user.Name,
-            Role = user.Role.ToString().ToLowerInvariant(),
+            Role = ToSnakeCase(user.Role.ToString()),
             MinistryId = user.MinistryId,
             Active = user.Active,
             MinistryName = user.Ministry?.Name,
@@ -102,7 +103,7 @@ public class UsersController(AppDbContext db) : ControllerBase
             Id = user.Id,
             Email = user.Email,
             Name = user.Name,
-            Role = user.Role.ToString().ToLowerInvariant(),
+            Role = ToSnakeCase(user.Role.ToString()),
             MinistryId = user.MinistryId,
             Active = user.Active,
             CreatedAt = user.CreatedAt,
@@ -132,7 +133,7 @@ public class UsersController(AppDbContext db) : ControllerBase
             Id = user.Id,
             Email = user.Email,
             Name = user.Name,
-            Role = user.Role.ToString().ToLowerInvariant(),
+            Role = ToSnakeCase(user.Role.ToString()),
             MinistryId = user.MinistryId,
             Active = user.Active,
             UpdatedAt = user.UpdatedAt,

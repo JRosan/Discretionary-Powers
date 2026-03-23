@@ -3,6 +3,7 @@ using DiscretionaryPowers.Application.DTOs.Auth;
 using DiscretionaryPowers.Application.DTOs.Users;
 using DiscretionaryPowers.Domain.Auth;
 using DiscretionaryPowers.Infrastructure.Data;
+using static DiscretionaryPowers.Infrastructure.Data.EnumConverter;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -51,7 +52,7 @@ public class AuthController(AppDbContext db, JwtTokenService jwtService, ICurren
                 Id = user.Id,
                 Email = user.Email,
                 Name = user.Name,
-                Role = user.Role.ToString().ToLowerInvariant(),
+                Role = ToSnakeCase(user.Role.ToString()),
                 MinistryId = user.MinistryId,
                 Active = user.Active,
                 MinistryName = user.Ministry?.Name,
@@ -70,7 +71,7 @@ public class AuthController(AppDbContext db, JwtTokenService jwtService, ICurren
             Id = currentUser.UserId,
             Email = currentUser.Email,
             Name = currentUser.Name,
-            Role = currentUser.Role.ToString().ToLowerInvariant(),
+            Role = ToSnakeCase(currentUser.Role.ToString()),
             MinistryId = currentUser.MinistryId,
         });
     }

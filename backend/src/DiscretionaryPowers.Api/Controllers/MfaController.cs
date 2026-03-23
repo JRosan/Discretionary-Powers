@@ -1,6 +1,7 @@
 using DiscretionaryPowers.Api.Auth;
 using DiscretionaryPowers.Application.DTOs.Auth;
 using DiscretionaryPowers.Application.DTOs.Users;
+using static DiscretionaryPowers.Infrastructure.Data.EnumConverter;
 using DiscretionaryPowers.Domain.Auth;
 using DiscretionaryPowers.Infrastructure.Data;
 using DiscretionaryPowers.Infrastructure.Services;
@@ -95,7 +96,7 @@ public class MfaController(AppDbContext db, MfaService mfaService, JwtTokenServi
                 Id = user.Id,
                 Email = user.Email,
                 Name = user.Name,
-                Role = user.Role.ToString().ToLowerInvariant(),
+                Role = ToSnakeCase(user.Role.ToString()),
                 MinistryId = user.MinistryId,
                 Active = user.Active,
                 MinistryName = user.Ministry?.Name,
