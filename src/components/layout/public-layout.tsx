@@ -34,6 +34,20 @@ export function PublicLayout({ children }: PublicLayoutProps) {
                 Transparency Initiative
               </span>
             </Link>
+            <div className="flex items-center gap-3">
+              <Link
+                href="/"
+                className="text-xs text-white/60 hover:text-white transition-colors"
+              >
+                Home
+              </Link>
+              <Link
+                href="/login"
+                className="rounded-md bg-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/20 transition-colors"
+              >
+                Staff Sign In
+              </Link>
+            </div>
           </div>
         </div>
 
