@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, SkipForward } from "lucide-react";
 import { DECISION_STEPS } from "@/lib/constants";
 import { api } from "@/lib/api";
@@ -107,6 +107,18 @@ export default function StepPage() {
   const step = DECISION_STEPS.find((s) => s.number === stepNumber);
   const fields = stepFields[stepNumber] ?? [];
   const requiredFields = fields.filter((f) => f.required);
+
+  // Fetch the decision to get existing step data
+  const { data: decision } = useQuery({
+    queryKey: ["decision", decisionId],
+    queryFn: () => api.decisions.getById(decisionId),
+    enabled: !!decisionId,
+  });
+
+  const stepData = decision?.steps?.find((s: { stepNumber: number }) => s.stepNumber === stepNumber);
+  const savedData = (stepData?.data ?? {}) as Record<string, unknown>;
+  const savedNotes = stepData?.notes ?? "";
+  const isCompleted = stepData?.status === "completed" || stepData?.status === "skipped_with_reason";
 
   const advanceStepMutation = useMutation({
     mutationFn: (data: Record<string, unknown>) =>
@@ -295,6 +307,21 @@ export default function StepPage() {
         <p className="mt-1 text-sm text-text-secondary">{step.description}</p>
       </div>
 
+      {/* Completed/Skipped banner */}
+      {isCompleted && (
+        <div className={`rounded-lg border p-4 text-sm flex items-center gap-2 ${
+          stepData?.status === "skipped_with_reason"
+            ? "bg-warning/10 border-warning/20 text-warning-dark"
+            : "bg-accent/10 border-accent/20 text-accent-dark"
+        }`}>
+          <CheckCircle2 className="h-4 w-4 shrink-0" />
+          {stepData?.status === "skipped_with_reason"
+            ? "This step was skipped."
+            : `This step was completed${stepData?.completedAt ? ` on ${new Date(stepData.completedAt).toLocaleDateString()}` : ""}.`}
+          <span className="text-xs ml-auto text-text-muted">Read-only view</span>
+        </div>
+      )}
+
       {/* Success banner */}
       {successMessage && (
         <div className="rounded-lg bg-accent/10 border border-accent/20 p-4 text-sm text-accent flex items-center gap-2 transition-opacity duration-300">
@@ -321,10 +348,12 @@ export default function StepPage() {
             <div key={field.name}>
               {field.type === "checkbox" ? (
                 <div>
-                  <label className="flex items-start gap-3 cursor-pointer">
+                  <label className={`flex items-start gap-3 ${isCompleted ? "" : "cursor-pointer"}`}>
                     <input
                       type="checkbox"
                       name={field.name}
+                      defaultChecked={!!savedData[field.name]}
+                      disabled={isCompleted}
                       onChange={() => {
                         clearFieldError(field.name);
                         // Defer completeness check to after state update
@@ -354,6 +383,8 @@ export default function StepPage() {
                   <select
                     id={field.name}
                     name={field.name}
+                    defaultValue={savedData[field.name] as string ?? ""}
+                    disabled={isCompleted}
                     onChange={() => clearFieldError(field.name)}
                     className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-1 ${
                       fieldErrors[field.name]
@@ -385,6 +416,8 @@ export default function StepPage() {
                     name={field.name}
                     rows={4}
                     placeholder={field.placeholder}
+                    defaultValue={savedData[field.name] as string ?? ""}
+                    readOnly={isCompleted}
                     onInput={() => clearFieldError(field.name)}
                     className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-1 resize-none ${
                       fieldErrors[field.name]
@@ -409,6 +442,8 @@ export default function StepPage() {
                     name={field.name}
                     type="text"
                     placeholder={field.placeholder}
+                    defaultValue={savedData[field.name] as string ?? ""}
+                    readOnly={isCompleted}
                     onInput={() => clearFieldError(field.name)}
                     className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-1 ${
                       fieldErrors[field.name]
@@ -437,6 +472,8 @@ export default function StepPage() {
             name="notes"
             rows={3}
             placeholder="Any additional notes or observations for this step..."
+            defaultValue={savedNotes}
+            readOnly={isCompleted}
             className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-text placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent resize-none"
           />
         </div>
@@ -444,7 +481,7 @@ export default function StepPage() {
         {/* Actions */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {stepNumber > 1 && (
+            {stepNumber > 1 && !isCompleted && (
               <Link
                 href={`/decisions/${decisionId}/step/${stepNumber - 1}`}
                 className="inline-flex items-center gap-1 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-text-secondary hover:bg-surface transition-colors"
@@ -453,21 +490,32 @@ export default function StepPage() {
                 Previous
               </Link>
             )}
-            <button
-              type="button"
-              onClick={() => setShowSkipDialog(true)}
-              disabled={isPending}
-              className="inline-flex items-center gap-1 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-text-muted hover:bg-surface transition-colors disabled:opacity-50"
-            >
-              <SkipForward className="h-4 w-4" />
-              Skip
-            </button>
+            {!isCompleted && (
+              <button
+                type="button"
+                onClick={() => setShowSkipDialog(true)}
+                disabled={isPending}
+                className="inline-flex items-center gap-1 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-text-muted hover:bg-surface transition-colors disabled:opacity-50"
+              >
+                <SkipForward className="h-4 w-4" />
+                Skip
+              </button>
+            )}
           </div>
-          <button
-            type="submit"
-            disabled={isPending || (hasRequiredFields && !isFormComplete)}
-            className="inline-flex items-center gap-2 rounded-lg bg-accent px-6 py-2.5 text-sm font-medium text-white hover:bg-accent-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+          {isCompleted ? (
+            <Link
+              href={stepNumber < 10 ? `/decisions/${decisionId}/step/${stepNumber + 1}` : `/decisions/${decisionId}`}
+              className="inline-flex items-center gap-2 rounded-lg bg-accent px-6 py-2.5 text-sm font-medium text-white hover:bg-accent-dark transition-colors"
+            >
+              {stepNumber < 10 ? "Next Step" : "Back to Decision"}
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          ) : (
+            <button
+              type="submit"
+              disabled={isPending || (hasRequiredFields && !isFormComplete)}
+              className="inline-flex items-center gap-2 rounded-lg bg-accent px-6 py-2.5 text-sm font-medium text-white hover:bg-accent-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
             {isPending ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -485,6 +533,7 @@ export default function StepPage() {
               </>
             )}
           </button>
+          )}
         </div>
       </form>
 
