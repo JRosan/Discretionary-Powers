@@ -15,6 +15,8 @@ public class PlaceToPayService
     private readonly string _endpoint;
     private readonly ILogger<PlaceToPayService> _logger;
 
+    private readonly bool _isMockMode;
+
     public PlaceToPayService(
         IConfiguration configuration,
         IHttpClientFactory httpClientFactory,
@@ -25,7 +27,13 @@ public class PlaceToPayService
         _secretKey = configuration["PlaceToPay:SecretKey"] ?? "";
         _endpoint = configuration["PlaceToPay:Endpoint"] ?? "https://checkout-test.placetopay.com";
         _logger = logger;
+        _isMockMode = string.IsNullOrEmpty(_login) || string.IsNullOrEmpty(_secretKey);
+
+        if (_isMockMode)
+            _logger.LogWarning("PlaceToPay credentials not configured — running in MOCK payment mode");
     }
+
+    public bool IsMockMode => _isMockMode;
 
     private object BuildAuth()
     {
@@ -52,6 +60,16 @@ public class PlaceToPayService
         string returnUrl, string ipAddress, string? userAgent,
         string? buyerName = null, string? buyerEmail = null)
     {
+        if (_isMockMode)
+        {
+            var mockRequestId = $"mock_{Guid.NewGuid():N}";
+            // In mock mode, redirect back to the callback URL with the mock request ID
+            var separator = returnUrl.Contains('?') ? "&" : "?";
+            var mockUrl = $"{returnUrl}{separator}requestId={mockRequestId}";
+            _logger.LogInformation("MOCK payment session created: {RequestId} for {Amount} {Currency}", mockRequestId, amount, currency);
+            return (mockUrl, mockRequestId, null);
+        }
+
         var body = new Dictionary<string, object?>
         {
             ["auth"] = BuildAuth(),
@@ -104,6 +122,18 @@ public class PlaceToPayService
     /// </summary>
     public async Task<PlaceToPaySessionStatus> GetSessionStatus(string requestId)
     {
+        if (_isMockMode || requestId.StartsWith("mock_"))
+        {
+            _logger.LogInformation("MOCK payment status check: {RequestId} → APPROVED", requestId);
+            return new PlaceToPaySessionStatus
+            {
+                Status = "APPROVED",
+                Reason = "00",
+                Message = "Mock payment approved",
+                Date = DateTime.UtcNow.ToString("o"),
+            };
+        }
+
         try
         {
             var body = new { auth = BuildAuth() };
