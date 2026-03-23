@@ -12,6 +12,7 @@ import {
   ChevronDown,
   Search,
   LogOut,
+  KeyRound,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -229,6 +230,14 @@ export function AppShell({ children }: AppShellProps) {
                 {user?.role ? user.role.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : ""}
               </p>
             </div>
+            <Link
+              href="/admin/change-password"
+              className="text-white/60 hover:text-white transition-colors"
+              title="Change Password"
+              aria-label="Change Password"
+            >
+              <KeyRound className="h-4 w-4" />
+            </Link>
             <button
               onClick={logout}
               className="text-white/60 hover:text-white transition-colors"

@@ -13,6 +13,8 @@ public class User
     public bool MfaEnabled { get; set; }
     public string? MfaSecret { get; set; }
     public bool Active { get; set; } = true;
+    public string? PasswordResetToken { get; set; }
+    public DateTime? PasswordResetExpiry { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 

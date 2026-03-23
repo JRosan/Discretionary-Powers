@@ -35,7 +35,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .getCurrentUser()
       .then(setUser)
       .catch(() => {
+        const hadToken = !!localStorage.getItem("auth_token");
         localStorage.removeItem("auth_token");
+        document.cookie = "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        if (hadToken) {
+          window.location.href = "/session-expired";
+        }
       })
       .finally(() => setIsLoading(false));
   }, []);

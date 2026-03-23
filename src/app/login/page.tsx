@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -222,15 +223,22 @@ function LoginPage() {
               autoComplete="email"
             />
 
-            <Input
-              label={tAuth("password")}
-              type="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-            />
+            <div>
+              <Input
+                label={tAuth("password")}
+                type="password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+              />
+              <div className="mt-1 text-right">
+                <Link href="/forgot-password" className="text-xs text-accent hover:underline">
+                  Forgot your password?
+                </Link>
+              </div>
+            </div>
 
             <Button
               type="submit"

@@ -75,4 +75,65 @@ public class AuthController(AppDbContext db, JwtTokenService jwtService, ICurren
             MinistryId = currentUser.MinistryId,
         });
     }
+
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    {
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+
+        if (user is not null)
+        {
+            user.PasswordResetToken = Guid.NewGuid().ToString();
+            user.PasswordResetExpiry = DateTime.UtcNow.AddHours(1);
+            await db.SaveChangesAsync();
+
+            // In production, send email with the reset link containing the token.
+            // For now, log it for development purposes.
+            var logger = HttpContext.RequestServices.GetRequiredService<ILogger<AuthController>>();
+            logger.LogInformation("Password reset token for {Email}: {Token}", user.Email, user.PasswordResetToken);
+        }
+
+        // Always return 200 to avoid revealing whether the email exists
+        return Ok(new { message = "If an account exists with that email, you will receive a password reset link." });
+    }
+
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+    {
+        var user = await db.Users.FirstOrDefaultAsync(u =>
+            u.PasswordResetToken == request.Token &&
+            u.PasswordResetExpiry > DateTime.UtcNow);
+
+        if (user is null)
+            return BadRequest(new { message = "Invalid or expired reset link." });
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+        user.PasswordResetToken = null;
+        user.PasswordResetExpiry = null;
+        user.UpdatedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync();
+
+        return Ok(new { message = "Password has been reset successfully." });
+    }
+
+    [HttpPost("change-password")]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+    {
+        var user = await db.Users.FindAsync(currentUser.UserId);
+
+        if (user is null || user.PasswordHash is null)
+            return BadRequest(new { message = "User not found." });
+
+        if (!BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.PasswordHash))
+            return BadRequest(new { message = "Current password is incorrect." });
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+        user.UpdatedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync();
+
+        return Ok(new { message = "Password changed successfully." });
+    }
 }

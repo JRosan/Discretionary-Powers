@@ -26,6 +26,8 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.MfaEnabled).HasColumnName("mfa_enabled").HasDefaultValue(false);
         builder.Property(u => u.MfaSecret).HasColumnName("mfa_secret");
         builder.Property(u => u.Active).HasColumnName("active").HasDefaultValue(true);
+        builder.Property(u => u.PasswordResetToken).HasColumnName("password_reset_token");
+        builder.Property(u => u.PasswordResetExpiry).HasColumnName("password_reset_expiry");
         builder.Property(u => u.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
         builder.Property(u => u.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
 
