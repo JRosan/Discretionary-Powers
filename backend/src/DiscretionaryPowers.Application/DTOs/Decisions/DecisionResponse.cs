@@ -18,6 +18,7 @@ public class DecisionResponse
     public bool IsPublic { get; set; }
     public bool JudicialReviewFlag { get; set; }
     public DateTime? Deadline { get; set; }
+    public DateTime? PublicationDeadline { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public List<DecisionStepResponse> Steps { get; set; } = [];

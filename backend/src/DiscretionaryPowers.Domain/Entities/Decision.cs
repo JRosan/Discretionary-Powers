@@ -19,6 +19,7 @@ public class Decision
     public bool JudicialReviewFlag { get; set; }
     public DateTime? Deadline { get; set; }
     public JsonDocument? Metadata { get; set; }
+    public DateTime? PublicationDeadline { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 

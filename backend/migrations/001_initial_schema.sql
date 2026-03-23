@@ -118,6 +118,7 @@ CREATE TABLE decisions (
     is_public            boolean         NOT NULL DEFAULT false,
     judicial_review_flag boolean         NOT NULL DEFAULT false,
     deadline             timestamptz,
+    publication_deadline timestamptz,
     metadata             jsonb,
     created_at           timestamptz     NOT NULL DEFAULT now(),
     updated_at           timestamptz     NOT NULL DEFAULT now()

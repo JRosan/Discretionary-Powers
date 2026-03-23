@@ -52,6 +52,18 @@ public class DecisionService(
             UpdatedAt = DateTime.UtcNow,
         };
 
+        decision.PublicationDeadline = decision.DecisionType switch
+        {
+            DecisionType.Licensing => decision.CreatedAt.AddDays(14),
+            DecisionType.Enforcement => decision.CreatedAt.AddDays(14),
+            DecisionType.Regulatory => decision.CreatedAt.AddDays(30),
+            DecisionType.Planning => decision.CreatedAt.AddDays(30),
+            DecisionType.Financial => decision.CreatedAt.AddDays(30),
+            DecisionType.Appointment => decision.CreatedAt.AddDays(21),
+            DecisionType.Policy => decision.CreatedAt.AddDays(60),
+            _ => decision.CreatedAt.AddDays(30),
+        };
+
         db.Decisions.Add(decision);
 
         for (var i = 1; i <= 10; i++)
@@ -397,6 +409,7 @@ public class DecisionService(
             IsPublic = d.IsPublic,
             JudicialReviewFlag = d.JudicialReviewFlag,
             Deadline = d.Deadline,
+            PublicationDeadline = d.PublicationDeadline,
             CreatedAt = d.CreatedAt,
             UpdatedAt = d.UpdatedAt,
             Steps = steps.Select(s => new DecisionStepResponse

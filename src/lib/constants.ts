@@ -1,14 +1,14 @@
 export const DECISION_STEPS = [
-  { number: 1, name: "Confirm Authority", description: "Verify the legal basis and scope of the discretionary power being exercised." },
-  { number: 2, name: "Follow Procedures", description: "Identify and follow all required statutory and administrative procedures." },
-  { number: 3, name: "Gather Information", description: "Collect all relevant facts, data, and evidence needed for the decision." },
-  { number: 4, name: "Evaluate Evidence", description: "Assess the quality, reliability, and relevance of all gathered evidence." },
-  { number: 5, name: "Apply Standard of Proof", description: "Apply the correct standard of proof appropriate to the type of decision." },
-  { number: 6, name: "Act Fairly Without Bias", description: "Ensure the decision-maker has no conflict of interest and acts impartially." },
-  { number: 7, name: "Ensure Procedural Fairness", description: "Give affected parties the right to be heard and to respond to evidence." },
-  { number: 8, name: "Consider Merits", description: "Weigh all relevant factors and consider the merits of each case individually." },
-  { number: 9, name: "Communicate Outcome", description: "Clearly communicate the decision and provide reasons to affected parties." },
-  { number: 10, name: "Record and Maintain", description: "Document the decision, reasons, and all supporting materials for the record." },
+  { number: 1, name: "Confirm Authority", description: "Ensure you have legal power to act. Identify the specific legislation, regulation, or constitutional provision that grants the discretionary power. If the power is delegated, confirm the chain of delegation." },
+  { number: 2, name: "Follow Procedures", description: "Comply with all statutory and administrative requirements. Identify every procedural step mandated by law and confirm each has been followed before proceeding." },
+  { number: 3, name: "Gather Information", description: "Collect all relevant facts and supporting documents. Consult all available sources of information and identify any gaps that need to be addressed." },
+  { number: 4, name: "Evaluate Evidence", description: "Assess key facts carefully and objectively. Consider the quality, reliability, and relevance of all evidence. Document any contradictory evidence and how it was weighed." },
+  { number: 5, name: "Apply Correct Standard", description: "Decide on the balance of probabilities unless a higher standard is required by law. Document which standard was applied and why it is appropriate for this type of decision." },
+  { number: 6, name: "Act Fairly", description: "Avoid conflicts of interest or improper influence. Declare any personal interest in the matter. Ensure no bias, predetermination, or external pressure has influenced the decision." },
+  { number: 7, name: "Ensure Procedural Fairness", description: "Allow affected persons the right to be heard. Notify all affected parties, provide them opportunity to make representations, and consider all responses received before deciding." },
+  { number: 8, name: "Consider Individual Merits", description: "Base decisions on evidence, not precedent alone. Weigh all relevant factors for this specific case. Consider alternatives and document the reasoning for the chosen course of action." },
+  { number: 9, name: "Communicate Outcome", description: "Inform all parties and explain reasons for the decision. Provide clear written communication including the decision reached, the reasons for it, and any right of appeal." },
+  { number: 10, name: "Record Decisions", description: "Document reasons and deviations from policy. Create a complete record of the decision including all supporting materials, the reasoning process, and any departures from standard policy with justification." },
 ] as const;
 
 export const USER_ROLES = {

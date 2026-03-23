@@ -69,7 +69,11 @@ export default function AuditTrailPage() {
               Complete history of all actions taken on this decision
             </p>
           </div>
-          <Button variant="outline" size="sm">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/decisions/${id}/export?format=json`, '_blank')}
+          >
             <Download className="h-4 w-4" />
             Export
           </Button>

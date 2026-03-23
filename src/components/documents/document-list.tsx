@@ -44,6 +44,7 @@ export function DocumentList({ decisionId }: DocumentListProps) {
   const [deleteTarget, setDeleteTarget] = useState<ApiDocument | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [redactTarget, setRedactTarget] = useState<ApiDocument | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchDocuments = useCallback(async () => {
     try {
@@ -62,13 +63,16 @@ export function DocumentList({ decisionId }: DocumentListProps) {
 
   const handleDownload = useCallback(async (documentId: string) => {
     try {
+      setError(null);
       const { url, filename } = await api.documents.getDownloadUrl(documentId);
       const a = document.createElement("a");
       a.href = url;
       a.download = filename;
       a.click();
-    } catch {
-      // silently fail
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to download document.";
+      setError(message);
+      setTimeout(() => setError(null), 5000);
     }
   }, []);
 
@@ -78,8 +82,10 @@ export function DocumentList({ decisionId }: DocumentListProps) {
     try {
       await api.documents.delete(deleteTarget.id);
       setDocuments((prev) => prev.filter((d) => d.id !== deleteTarget.id));
-    } catch {
-      // silently fail
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to delete document.";
+      setError(message);
+      setTimeout(() => setError(null), 5000);
     } finally {
       setDeleting(false);
       setDeleteTarget(null);
@@ -126,6 +132,11 @@ export function DocumentList({ decisionId }: DocumentListProps) {
 
   return (
     <>
+      {error && (
+        <div className="mb-3 rounded-lg bg-error/10 border border-error/20 p-3 text-sm text-error">
+          {error}
+        </div>
+      )}
       <div className="overflow-hidden rounded-lg border border-border">
         <table className="w-full text-sm">
           <thead>

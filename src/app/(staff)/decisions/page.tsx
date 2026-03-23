@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Plus, Search, FileText, Loader2 } from "lucide-react";
@@ -28,6 +28,10 @@ export default function DecisionsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [typeFilter, setTypeFilter] = useState<string>("");
+  const [allDecisions, setAllDecisions] = useState<Awaited<ReturnType<typeof api.decisions.list>>["items"]>([]);
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["decisions", "list", searchQuery, statusFilter, typeFilter],
@@ -41,7 +45,35 @@ export default function DecisionsPage() {
     ...queryConfig.decisions,
   });
 
-  const decisions = data?.items ?? [];
+  // Reset accumulated items when filters change or initial data loads
+  React.useEffect(() => {
+    if (data) {
+      setAllDecisions(data.items);
+      setCursor(data.nextCursor);
+      setHasMore(data.hasMore);
+    }
+  }, [data]);
+
+  const loadMore = async () => {
+    if (!cursor || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const next = await api.decisions.list({
+        search: searchQuery || undefined,
+        status: statusFilter || undefined,
+        decisionType: typeFilter || undefined,
+        limit: 50,
+        cursor,
+      });
+      setAllDecisions((prev) => [...prev, ...next.items]);
+      setCursor(next.nextCursor);
+      setHasMore(next.hasMore);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  const decisions = allDecisions;
 
   return (
     <div className="space-y-6">
@@ -176,10 +208,21 @@ export default function DecisionsPage() {
         )}
       </div>
 
-      <p className="text-xs text-text-muted">
-        Showing {decisions.length} decisions
-        {data?.hasMore && " (more available)"}
-      </p>
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-text-muted">
+          Showing {decisions.length} decisions
+        </p>
+        {hasMore && (
+          <button
+            onClick={loadMore}
+            disabled={loadingMore}
+            className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-secondary hover:bg-surface transition-colors disabled:opacity-50"
+          >
+            {loadingMore && <Loader2 className="h-4 w-4 animate-spin" />}
+            {loadingMore ? "Loading..." : "Load More"}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

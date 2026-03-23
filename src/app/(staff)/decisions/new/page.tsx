@@ -22,6 +22,12 @@ export default function NewDecisionPage() {
   });
   const ministries = ministriesQuery.data ?? [];
 
+  const usersQuery = useQuery({
+    queryKey: ["users"],
+    queryFn: () => api.users.list(),
+  });
+  const users = (usersQuery.data ?? []).filter((u) => u.active);
+
   const createMutation = useMutation({
     mutationFn: (data: Record<string, unknown>) => api.decisions.create(data),
     onSuccess: (decision) => {
@@ -39,12 +45,15 @@ export default function NewDecisionPage() {
     const formData = new FormData(e.currentTarget);
     const deadline = formData.get("deadline") as string;
 
+    const assignedTo = formData.get("assignedTo") as string;
+
     createMutation.mutate({
       title: formData.get("title") as string,
       description: (formData.get("description") as string) || undefined,
       ministryId: formData.get("ministryId") as string,
       decisionType: formData.get("decisionType") as string,
       deadline: deadline ? new Date(deadline).toISOString() : undefined,
+      assignedTo: assignedTo || undefined,
     });
   }
 
@@ -117,6 +126,27 @@ export default function NewDecisionPage() {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label htmlFor="assignedTo" className="block text-sm font-medium text-text mb-1.5">
+              Assign To
+            </label>
+            <select
+              id="assignedTo"
+              name="assignedTo"
+              className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+            >
+              <option value="">No assignment</option>
+              {users.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name} ({u.role.replace(/_/g, " ")})
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-text-muted">
+              Optional. Assign this decision to a specific user.
+            </p>
           </div>
 
           <div>

@@ -2,19 +2,7 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
-
-const STEP_NAMES = [
-  "Initiation",
-  "Information Gathering",
-  "Consultation",
-  "Analysis",
-  "Recommendation",
-  "Review",
-  "Approval",
-  "Documentation",
-  "Notification",
-  "Implementation",
-];
+import { DECISION_STEPS } from "@/lib/constants";
 
 interface StepIndicatorProps {
   currentStep: number;
@@ -31,7 +19,7 @@ export function StepIndicator({
     <div className={cn("w-full", className)}>
       {/* Desktop: horizontal */}
       <div className="hidden md:flex items-start">
-        {STEP_NAMES.map((name, index) => {
+        {DECISION_STEPS.map((stepDef, index) => {
           const step = index + 1;
           const isCompleted = completedSteps.includes(step);
           const isCurrent = step === currentStep;
@@ -61,7 +49,7 @@ export function StepIndicator({
                     isUpcoming && "text-text-muted"
                   )}
                 >
-                  {name}
+                  {stepDef.name}
                 </span>
               </div>
               {step < 10 && (
@@ -79,7 +67,7 @@ export function StepIndicator({
 
       {/* Mobile: vertical */}
       <div className="flex flex-col gap-0 md:hidden">
-        {STEP_NAMES.map((name, index) => {
+        {DECISION_STEPS.map((stepDef, index) => {
           const step = index + 1;
           const isCompleted = completedSteps.includes(step);
           const isCurrent = step === currentStep;
@@ -118,7 +106,7 @@ export function StepIndicator({
                   isUpcoming && "text-text-muted"
                 )}
               >
-                {name}
+                {stepDef.name}
               </span>
             </div>
           );

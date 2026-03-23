@@ -79,6 +79,157 @@ export default function AboutPage() {
           </ol>
         </section>
 
+        {/* Published Decision-Making Guidelines */}
+        <section className="rounded-lg border border-border bg-white p-6">
+          <h2 className="text-xl font-semibold text-text mb-3">
+            Published Decision-Making Guidelines
+          </h2>
+          <p className="mb-4 text-sm text-text-secondary">
+            The following criteria are applied when exercising discretionary
+            powers across different decision types. These guidelines ensure
+            consistency, transparency, and lawfulness in all government
+            decisions.
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-md border border-border p-4">
+              <h3 className="text-sm font-semibold text-text mb-1">Regulatory</h3>
+              <p className="text-xs text-text-secondary">
+                Health, safety, and environmental standards. Decisions must
+                demonstrate compliance with applicable regulatory frameworks and
+                consider public welfare impacts.
+              </p>
+            </div>
+            <div className="rounded-md border border-border p-4">
+              <h3 className="text-sm font-semibold text-text mb-1">Licensing</h3>
+              <p className="text-xs text-text-secondary">
+                Qualification requirements and the public interest test.
+                Applicants must meet prescribed criteria and licensing decisions
+                must weigh individual merit against community benefit.
+              </p>
+            </div>
+            <div className="rounded-md border border-border p-4">
+              <h3 className="text-sm font-semibold text-text mb-1">Planning</h3>
+              <p className="text-xs text-text-secondary">
+                Land use policy and environmental impact. Planning decisions
+                consider zoning requirements, environmental assessments, and
+                community consultation outcomes.
+              </p>
+            </div>
+            <div className="rounded-md border border-border p-4">
+              <h3 className="text-sm font-semibold text-text mb-1">Financial</h3>
+              <p className="text-xs text-text-secondary">
+                Value for money and budget constraints. Financial decisions must
+                demonstrate fiscal responsibility and alignment with approved
+                budgetary allocations.
+              </p>
+            </div>
+            <div className="rounded-md border border-border p-4">
+              <h3 className="text-sm font-semibold text-text mb-1">Appointment</h3>
+              <p className="text-xs text-text-secondary">
+                Merit-based selection and equal opportunity. Appointments must
+                follow transparent selection processes and demonstrate that
+                candidates were assessed on merit.
+              </p>
+            </div>
+            <div className="rounded-md border border-border p-4">
+              <h3 className="text-sm font-semibold text-text mb-1">Policy</h3>
+              <p className="text-xs text-text-secondary">
+                Evidence-based analysis and public consultation. Policy decisions
+                must be grounded in research, stakeholder engagement, and
+                consideration of alternatives.
+              </p>
+            </div>
+            <div className="rounded-md border border-border p-4">
+              <h3 className="text-sm font-semibold text-text mb-1">Enforcement</h3>
+              <p className="text-xs text-text-secondary">
+                Proportionality and consistency. Enforcement actions must be
+                proportionate to the offence and applied consistently across
+                similar cases.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Governance Reform Compliance */}
+        <section className="rounded-lg border border-border bg-white p-6">
+          <h2 className="text-xl font-semibold text-text mb-3">
+            Governance Reform Compliance
+          </h2>
+          <div className="space-y-3 text-sm text-text-secondary">
+            <p>
+              This system implements key recommendations from the 2022
+              Commission of Inquiry into Governance in the British Virgin
+              Islands. The Commission&apos;s report identified the need for
+              systematic oversight of discretionary powers and recommended
+              comprehensive reforms to restore public confidence.
+            </p>
+            <p>
+              The DPMS directly addresses the following Commission
+              recommendations:
+            </p>
+            <div className="space-y-3">
+              <div className="rounded-md border border-border p-4">
+                <h3 className="text-sm font-semibold text-text mb-1">
+                  Recommendation A3: Published Guidelines
+                </h3>
+                <p className="text-xs text-text-secondary">
+                  The government shall publish clear guidelines for the exercise
+                  of discretionary powers. This system serves as the primary
+                  mechanism for publishing and enforcing those guidelines through
+                  the 10-step decision-making framework.
+                </p>
+              </div>
+              <div className="rounded-md border border-border p-4">
+                <h3 className="text-sm font-semibold text-text mb-1">
+                  Documented Reasoning
+                </h3>
+                <p className="text-xs text-text-secondary">
+                  Every discretionary decision recorded in the DPMS includes a
+                  complete account of the reasoning process, the evidence
+                  considered, and the factors that led to the final outcome.
+                </p>
+              </div>
+              <div className="rounded-md border border-border p-4">
+                <h3 className="text-sm font-semibold text-text mb-1">
+                  Complete Audit Trail
+                </h3>
+                <p className="text-xs text-text-secondary">
+                  The system maintains a cryptographically secured,
+                  tamper-evident audit trail using SHA-256 hash chaining. Every
+                  action taken on a decision is permanently recorded and
+                  verifiable.
+                </p>
+              </div>
+              <div className="rounded-md border border-border p-4">
+                <h3 className="text-sm font-semibold text-text mb-1">
+                  Public Transparency Portal
+                </h3>
+                <p className="text-xs text-text-secondary">
+                  Approved decisions are published on this public portal,
+                  allowing citizens to review how discretionary powers are being
+                  exercised across government.
+                </p>
+              </div>
+              <div className="rounded-md border border-border p-4">
+                <h3 className="text-sm font-semibold text-text mb-1">
+                  Judicial Review Mechanisms
+                </h3>
+                <p className="text-xs text-text-secondary">
+                  The system supports judicial oversight by providing
+                  authoritative records that can be examined by the Eastern
+                  Caribbean Supreme Court when decisions are challenged.
+                </p>
+              </div>
+            </div>
+            <p>
+              The BVI Government has implemented 46 of the Commission&apos;s 48
+              recommendations. The DPMS is a central component of the
+              governance reform programme, demonstrating the Territory&apos;s
+              commitment to transparency, accountability, and the rule of law.
+            </p>
+          </div>
+        </section>
+
         {/* Your Rights */}
         <section id="rights" className="rounded-lg border border-border bg-white p-6">
           <h2 className="text-xl font-semibold text-text mb-3">

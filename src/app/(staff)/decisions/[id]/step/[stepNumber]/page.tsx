@@ -31,6 +31,7 @@ const stepFields: Record<
     { name: "legalBasis", label: "Legal Basis", type: "textarea", required: true, placeholder: "Cite the specific legislation, regulation, or constitutional provision..." },
     { name: "legislativeReference", label: "Legislative Reference", type: "text", placeholder: "e.g., Section 47(3) of the Constitution" },
     { name: "scopeDescription", label: "Scope of Authority", type: "textarea", required: true, placeholder: "Describe the scope and limits of the discretionary power..." },
+    { name: "delegationChain", label: "Chain of Delegation", type: "textarea", placeholder: "If authority is delegated, document the delegation chain and legal basis..." },
     { name: "authorityConfirmed", label: "I confirm that the authority to make this decision has been verified", type: "checkbox", required: true },
   ],
   2: [
@@ -48,17 +49,22 @@ const stepFields: Record<
     { name: "contradictoryEvidence", label: "Contradictory Evidence", type: "textarea", placeholder: "Document any contradictory or conflicting evidence..." },
   ],
   5: [
-    { name: "standardApplied", label: "Standard of Proof Applied", type: "text", required: true, placeholder: "e.g., Balance of probabilities, Beyond reasonable doubt" },
+    { name: "standardApplied", label: "Standard of Proof Applied", type: "text", required: true, placeholder: "Balance of probabilities (default for most decisions)" },
     { name: "justification", label: "Justification", type: "textarea", required: true, placeholder: "Explain why this standard was applied..." },
     { name: "thresholdMet", label: "The threshold has been met based on the evidence", type: "checkbox" },
   ],
   6: [
     { name: "biasAssessment", label: "Bias Assessment", type: "textarea", required: true, placeholder: "Document the assessment of potential bias or conflicts..." },
     { name: "conflictsOfInterest", label: "Conflicts of Interest", type: "textarea", placeholder: "Declare any conflicts of interest..." },
+    { name: "conflictDeclared", label: "I declare that a conflict of interest assessment has been conducted", type: "checkbox", required: true },
+    { name: "conflictMitigationSteps", label: "Conflict Mitigation Steps", type: "textarea", placeholder: "If conflicts identified, describe mitigation steps taken..." },
     { name: "declarationSigned", label: "I declare that I have no conflict of interest and will act impartially", type: "checkbox", required: true },
   ],
   7: [
     { name: "rightToBeHeard", label: "Right to Be Heard", type: "textarea", required: true, placeholder: "Document how affected parties were given opportunity to be heard..." },
+    { name: "notificationDate", label: "Date Parties Notified", type: "text", placeholder: "YYYY-MM-DD" },
+    { name: "notificationMethod", label: "Notification Method", type: "text", required: true, placeholder: "e.g., Official letter, Email, Gazette notice" },
+    { name: "responseDeadline", label: "Response Deadline Given", type: "text", placeholder: "YYYY-MM-DD" },
     { name: "partiesNotified", label: "All affected parties have been notified", type: "checkbox" },
     { name: "representationsReceived", label: "Representations Received", type: "textarea", placeholder: "Summarise any representations received..." },
     { name: "responsesToRepresentations", label: "Responses to Representations", type: "textarea", placeholder: "Document how representations were addressed..." },
@@ -78,6 +84,7 @@ const stepFields: Record<
   10: [
     { name: "filingReference", label: "Filing Reference", type: "text", placeholder: "Internal filing reference number" },
     { name: "retentionPeriod", label: "Retention Period", type: "text", placeholder: "e.g., 7 years" },
+    { name: "policyDeviations", label: "Policy Deviations", type: "textarea", placeholder: "Document any deviations from established policy and justification..." },
     { name: "documentsAttached", label: "All supporting documents have been attached", type: "checkbox" },
     { name: "recordCreated", label: "A complete record of this decision has been created and filed", type: "checkbox", required: true },
   ],

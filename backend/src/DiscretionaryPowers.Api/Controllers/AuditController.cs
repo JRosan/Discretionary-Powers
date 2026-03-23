@@ -1,14 +1,16 @@
 using DiscretionaryPowers.Api.Auth;
+using DiscretionaryPowers.Infrastructure.Data;
 using DiscretionaryPowers.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace DiscretionaryPowers.Api.Controllers;
 
 [ApiController]
 [Route("api/audit")]
 [Authorize]
-public class AuditController(AuditService auditService) : ControllerBase
+public class AuditController(AuditService auditService, AppDbContext db) : ControllerBase
 {
     [HttpGet("decisions/{decisionId:guid}")]
     [Authorize(Policy = PermissionPolicies.CanViewAuditTrail)]
@@ -25,6 +27,29 @@ public class AuditController(AuditService auditService) : ControllerBase
     {
         var entries = await auditService.GetAll(limit, offset);
         return Ok(entries);
+    }
+
+    [HttpGet("conflicts")]
+    [Authorize(Policy = PermissionPolicies.CanViewAllAudit)]
+    public async Task<IActionResult> GetConflictDeclarations()
+    {
+        var step6Data = await db.DecisionSteps
+            .AsNoTracking()
+            .Where(s => s.StepNumber == 6 && s.Status == Domain.Enums.StepStatus.Completed && s.Data != null)
+            .Include(s => s.Decision)
+            .OrderByDescending(s => s.CompletedAt)
+            .Select(s => new
+            {
+                DecisionId = s.DecisionId,
+                DecisionTitle = s.Decision != null ? s.Decision.Title : null,
+                DecisionReference = s.Decision != null ? s.Decision.ReferenceNumber : null,
+                CompletedAt = s.CompletedAt,
+                CompletedBy = s.CompletedBy,
+                StepData = s.Data
+            })
+            .ToListAsync();
+
+        return Ok(step6Data);
     }
 
     [HttpPost("verify-chain")]

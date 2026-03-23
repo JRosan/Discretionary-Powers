@@ -89,6 +89,7 @@ export const stepSchemas: Record<number, z.ZodObject<z.ZodRawShape>> = {
     legalBasis: z.string().min(1, "Legal basis is required"),
     legislativeReference: z.string().optional(),
     scopeDescription: z.string().min(1, "Scope description is required"),
+    delegationChain: z.string().optional().describe("If authority is delegated, document the chain of delegation and the legal basis for each delegation."),
     authorityConfirmed: z.boolean().refine((v) => v === true, "Authority must be confirmed"),
   }),
   2: z.object({
@@ -114,10 +115,15 @@ export const stepSchemas: Record<number, z.ZodObject<z.ZodRawShape>> = {
   6: z.object({
     conflictsOfInterest: z.string().optional(),
     biasAssessment: z.string().min(1, "Bias assessment is required"),
+    conflictDeclared: z.boolean().describe("Were any conflicts of interest identified?"),
+    conflictMitigationSteps: z.string().optional().describe("If conflicts were identified, what steps were taken to mitigate them?"),
     declarationSigned: z.boolean().refine((v) => v === true, "Declaration must be signed"),
   }),
   7: z.object({
     partiesNotified: z.boolean(),
+    notificationDate: z.string().optional().describe("Date affected parties were notified"),
+    notificationMethod: z.string().min(1, "Notification method is required").describe("How parties were notified (letter, email, gazette, etc.)"),
+    responseDeadline: z.string().optional().describe("Deadline given for parties to respond"),
     rightToBeHeard: z.string().min(1, "Right to be heard must be documented"),
     representationsReceived: z.string().optional(),
     responsesToRepresentations: z.string().optional(),
@@ -139,5 +145,6 @@ export const stepSchemas: Record<number, z.ZodObject<z.ZodRawShape>> = {
     documentsAttached: z.boolean(),
     retentionPeriod: z.string().optional(),
     filingReference: z.string().optional(),
+    policyDeviations: z.string().optional().describe("Document any deviations from established policy and the justification for each departure."),
   }),
 };

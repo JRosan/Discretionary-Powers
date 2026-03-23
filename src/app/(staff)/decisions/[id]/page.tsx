@@ -18,9 +18,18 @@ import {
   Shield,
   AlertTriangle,
 } from "lucide-react";
-import { DECISION_STEPS } from "@/lib/constants";
+import { DECISION_STEPS, JUDICIAL_REVIEW_GROUNDS } from "@/lib/constants";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { CommentThread } from "@/components/decisions/comment-thread";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const statusColors: Record<string, string> = {
   draft: "bg-surface text-text-secondary",
@@ -55,6 +64,9 @@ export default function DecisionDetailPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [actionMessage, setActionMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [showFlagDialog, setShowFlagDialog] = useState(false);
+  const [flagGround, setFlagGround] = useState("");
+  const [flagNotes, setFlagNotes] = useState("");
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["decision", decisionId],
@@ -245,12 +257,7 @@ export default function DecisionDetailPage() {
 
         {canFlagForReview && (decision.status === "approved" || decision.status === "published") && (
           <button
-            onClick={() => {
-              const reason = prompt("Enter the ground for judicial review:");
-              if (!reason) return;
-              const notes = prompt("Additional notes (optional):");
-              flagMutation.mutate({ ground: reason, notes: notes || undefined });
-            }}
+            onClick={() => setShowFlagDialog(true)}
             disabled={isActioning}
             className="inline-flex items-center gap-2 rounded-lg border border-warning bg-warning/10 px-4 py-2 text-sm font-medium text-warning-dark hover:bg-warning/20 transition-colors disabled:opacity-50"
           >
@@ -280,13 +287,13 @@ export default function DecisionDetailPage() {
           <FileText className="h-4 w-4" />
           Audit Trail
         </Link>
-        <Link
-          href="#comments"
+        <button
+          onClick={() => document.getElementById('comments')?.scrollIntoView({ behavior: 'smooth' })}
           className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-secondary hover:bg-surface transition-colors"
         >
           <MessageSquare className="h-4 w-4" />
           Comments
-        </Link>
+        </button>
       </div>
 
       {/* Progress Bar */}
@@ -366,6 +373,125 @@ export default function DecisionDetailPage() {
           })}
         </div>
       </div>
+
+      {/* Comments */}
+      <div id="comments" className="rounded-lg border border-border bg-white p-6">
+        <h2 className="text-lg font-semibold text-text mb-4">
+          <MessageSquare className="inline h-5 w-5 mr-2 -mt-0.5" />
+          Comments
+        </h2>
+        <CommentsSection decisionId={decisionId} user={user} />
+      </div>
+
+      {/* Flag for Judicial Review Dialog */}
+      <Dialog open={showFlagDialog} onOpenChange={(open) => { if (!open) { setShowFlagDialog(false); setFlagGround(""); setFlagNotes(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Flag for Judicial Review</DialogTitle>
+            <DialogDescription>
+              Select the ground for judicial review and provide any additional notes.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <label htmlFor="flag-ground" className="block text-sm font-medium text-text mb-1.5">
+                Ground <span className="text-error">*</span>
+              </label>
+              <select
+                id="flag-ground"
+                value={flagGround}
+                onChange={(e) => setFlagGround(e.target.value)}
+                className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+              >
+                <option value="">Select a ground</option>
+                {Object.values(JUDICIAL_REVIEW_GROUNDS).map((ground) => (
+                  <option key={ground} value={ground}>
+                    {ground.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="flag-notes" className="block text-sm font-medium text-text mb-1.5">
+                Notes
+              </label>
+              <textarea
+                id="flag-notes"
+                value={flagNotes}
+                onChange={(e) => setFlagNotes(e.target.value)}
+                rows={3}
+                placeholder="Additional notes (optional)..."
+                className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-text placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent resize-none"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <button
+              onClick={() => { setShowFlagDialog(false); setFlagGround(""); setFlagNotes(""); }}
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-secondary hover:bg-surface transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => {
+                if (!flagGround) return;
+                flagMutation.mutate({ ground: flagGround, notes: flagNotes || undefined });
+                setShowFlagDialog(false);
+                setFlagGround("");
+                setFlagNotes("");
+              }}
+              disabled={!flagGround || flagMutation.isPending}
+              className="rounded-lg bg-warning/80 px-4 py-2 text-sm font-medium text-white hover:bg-warning transition-colors disabled:opacity-50"
+            >
+              {flagMutation.isPending ? "Submitting..." : "Flag for Review"}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
+
+function CommentsSection({ decisionId, user }: { decisionId: string; user: { id: string; role: string } | null }) {
+  const queryClient = useQueryClient();
+
+  const { data: comments = [], isLoading } = useQuery({
+    queryKey: ["comments", decisionId],
+    queryFn: () => api.comments.list(decisionId),
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (input: { content: string; isInternal: boolean }) =>
+      api.comments.create({ decisionId, ...input }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["comments", decisionId] });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => api.comments.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["comments", decisionId] });
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin text-text-muted" />
+      </div>
+    );
+  }
+
+  return (
+    <CommentThread
+      decisionId={decisionId}
+      comments={comments}
+      onSubmit={async (input) => { await createMutation.mutateAsync(input); }}
+      onDelete={async (id) => { await deleteMutation.mutateAsync(id); }}
+      currentUserId={user?.id}
+      currentUserRole={user?.role}
+      isSubmitting={createMutation.isPending}
+    />
   );
 }

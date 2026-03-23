@@ -36,6 +36,7 @@ public class DecisionConfiguration : IEntityTypeConfiguration<Decision>
         builder.Property(d => d.IsPublic).HasColumnName("is_public").HasDefaultValue(false);
         builder.Property(d => d.JudicialReviewFlag).HasColumnName("judicial_review_flag").HasDefaultValue(false);
         builder.Property(d => d.Deadline).HasColumnName("deadline");
+        builder.Property(d => d.PublicationDeadline).HasColumnName("publication_deadline");
         builder.Property(d => d.Metadata).HasColumnName("metadata").HasColumnType("jsonb");
         builder.Property(d => d.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
         builder.Property(d => d.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
