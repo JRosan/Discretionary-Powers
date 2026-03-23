@@ -275,8 +275,24 @@ export default function StepPage() {
   const hasRequiredFields = requiredFields.length > 0;
   const errorBorderClass = "border-[#E76F51] focus:border-[#E76F51] focus:ring-[#E76F51]";
 
+  // Step-specific guidance for the right sidebar
+  const stepGuidance: Record<number, { tips: string[]; legalRef: string; checklist: string[] }> = {
+    1: { tips: ["Check the specific Act or Regulation that grants this power", "Verify the power hasn't been repealed or amended", "If delegated, ensure the delegation instrument is valid"], legalRef: "Virgin Islands Constitution Order 2007, Section 56", checklist: ["Legal basis identified", "Scope of power confirmed", "Delegation chain documented (if applicable)"] },
+    2: { tips: ["Review the relevant statute for procedural requirements", "Check if consultation periods are mandated", "Verify all pre-conditions have been met"], legalRef: "Applicable enabling legislation", checklist: ["Statutory procedures identified", "Administrative requirements listed", "All pre-conditions verified"] },
+    3: { tips: ["Cast a wide net — consider all relevant sources", "Document where information came from", "Identify gaps and how they were addressed"], legalRef: "Natural justice principles", checklist: ["All relevant sources consulted", "Key facts documented", "Information gaps identified and addressed"] },
+    4: { tips: ["Weigh evidence objectively — don't ignore contradictory facts", "Consider the source reliability", "Document your reasoning for each conclusion"], legalRef: "Administrative law — Wednesbury reasonableness", checklist: ["Evidence quality assessed", "Contradictory evidence considered", "Reasoning documented"] },
+    5: { tips: ["Default standard is 'balance of probabilities'", "Higher standard only if statute requires it", "Document why this standard is appropriate"], legalRef: "Common law standards of proof", checklist: ["Standard identified", "Justification documented", "Threshold assessment completed"] },
+    6: { tips: ["Declare any personal, financial, or family interests", "Recuse yourself if a real conflict exists", "Document the assessment even if no conflict found"], legalRef: "Ministerial Code of Conduct; Natural justice — nemo judex in causa sua", checklist: ["Conflict assessment conducted", "Interests declared (if any)", "Mitigation steps documented (if needed)"] },
+    7: { tips: ["Notify ALL affected parties, not just the obvious ones", "Give reasonable time to respond", "Consider all representations before deciding"], legalRef: "Natural justice — audi alteram partem (hear the other side)", checklist: ["Parties identified and notified", "Adequate response time given", "All representations considered"] },
+    8: { tips: ["Each case must be decided on its own facts", "Don't blindly follow precedent", "Consider and document alternatives rejected"], legalRef: "Administrative law — no fettering of discretion", checklist: ["Individual circumstances considered", "Alternatives evaluated", "Reasons for chosen approach documented"] },
+    9: { tips: ["Provide written notice of the decision", "Include clear reasons", "Inform parties of any right of appeal"], legalRef: "Duty to give reasons", checklist: ["Decision communicated in writing", "Reasons provided", "Appeal rights explained"] },
+    10: { tips: ["Create a complete file for the record", "Include all supporting documents", "Note any departures from standard policy"], legalRef: "Public Records Act; COI Recommendation A3", checklist: ["Complete record created", "All documents attached", "Policy deviations noted (if any)"] },
+  };
+
+  const guidance = stepGuidance[stepNumber];
+
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="space-y-6">
       <div>
         <Link
           href={`/decisions/${decisionId}`}
@@ -366,6 +382,10 @@ export default function StepPage() {
         </div>
       )}
 
+      {/* Two-column layout: Form + Guidance Sidebar */}
+      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+
+      {/* Left column: Form */}
       <form ref={formRef} onSubmit={handleSubmit} onChange={checkFormCompleteness} className="space-y-5">
         <div className="rounded-lg border border-border bg-white p-6 space-y-5">
           {hasRequiredFields && (
@@ -580,6 +600,93 @@ export default function StepPage() {
           )}
         </div>
       </form>
+
+      {/* Right column: Guidance Sidebar */}
+      <aside className="space-y-5 hidden lg:block">
+        {/* Step Guidance */}
+        <div className="rounded-lg border border-border bg-white p-5 sticky top-6">
+          <h3 className="text-sm font-semibold text-primary mb-3">
+            Step {stepNumber} Guidance
+          </h3>
+          <p className="text-xs text-text-secondary mb-4">
+            {step.description}
+          </p>
+
+          {/* Checklist */}
+          {guidance && (
+            <div className="mb-4">
+              <h4 className="text-xs font-semibold text-text uppercase tracking-wide mb-2">Checklist</h4>
+              <ul className="space-y-1.5">
+                {guidance.checklist.map((item, i) => (
+                  <li key={i} className="flex items-start gap-2 text-xs text-text-secondary">
+                    <span className="mt-0.5 h-4 w-4 rounded border border-border flex items-center justify-center shrink-0 text-[10px]">
+                      {i + 1}
+                    </span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Best Practice Tips */}
+          {guidance && (
+            <div className="mb-4">
+              <h4 className="text-xs font-semibold text-text uppercase tracking-wide mb-2">Best Practice</h4>
+              <ul className="space-y-1.5">
+                {guidance.tips.map((tip, i) => (
+                  <li key={i} className="text-xs text-text-secondary flex items-start gap-1.5">
+                    <span className="text-accent mt-0.5 shrink-0">&#8226;</span>
+                    {tip}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Legal Reference */}
+          {guidance && (
+            <div className="border-t border-border pt-3">
+              <h4 className="text-xs font-semibold text-text uppercase tracking-wide mb-1">Legal Reference</h4>
+              <p className="text-xs text-text-muted italic">{guidance.legalRef}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Progress Overview */}
+        {decision && (
+          <div className="rounded-lg border border-border bg-white p-5">
+            <h3 className="text-sm font-semibold text-text mb-3">Progress</h3>
+            <div className="space-y-1.5">
+              {DECISION_STEPS.map((s) => {
+                const sd = decision.steps?.find((st: { stepNumber: number }) => st.stepNumber === s.number);
+                const st = sd?.status ?? "not_started";
+                const active = s.number === stepNumber;
+                return (
+                  <Link
+                    key={s.number}
+                    href={`/decisions/${decisionId}/step/${s.number}`}
+                    className={`flex items-center gap-2 rounded px-2 py-1 text-xs transition-colors ${
+                      active ? "bg-accent/10 text-accent-dark font-medium" : "text-text-secondary hover:bg-surface"
+                    }`}
+                  >
+                    {st === "completed" || st === "skipped_with_reason" ? (
+                      <CheckCircle2 className="h-3 w-3 text-accent shrink-0" />
+                    ) : active ? (
+                      <div className="h-3 w-3 rounded-full border border-accent bg-accent/20 shrink-0" />
+                    ) : (
+                      <div className="h-3 w-3 rounded-full border border-border shrink-0" />
+                    )}
+                    <span className="truncate">{s.number}. {s.name}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </aside>
+
+      </div>{/* End two-column grid */}
 
       {/* Skip confirmation dialog */}
       <Dialog open={showSkipDialog} onOpenChange={setShowSkipDialog}>
