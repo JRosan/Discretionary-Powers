@@ -11,6 +11,7 @@ import {
   Sparkles,
   Building2,
   Users,
+  Palette,
   Rocket,
   Plus,
   Trash2,
@@ -28,6 +29,7 @@ const STEPS = [
   { label: "Welcome", icon: Sparkles },
   { label: "Ministries", icon: Building2 },
   { label: "Team", icon: Users },
+  { label: "Branding", icon: Palette },
   { label: "Done", icon: Rocket },
 ];
 
@@ -71,6 +73,11 @@ export default function OnboardingPage() {
   const [invites, setInvites] = useState<InviteItem[]>([
     { name: "", email: "", role: "minister" },
   ]);
+
+  // Step 4: Branding
+  const [logoUrl, setLogoUrl] = useState("");
+  const [primaryColor, setPrimaryColor] = useState("#1D3557");
+  const [accentColor, setAccentColor] = useState("#2A9D8F");
 
   function addMinistry() {
     setMinistries([...ministries, { name: "", code: "" }]);
@@ -127,9 +134,26 @@ export default function OnboardingPage() {
       if (valid.length > 0) {
         await api.onboarding.inviteUsers(valid);
       }
-      setStep(4);
+      setStep(4); // Go to Branding step
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to send invitations.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSaveBranding() {
+    setError("");
+    setLoading(true);
+    try {
+      await api.tenant.updateBranding({
+        logoUrl: logoUrl || null,
+        primaryColor,
+        accentColor,
+      });
+      setStep(5); // Go to Done step
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save branding.");
     } finally {
       setLoading(false);
     }
@@ -359,8 +383,114 @@ export default function OnboardingPage() {
               </>
             )}
 
-            {/* Step 4: Done */}
+            {/* Step 4: Branding */}
             {step === 4 && (
+              <>
+                <div>
+                  <h2 className="text-lg font-semibold text-text">Customize Your Portal</h2>
+                  <p className="text-sm text-text-muted mt-1">
+                    Add your logo and pick brand colours. These appear on your staff portal, public portal, and documents.
+                    You can update these at any time from <span className="font-medium text-text">Admin → Organization</span>.
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-text mb-1.5">Logo URL</label>
+                    <Input
+                      placeholder="https://your-gov.example/logo.png"
+                      value={logoUrl}
+                      onChange={(e) => setLogoUrl(e.target.value)}
+                    />
+                    <p className="mt-1 text-xs text-text-muted">
+                      Paste a URL to your government&apos;s logo (PNG or SVG). This will appear in the sidebar and public portal header.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-text mb-1.5">Primary Colour</label>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="color"
+                          value={primaryColor}
+                          onChange={(e) => setPrimaryColor(e.target.value)}
+                          className="h-10 w-14 rounded-md border border-border cursor-pointer"
+                        />
+                        <Input
+                          value={primaryColor}
+                          onChange={(e) => setPrimaryColor(e.target.value)}
+                          placeholder="#1D3557"
+                          className="flex-1"
+                        />
+                      </div>
+                      <p className="mt-1 text-xs text-text-muted">Sidebar, header, buttons</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-text mb-1.5">Accent Colour</label>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="color"
+                          value={accentColor}
+                          onChange={(e) => setAccentColor(e.target.value)}
+                          className="h-10 w-14 rounded-md border border-border cursor-pointer"
+                        />
+                        <Input
+                          value={accentColor}
+                          onChange={(e) => setAccentColor(e.target.value)}
+                          placeholder="#2A9D8F"
+                          className="flex-1"
+                        />
+                      </div>
+                      <p className="mt-1 text-xs text-text-muted">Links, progress, highlights</p>
+                    </div>
+                  </div>
+
+                  {/* Live Preview */}
+                  <div className="rounded-lg border border-border overflow-hidden">
+                    <div className="text-xs text-text-muted px-3 py-1.5 bg-surface">Preview</div>
+                    <div className="flex h-24">
+                      <div className="w-16 flex flex-col items-center justify-center gap-1" style={{ backgroundColor: primaryColor }}>
+                        {logoUrl ? (
+                          <img src={logoUrl} alt="Logo" className="h-6 w-6 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                        ) : (
+                          <div className="h-6 w-6 rounded bg-white/20" />
+                        )}
+                        <div className="h-1 w-8 rounded bg-white/30" />
+                        <div className="h-1 w-6 rounded bg-white/20" />
+                      </div>
+                      <div className="flex-1 bg-surface p-3">
+                        <div className="h-2 w-20 rounded mb-2" style={{ backgroundColor: primaryColor, opacity: 0.7 }} />
+                        <div className="h-1.5 w-32 rounded bg-border mb-3" />
+                        <div className="flex gap-2">
+                          <div className="h-5 w-16 rounded text-[8px] text-white flex items-center justify-center" style={{ backgroundColor: accentColor }}>Button</div>
+                          <div className="h-5 w-12 rounded border border-border text-[8px] flex items-center justify-center text-text-muted">Link</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <Button variant="outline" className="flex-1" onClick={() => setStep(3)}>
+                    Back
+                  </Button>
+                  <button
+                    type="button"
+                    onClick={() => setStep(5)}
+                    className="text-sm text-text-muted hover:text-text transition-colors"
+                  >
+                    Skip for now
+                  </button>
+                  <Button variant="accent" className="flex-1" onClick={handleSaveBranding} loading={loading}>
+                    {loading ? "Saving..." : "Save & Continue"}
+                  </Button>
+                </div>
+              </>
+            )}
+
+            {/* Step 5: Done */}
+            {step === 5 && (
               <div className="text-center space-y-4 py-4">
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-accent/10">
                   <Rocket className="h-8 w-8 text-accent" />
@@ -386,6 +516,12 @@ export default function OnboardingPage() {
                   </div>
                   <div className="flex items-center gap-2 text-sm text-text">
                     <Check className="h-4 w-4 text-accent" />
+                    {primaryColor !== "#1D3557" || accentColor !== "#2A9D8F" || logoUrl
+                      ? "Custom branding applied"
+                      : "Branding customization skipped"}
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-text">
+                    <Check className="h-4 w-4 text-accent" />
                     10-step workflow template ready
                   </div>
                   <div className="flex items-center gap-2 text-sm text-text">
@@ -393,7 +529,10 @@ export default function OnboardingPage() {
                     14-day free trial active
                   </div>
                 </div>
-                <Button variant="accent" size="lg" onClick={handleComplete} loading={loading} className="mt-4">
+                <p className="text-xs text-text-muted">
+                  You can update your branding, ministries, and team at any time from the Admin panel.
+                </p>
+                <Button variant="accent" size="lg" onClick={handleComplete} loading={loading} className="mt-2">
                   Go to Dashboard
                 </Button>
               </div>
