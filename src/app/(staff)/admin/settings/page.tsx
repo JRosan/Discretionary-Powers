@@ -7,9 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { useTranslations } from "@/i18n";
 
 export default function SettingsPage() {
   const { user } = useAuth();
+  const t = useTranslations("admin");
+  const tc = useTranslations("common");
   const queryClient = useQueryClient();
   const isPermanentSecretary = user?.role === "permanent_secretary";
 
@@ -52,9 +55,9 @@ export default function SettingsPage() {
   if (!isPermanentSecretary) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
-        <h1 className="text-2xl font-semibold text-text">Access Denied</h1>
+        <h1 className="text-2xl font-semibold text-text">{t("accessDenied")}</h1>
         <p className="mt-2 text-sm text-text-secondary">
-          You do not have permission to manage settings. This page is restricted to Permanent Secretaries.
+          {t("accessDeniedMessage")}
         </p>
       </div>
     );
@@ -81,7 +84,7 @@ export default function SettingsPage() {
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-text">Settings</h1>
+        <h1 className="text-2xl font-semibold text-text">{t("settings")}</h1>
         <p className="mt-1 text-sm text-text-secondary">
           System configuration and preferences
         </p>
@@ -161,7 +164,7 @@ export default function SettingsPage() {
           {saveMutation.isPending ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            "Save Settings"
+            tc("save")
           )}
         </Button>
         {saveSuccess && (

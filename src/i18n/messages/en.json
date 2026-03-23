@@ -48,6 +48,8 @@
     "searchPlaceholder": "Search decisions...",
     "allStatuses": "All Statuses",
     "allTypes": "All Types",
+    "filterByStatus": "Filter by status",
+    "filterByType": "Filter by type",
     "reference": "Reference",
     "decisionTitle": "Title",
     "type": "Type",
@@ -103,6 +105,39 @@
     "browseByMinistry": "Browse by Ministry",
     "recentPublished": "Recently Published Decisions",
     "viewDecisions": "View decisions"
+  },
+  "reports": {
+    "title": "Reports & Analytics",
+    "subtitle": "Decision analytics and workflow insights",
+    "overview": "Overview",
+    "byMinistry": "By Ministry",
+    "workflowAnalysis": "Workflow Analysis",
+    "dateRange": "Date Range",
+    "thisMonth": "This Month",
+    "thisQuarter": "This Quarter",
+    "thisYear": "This Year",
+    "allTime": "All Time",
+    "totalDecisions": "Total Decisions",
+    "avgCompletion": "Avg Completion",
+    "overdue": "Overdue",
+    "exportCsv": "Export CSV",
+    "exportJson": "Export JSON"
+  },
+  "documents": {
+    "title": "Documents",
+    "upload": "Upload Document",
+    "noDocuments": "No documents yet",
+    "download": "Download",
+    "delete": "Delete",
+    "redact": "Redact"
+  },
+  "admin": {
+    "users": "User Management",
+    "settings": "System Settings",
+    "createUser": "Create User",
+    "deactivate": "Deactivate",
+    "accessDenied": "Access Denied",
+    "accessDeniedMessage": "You do not have permission to access this page."
   },
   "notifications": {
     "title": "Notifications",

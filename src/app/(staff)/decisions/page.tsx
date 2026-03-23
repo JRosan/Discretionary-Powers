@@ -7,6 +7,7 @@ import { Plus, Search, FileText, Loader2 } from "lucide-react";
 import { DECISION_STATUSES, DECISION_TYPES } from "@/lib/constants";
 import { api } from "@/lib/api";
 import { queryConfig } from "@/lib/query-config";
+import { useTranslations } from "@/i18n";
 
 const statusColors: Record<string, string> = {
   draft: "bg-surface text-text-secondary",
@@ -23,6 +24,7 @@ function formatLabel(value: string): string {
 }
 
 export default function DecisionsPage() {
+  const t = useTranslations("decisions");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [typeFilter, setTypeFilter] = useState<string>("");
@@ -45,9 +47,9 @@ export default function DecisionsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-text">Decisions</h1>
+          <h1 className="text-2xl font-semibold text-text">{t("title")}</h1>
           <p className="mt-1 text-sm text-text-secondary">
-            Manage discretionary power decisions across all ministries.
+            {t("subtitle")}
           </p>
         </div>
         <Link
@@ -55,7 +57,7 @@ export default function DecisionsPage() {
           className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent-dark transition-colors"
         >
           <Plus className="h-4 w-4" />
-          New Decision
+          {t("newDecision")}
         </Link>
       </div>
 
@@ -65,7 +67,7 @@ export default function DecisionsPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
           <input
             type="text"
-            placeholder="Search decisions..."
+            placeholder={t("searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full rounded-lg border border-border bg-white py-2 pl-10 pr-4 text-sm text-text placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
@@ -77,7 +79,7 @@ export default function DecisionsPage() {
           onChange={(e) => setStatusFilter(e.target.value)}
           className="rounded-lg border border-border bg-white px-3 py-2 text-sm text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
         >
-          <option value="">All Statuses</option>
+          <option value="">{t("allStatuses")}</option>
           {Object.values(DECISION_STATUSES).map((status) => (
             <option key={status} value={status}>
               {formatLabel(status)}
@@ -90,7 +92,7 @@ export default function DecisionsPage() {
           onChange={(e) => setTypeFilter(e.target.value)}
           className="rounded-lg border border-border bg-white px-3 py-2 text-sm text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
         >
-          <option value="">All Types</option>
+          <option value="">{t("allTypes")}</option>
           {Object.values(DECISION_TYPES).map((type) => (
             <option key={type} value={type}>
               {formatLabel(type)}
@@ -108,23 +110,23 @@ export default function DecisionsPage() {
         ) : decisions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-text-muted">
             <FileText className="h-12 w-12 mb-3" />
-            <p className="font-medium">No decisions found</p>
+            <p className="font-medium">{t("noDecisions")}</p>
             <p className="text-sm mt-1">
               {searchQuery || statusFilter || typeFilter
                 ? "Try adjusting your search or filters."
-                : "Create your first decision to get started."}
+                : t("createFirst")}
             </p>
           </div>
         ) : (
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-surface">
-                <th className="px-4 py-3 text-left font-medium text-text-secondary">Reference</th>
-                <th className="px-4 py-3 text-left font-medium text-text-secondary">Title</th>
-                <th className="px-4 py-3 text-left font-medium text-text-secondary">Type</th>
-                <th className="px-4 py-3 text-left font-medium text-text-secondary">Status</th>
-                <th className="px-4 py-3 text-left font-medium text-text-secondary">Step</th>
-                <th className="px-4 py-3 text-left font-medium text-text-secondary">Deadline</th>
+                <th className="px-4 py-3 text-left font-medium text-text-secondary">{t("reference")}</th>
+                <th className="px-4 py-3 text-left font-medium text-text-secondary">{t("decisionTitle")}</th>
+                <th className="px-4 py-3 text-left font-medium text-text-secondary">{t("type")}</th>
+                <th className="px-4 py-3 text-left font-medium text-text-secondary">{t("status")}</th>
+                <th className="px-4 py-3 text-left font-medium text-text-secondary">{t("step")}</th>
+                <th className="px-4 py-3 text-left font-medium text-text-secondary">{t("deadline")}</th>
               </tr>
             </thead>
             <tbody>

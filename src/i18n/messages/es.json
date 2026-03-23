@@ -48,6 +48,8 @@
     "searchPlaceholder": "Buscar decisiones...",
     "allStatuses": "Todos los Estados",
     "allTypes": "Todos los Tipos",
+    "filterByStatus": "Filtrar por estado",
+    "filterByType": "Filtrar por tipo",
     "reference": "Referencia",
     "decisionTitle": "Título",
     "type": "Tipo",
@@ -103,6 +105,39 @@
     "browseByMinistry": "Explorar por Ministerio",
     "recentPublished": "Decisiones Publicadas Recientemente",
     "viewDecisions": "Ver decisiones"
+  },
+  "reports": {
+    "title": "Informes y Análisis",
+    "subtitle": "Análisis de decisiones e información del flujo de trabajo",
+    "overview": "Resumen",
+    "byMinistry": "Por Ministerio",
+    "workflowAnalysis": "Análisis del Flujo de Trabajo",
+    "dateRange": "Rango de Fechas",
+    "thisMonth": "Este Mes",
+    "thisQuarter": "Este Trimestre",
+    "thisYear": "Este Año",
+    "allTime": "Todo el Tiempo",
+    "totalDecisions": "Total de Decisiones",
+    "avgCompletion": "Tiempo Promedio",
+    "overdue": "Vencidas",
+    "exportCsv": "Exportar CSV",
+    "exportJson": "Exportar JSON"
+  },
+  "documents": {
+    "title": "Documentos",
+    "upload": "Subir Documento",
+    "noDocuments": "Aún no hay documentos",
+    "download": "Descargar",
+    "delete": "Eliminar",
+    "redact": "Redactar"
+  },
+  "admin": {
+    "users": "Gestión de Usuarios",
+    "settings": "Configuración del Sistema",
+    "createUser": "Crear Usuario",
+    "deactivate": "Desactivar",
+    "accessDenied": "Acceso Denegado",
+    "accessDeniedMessage": "No tiene permiso para acceder a esta página."
   },
   "notifications": {
     "title": "Notificaciones",

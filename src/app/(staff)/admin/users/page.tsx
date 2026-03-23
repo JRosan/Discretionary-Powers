@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { api, type ApiUser, type ApiMinistry } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { useTranslations } from "@/i18n";
 
 const ROLE_LABELS: Record<string, { label: string; variant: "default" | "accent" | "warning" | "outline" }> = {
   minister: { label: "Minister", variant: "default" },
@@ -46,6 +47,7 @@ function getInitials(name: string): string {
 
 export default function UsersPage() {
   const { user: currentUser } = useAuth();
+  const t = useTranslations("admin");
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
 
@@ -71,9 +73,9 @@ export default function UsersPage() {
   if (!isPermanentSecretary) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
-        <h1 className="text-2xl font-semibold text-text">Access Denied</h1>
+        <h1 className="text-2xl font-semibold text-text">{t("accessDenied")}</h1>
         <p className="mt-2 text-sm text-text-secondary">
-          You do not have permission to manage users. This page is restricted to Permanent Secretaries.
+          {t("accessDeniedMessage")}
         </p>
       </div>
     );
@@ -83,14 +85,14 @@ export default function UsersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-text">Users</h1>
+          <h1 className="text-2xl font-semibold text-text">{t("users")}</h1>
           <p className="mt-1 text-sm text-text-secondary">
             Manage system users and role assignments
           </p>
         </div>
         <Button variant="accent" onClick={() => setCreateOpen(true)}>
           <Plus className="h-4 w-4" />
-          Add User
+          {t("createUser")}
         </Button>
       </div>
 
@@ -157,7 +159,7 @@ export default function UsersPage() {
                             onClick={() => deactivateMutation.mutate(user.id)}
                             disabled={deactivateMutation.isPending}
                           >
-                            Deactivate
+                            {t("deactivate")}
                           </Button>
                         )}
                       </td>
@@ -191,6 +193,7 @@ function CreateUserDialog({
   onOpenChange: (open: boolean) => void;
   ministries: ApiMinistry[];
 }) {
+  const t = useTranslations("admin");
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -224,7 +227,7 @@ function CreateUserDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create User</DialogTitle>
+          <DialogTitle>{t("createUser")}</DialogTitle>
           <DialogDescription>Add a new user to the system.</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -299,7 +302,7 @@ function CreateUserDialog({
               {createMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                "Create User"
+                t("createUser")
               )}
             </Button>
           </DialogFooter>

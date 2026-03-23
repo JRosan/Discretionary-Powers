@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   FileText,
@@ -24,6 +24,7 @@ import dynamic from "next/dynamic";
 import { SkeletonChart } from "@/components/common/loading-skeleton";
 import { DECISION_STEPS } from "@/lib/constants";
 import { api } from "@/lib/api";
+import { useTranslations } from "@/i18n";
 
 const StatusChart = dynamic(
   () => import("@/components/dashboard/status-chart").then((m) => ({ default: m.StatusChart })),
@@ -44,20 +45,44 @@ const StepBottleneckChart = dynamic(
 
 interface DashboardResponse {
   total: number;
+  overdueCount: number;
   byStatus: Record<string, number>;
   byMinistry: { name: string; count: number }[];
   overTime: { month: string; count: number }[];
   stepTimes: { step: number; avgDays: number }[];
 }
 
+function computeDateRange(dateRange: string): { from?: string; to?: string } {
+  const now = new Date();
+  const toStr = now.toISOString();
+  if (dateRange === "this_month") {
+    const from = new Date(now.getFullYear(), now.getMonth(), 1);
+    return { from: from.toISOString(), to: toStr };
+  }
+  if (dateRange === "this_quarter") {
+    const quarterStart = Math.floor(now.getMonth() / 3) * 3;
+    const from = new Date(now.getFullYear(), quarterStart, 1);
+    return { from: from.toISOString(), to: toStr };
+  }
+  if (dateRange === "this_year") {
+    const from = new Date(now.getFullYear(), 0, 1);
+    return { from: from.toISOString(), to: toStr };
+  }
+  // all_time
+  return {};
+}
+
 // ── Component ────────────────────────────────────────────────────────
 
 export default function ReportsPage() {
+  const t = useTranslations("reports");
   const [dateRange, setDateRange] = useState("this_quarter");
 
+  const dateParams = useMemo(() => computeDateRange(dateRange), [dateRange]);
+
   const { data: dashboard, isLoading } = useQuery({
-    queryKey: ["reports", "dashboard"],
-    queryFn: () => api.reports.getDashboard() as unknown as Promise<DashboardResponse>,
+    queryKey: ["reports", "dashboard", dateParams],
+    queryFn: () => api.reports.getDashboard(dateParams as Record<string, unknown>) as unknown as Promise<DashboardResponse>,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -110,13 +135,13 @@ export default function ReportsPage() {
 
   const stats = [
     {
-      label: "Total Decisions",
+      label: t("totalDecisions"),
       value: isLoading ? "--" : totalDecisions,
       icon: FileText,
       color: "text-primary",
     },
     {
-      label: "Avg. Completion Time",
+      label: t("avgCompletion"),
       value: isLoading ? "--" : `${avgCompletionDays} days`,
       icon: Clock,
       color: "text-accent",
@@ -128,9 +153,8 @@ export default function ReportsPage() {
       color: "text-success",
     },
     {
-      label: "Overdue",
-      value: "--",
-      // TODO: Backend doesn't track overdue yet
+      label: t("overdue"),
+      value: isLoading ? "--" : (dashboard?.overdueCount ?? 0),
       icon: AlertTriangle,
       color: "text-error",
     },
@@ -141,35 +165,34 @@ export default function ReportsPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-text">Reports & Analytics</h1>
+          <h1 className="text-2xl font-semibold text-text">{t("title")}</h1>
           <p className="mt-1 text-sm text-text-secondary">
-            Insights and metrics on discretionary powers activity
+            {t("subtitle")}
           </p>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-text-muted" />
-            {/* TODO: Date range filtering not yet implemented in backend */}
             <Select value={dateRange} onValueChange={setDateRange}>
               <SelectTrigger className="w-[170px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="this_month">This Month</SelectItem>
-                <SelectItem value="this_quarter">This Quarter</SelectItem>
-                <SelectItem value="this_year">This Year</SelectItem>
-                <SelectItem value="all_time">All Time</SelectItem>
+                <SelectItem value="this_month">{t("thisMonth")}</SelectItem>
+                <SelectItem value="this_quarter">{t("thisQuarter")}</SelectItem>
+                <SelectItem value="this_year">{t("thisYear")}</SelectItem>
+                <SelectItem value="all_time">{t("allTime")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => handleExport("csv")} disabled={isLoading}>
               <Download className="h-4 w-4" />
-              CSV
+              {t("exportCsv")}
             </Button>
             <Button variant="outline" size="sm" onClick={() => handleExport("json")} disabled={isLoading}>
               <Download className="h-4 w-4" />
-              JSON
+              {t("exportJson")}
             </Button>
           </div>
         </div>
@@ -178,9 +201,9 @@ export default function ReportsPage() {
       {/* Tabs */}
       <Tabs defaultValue="overview">
         <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="ministry">By Ministry</TabsTrigger>
-          <TabsTrigger value="workflow">Workflow Analysis</TabsTrigger>
+          <TabsTrigger value="overview">{t("overview")}</TabsTrigger>
+          <TabsTrigger value="ministry">{t("byMinistry")}</TabsTrigger>
+          <TabsTrigger value="workflow">{t("workflowAnalysis")}</TabsTrigger>
         </TabsList>
 
         {/* ── Overview Tab ─────────────────────────────────────── */}
