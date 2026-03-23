@@ -25,6 +25,7 @@ public class AuditService(AppDbContext db) : IAuditService
             Detail = detail,
             IpAddress = ipAddress,
             PreviousHash = lastHash,
+            EntryHash = "pending",
             CreatedAt = DateTime.UtcNow,
         };
 
