@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("auth_token");
     document.cookie = "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     setUser(null);
-    api.auth.logout().catch(() => {});
+    window.location.href = "/login";
   }, []);
 
   const value = useMemo<AuthContextValue>(
