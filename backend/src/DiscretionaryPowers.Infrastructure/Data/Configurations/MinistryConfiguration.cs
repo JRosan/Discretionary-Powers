@@ -18,6 +18,14 @@ public class MinistryConfiguration : IEntityTypeConfiguration<Ministry>
         builder.Property(m => m.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
         builder.Property(m => m.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
 
+        builder.Property(m => m.OrganizationId).HasColumnName("organization_id").IsRequired();
+
         builder.HasIndex(m => m.Code).IsUnique();
+        builder.HasIndex(m => m.OrganizationId).HasDatabaseName("ministries_organization_id_idx");
+
+        builder.HasOne(m => m.Organization)
+            .WithMany(o => o.Ministries)
+            .HasForeignKey(m => m.OrganizationId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

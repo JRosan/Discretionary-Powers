@@ -31,7 +31,15 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
         builder.Property(u => u.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
 
+        builder.Property(u => u.OrganizationId).HasColumnName("organization_id").IsRequired();
+
         builder.HasIndex(u => u.Email).IsUnique();
+        builder.HasIndex(u => u.OrganizationId).HasDatabaseName("users_organization_id_idx");
+
+        builder.HasOne(u => u.Organization)
+            .WithMany(o => o.Users)
+            .HasForeignKey(u => u.OrganizationId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(u => u.Ministry)
             .WithMany(m => m.Users)

@@ -5,6 +5,7 @@ public class Comment
     public Guid Id { get; set; }
     public Guid DecisionId { get; set; }
     public Guid UserId { get; set; }
+    public Guid OrganizationId { get; set; }
     public string Content { get; set; } = null!;
     public bool IsInternal { get; set; } = true;
     public DateTime CreatedAt { get; set; }

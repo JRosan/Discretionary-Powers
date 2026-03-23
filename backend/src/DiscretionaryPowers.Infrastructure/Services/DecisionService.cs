@@ -33,6 +33,10 @@ public class DecisionService(
         if (ministry is null)
             return ServiceResult<DecisionResponse>.Fail("Ministry not found.");
 
+        var user = await db.Users.FindAsync(userId);
+        if (user is null)
+            return ServiceResult<DecisionResponse>.Fail("User not found.");
+
         var referenceNumber = GenerateReferenceNumber(ministry.Code);
 
         var decision = new Decision
@@ -42,6 +46,7 @@ public class DecisionService(
             Title = request.Title,
             Description = request.Description,
             MinistryId = request.MinistryId,
+            OrganizationId = user.OrganizationId,
             DecisionType = decisionType,
             Status = DecisionStatus.Draft,
             CurrentStep = 1,
@@ -321,6 +326,7 @@ public class DecisionService(
         {
             Id = Guid.NewGuid(),
             DecisionId = decisionId,
+            OrganizationId = decision.OrganizationId,
             Ground = ground,
             Status = "filed",
             FiledDate = DateOnly.FromDateTime(DateTime.UtcNow),

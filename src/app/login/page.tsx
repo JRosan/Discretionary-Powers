@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth-context";
 import { useTranslations } from "@/i18n";
 import { Scale, FileSearch, UserCheck, Shield } from "lucide-react";
+import { useTenant } from "@/lib/tenant-context";
 
 const demoAccounts = [
   {
@@ -54,6 +55,7 @@ function LoginPage() {
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const loggedOut = searchParams.get("logged_out") === "true";
   const { login, loginWithMfa } = useAuth();
+  const tenant = useTenant();
   const tAuth = useTranslations("auth");
   const tCommon = useTranslations("common");
 
@@ -188,9 +190,9 @@ function LoginPage() {
         <div className="rounded-xl border border-border bg-background shadow-sm overflow-hidden">
           {/* Logo */}
           <div className="px-8 pt-8 pb-2 text-center">
-            <img src="/images/logos/crest-bw.png" alt="BVI Coat of Arms" className="mx-auto mb-4 h-16 w-auto" />
+            <img src={tenant.logoUrl ?? "/images/logos/crest-bw.png"} alt={`${tenant.name} logo`} className="mx-auto mb-4 h-16 w-auto" />
             <h1 className="text-lg font-semibold text-text">
-              {tCommon("government")}
+              {tenant.name}
             </h1>
             <p className="mt-0.5 text-xs text-text-muted">
               {tCommon("appName")}

@@ -21,6 +21,7 @@ public class AuthController(AppDbContext db, JwtTokenService jwtService, ICurren
     {
         var user = await db.Users
             .Include(u => u.Ministry)
+            .Include(u => u.Organization)
             .FirstOrDefaultAsync(u => u.Email == request.Email);
 
         if (user is null || user.PasswordHash is null)
@@ -56,6 +57,8 @@ public class AuthController(AppDbContext db, JwtTokenService jwtService, ICurren
                 MinistryId = user.MinistryId,
                 Active = user.Active,
                 MinistryName = user.Ministry?.Name,
+                OrganizationId = user.OrganizationId,
+                OrganizationName = user.Organization?.Name,
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt,
             },
@@ -73,6 +76,7 @@ public class AuthController(AppDbContext db, JwtTokenService jwtService, ICurren
             Name = currentUser.Name,
             Role = ToSnakeCase(currentUser.Role.ToString()),
             MinistryId = currentUser.MinistryId,
+            OrganizationId = currentUser.OrganizationId,
         });
     }
 

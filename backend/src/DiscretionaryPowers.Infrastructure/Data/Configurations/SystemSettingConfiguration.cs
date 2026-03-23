@@ -13,6 +13,7 @@ public class SystemSettingConfiguration : IEntityTypeConfiguration<SystemSetting
         builder.HasKey(s => s.Key);
         builder.Property(s => s.Key).HasColumnName("key");
         builder.Property(s => s.Value).HasColumnName("value").IsRequired();
+        builder.Property(s => s.OrganizationId).HasColumnName("organization_id").IsRequired();
         builder.Property(s => s.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
     }
 }

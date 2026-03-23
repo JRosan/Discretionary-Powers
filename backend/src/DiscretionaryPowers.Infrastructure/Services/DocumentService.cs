@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DiscretionaryPowers.Infrastructure.Services;
 
-public class DocumentService(AppDbContext db, IStorageAdapter storage) : IDocumentService
+public class DocumentService(AppDbContext db, IStorageAdapter storage, ITenantService tenantService) : IDocumentService
 {
     public async Task<ServiceResult<UploadUrlResponse>> GetUploadUrl(
         Guid decisionId, string filename, string contentType, string classification, Guid uploadedBy)
@@ -22,6 +22,7 @@ public class DocumentService(AppDbContext db, IStorageAdapter storage) : IDocume
         {
             Id = Guid.NewGuid(),
             DecisionId = decisionId,
+            OrganizationId = tenantService.CurrentTenantId ?? Guid.Empty,
             Filename = filename,
             OriginalFilename = filename,
             MimeType = contentType,
@@ -98,6 +99,7 @@ public class DocumentService(AppDbContext db, IStorageAdapter storage) : IDocume
         {
             Id = Guid.NewGuid(),
             DecisionId = decisionId,
+            OrganizationId = tenantService.CurrentTenantId ?? Guid.Empty,
             Filename = filename,
             OriginalFilename = originalFilename,
             MimeType = mimeType,

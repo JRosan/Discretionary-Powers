@@ -260,6 +260,61 @@ export const api = {
       }>>("/judicial-reviews"),
   },
 
+  tenant: {
+    getBranding: () =>
+      request<{
+        name: string;
+        slug: string;
+        logoUrl: string | null;
+        primaryColor: string;
+        accentColor: string;
+        heroImageUrl: string | null;
+      }>("/tenant/branding"),
+    updateBranding: (data: Record<string, unknown>) =>
+      request<void>("/tenant/branding", {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+  },
+
+  workflows: {
+    list: () => request<ApiWorkflowTemplate[]>("/workflows"),
+    getById: (id: string) => request<ApiWorkflowTemplate>(`/workflows/${id}`),
+    create: (data: Record<string, unknown>) =>
+      request<ApiWorkflowTemplate>("/workflows", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    update: (id: string, data: Record<string, unknown>) =>
+      request<void>(`/workflows/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    updateSteps: (id: string, steps: Record<string, unknown>[]) =>
+      request<void>(`/workflows/${id}/steps`, {
+        method: "POST",
+        body: JSON.stringify(steps),
+      }),
+    delete: (id: string) =>
+      request<void>(`/workflows/${id}`, { method: "DELETE" }),
+  },
+
+  decisionTypes: {
+    list: () => request<ApiDecisionTypeConfig[]>("/decision-types"),
+    create: (data: Record<string, unknown>) =>
+      request<ApiDecisionTypeConfig>("/decision-types", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    update: (id: string, data: Record<string, unknown>) =>
+      request<void>(`/decision-types/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    delete: (id: string) =>
+      request<void>(`/decision-types/${id}`, { method: "DELETE" }),
+  },
+
   settings: {
     get: () => request<Record<string, string>>("/settings"),
     update: (data: Record<string, string>) =>
@@ -401,4 +456,38 @@ export interface ApiAuditEntry {
   previousHash: string | null;
   hash: string;
   createdAt: string | null;
+}
+
+export interface ApiWorkflowStepTemplate {
+  id: string;
+  stepNumber: number;
+  name: string;
+  description: string;
+  guidanceTips: string | null;
+  legalReference: string | null;
+  checklistItems: string | null;
+  isRequired: boolean;
+}
+
+export interface ApiWorkflowTemplate {
+  id: string;
+  organizationId: string;
+  name: string;
+  isDefault: boolean;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  steps: ApiWorkflowStepTemplate[];
+}
+
+export interface ApiDecisionTypeConfig {
+  id: string;
+  organizationId: string;
+  code: string;
+  name: string;
+  description: string | null;
+  publicationDeadlineDays: number;
+  defaultWorkflowId: string | null;
+  isActive: boolean;
+  createdAt: string;
 }

@@ -30,6 +30,9 @@ public class JwtTokenService(IConfiguration configuration)
         if (user.MinistryId.HasValue)
             claims.Add(new Claim("ministry_id", user.MinistryId.Value.ToString()));
 
+        if (user.OrganizationId != default)
+            claims.Add(new Claim("organization_id", user.OrganizationId.ToString()));
+
         var token = new JwtSecurityToken(
             issuer: configuration["Jwt:Issuer"] ?? "DiscretionaryPowers",
             audience: configuration["Jwt:Audience"] ?? "DiscretionaryPowers",

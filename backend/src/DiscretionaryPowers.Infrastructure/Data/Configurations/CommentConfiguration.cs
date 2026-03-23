@@ -14,6 +14,7 @@ public class CommentConfiguration : IEntityTypeConfiguration<Comment>
         builder.Property(c => c.Id).HasColumnName("id").HasDefaultValueSql("gen_random_uuid()");
         builder.Property(c => c.DecisionId).HasColumnName("decision_id").IsRequired();
         builder.Property(c => c.UserId).HasColumnName("user_id").IsRequired();
+        builder.Property(c => c.OrganizationId).HasColumnName("organization_id").IsRequired();
         builder.Property(c => c.Content).HasColumnName("content").IsRequired();
         builder.Property(c => c.IsInternal).HasColumnName("is_internal").HasDefaultValue(true);
         builder.Property(c => c.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");

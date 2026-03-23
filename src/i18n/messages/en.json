@@ -20,6 +20,9 @@
     "users": "User Management",
     "settings": "System Settings",
     "mfa": "Two-Factor Auth",
+    "workflows": "Workflows",
+    "decisionTypes": "Decision Types",
+    "organization": "Organization",
     "signOut": "Sign out"
   },
   "auth": {

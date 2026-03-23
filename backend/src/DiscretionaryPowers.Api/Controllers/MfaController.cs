@@ -78,6 +78,7 @@ public class MfaController(AppDbContext db, MfaService mfaService, JwtTokenServi
 
         var user = await db.Users
             .Include(u => u.Ministry)
+            .Include(u => u.Organization)
             .FirstOrDefaultAsync(u => u.Id == userId.Value);
 
         if (user is null || !user.MfaEnabled || user.MfaSecret is null)
@@ -100,6 +101,8 @@ public class MfaController(AppDbContext db, MfaService mfaService, JwtTokenServi
                 MinistryId = user.MinistryId,
                 Active = user.Active,
                 MinistryName = user.Ministry?.Name,
+                OrganizationId = user.OrganizationId,
+                OrganizationName = user.Organization?.Name,
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt,
             },

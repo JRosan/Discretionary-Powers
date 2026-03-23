@@ -6,19 +6,38 @@ namespace DiscretionaryPowers.Infrastructure.Data.Seed;
 
 public static class DataSeeder
 {
+    // Default BVI organization ID — must match the migration SQL
+    public static readonly Guid DefaultOrgId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+
     public static async Task SeedAsync(AppDbContext context)
     {
+        // Ensure default organization exists
+        if (!await context.Organizations.AnyAsync(o => o.Id == DefaultOrgId))
+        {
+            context.Organizations.Add(new Organization
+            {
+                Id = DefaultOrgId,
+                Name = "Government of the Virgin Islands",
+                Slug = "bvi",
+                PrimaryColor = "#1D3557",
+                AccentColor = "#2A9D8F",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+            });
+            await context.SaveChangesAsync();
+        }
+
         if (await context.Ministries.AnyAsync())
             return;
 
         var ministries = new List<Ministry>
         {
-            new() { Name = "Ministry of Finance", Code = "FIN" },
-            new() { Name = "Ministry of Natural Resources, Labour and Immigration", Code = "NAT" },
-            new() { Name = "Ministry of Education, Culture, Youth Affairs and Sports", Code = "EDU" },
-            new() { Name = "Ministry of Health and Social Development", Code = "HEA" },
-            new() { Name = "Ministry of Communications and Works", Code = "COM" },
-            new() { Name = "Premier's Office", Code = "PMO" },
+            new() { Name = "Ministry of Finance", Code = "FIN", OrganizationId = DefaultOrgId },
+            new() { Name = "Ministry of Natural Resources, Labour and Immigration", Code = "NAT", OrganizationId = DefaultOrgId },
+            new() { Name = "Ministry of Education, Culture, Youth Affairs and Sports", Code = "EDU", OrganizationId = DefaultOrgId },
+            new() { Name = "Ministry of Health and Social Development", Code = "HEA", OrganizationId = DefaultOrgId },
+            new() { Name = "Ministry of Communications and Works", Code = "COM", OrganizationId = DefaultOrgId },
+            new() { Name = "Premier's Office", Code = "PMO", OrganizationId = DefaultOrgId },
         };
 
         context.Ministries.AddRange(ministries);
@@ -35,6 +54,7 @@ public static class DataSeeder
                 Name = "Minister",
                 Role = UserRole.Minister,
                 MinistryId = ministryByCode["FIN"],
+                OrganizationId = DefaultOrgId,
                 PasswordHash = passwordHash,
             },
             new()
@@ -43,6 +63,7 @@ public static class DataSeeder
                 Name = "Permanent Secretary",
                 Role = UserRole.PermanentSecretary,
                 MinistryId = ministryByCode["FIN"],
+                OrganizationId = DefaultOrgId,
                 PasswordHash = passwordHash,
             },
             new()
@@ -51,6 +72,7 @@ public static class DataSeeder
                 Name = "Legal Advisor",
                 Role = UserRole.LegalAdvisor,
                 MinistryId = ministryByCode["PMO"],
+                OrganizationId = DefaultOrgId,
                 PasswordHash = passwordHash,
             },
             new()
@@ -59,6 +81,7 @@ public static class DataSeeder
                 Name = "Auditor",
                 Role = UserRole.Auditor,
                 MinistryId = ministryByCode["PMO"],
+                OrganizationId = DefaultOrgId,
                 PasswordHash = passwordHash,
             },
             new()
@@ -67,6 +90,7 @@ public static class DataSeeder
                 Name = "Admin",
                 Role = UserRole.PermanentSecretary,
                 MinistryId = ministryByCode["PMO"],
+                OrganizationId = DefaultOrgId,
                 PasswordHash = passwordHash,
             },
         };

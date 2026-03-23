@@ -1,5 +1,6 @@
 using DiscretionaryPowers.Api.Auth;
 using DiscretionaryPowers.Application.DTOs.Users;
+using DiscretionaryPowers.Domain.Auth;
 using DiscretionaryPowers.Domain.Enums;
 using static DiscretionaryPowers.Infrastructure.Data.EnumConverter;
 using DiscretionaryPowers.Infrastructure.Data;
@@ -13,7 +14,7 @@ namespace DiscretionaryPowers.Api.Controllers;
 [ApiController]
 [Route("api/users")]
 [Authorize]
-public class UsersController(AppDbContext db) : ControllerBase
+public class UsersController(AppDbContext db, ICurrentUserService currentUser) : ControllerBase
 {
     [HttpGet]
     [Authorize(Policy = PermissionPolicies.CanManageUsers)]
@@ -90,6 +91,7 @@ public class UsersController(AppDbContext db) : ControllerBase
             Name = request.Name,
             Role = role,
             MinistryId = request.MinistryId,
+            OrganizationId = currentUser.OrganizationId ?? Guid.Empty,
             PasswordHash = passwordHash,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,

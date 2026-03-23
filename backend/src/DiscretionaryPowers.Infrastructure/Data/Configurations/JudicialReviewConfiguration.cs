@@ -14,6 +14,7 @@ public class JudicialReviewConfiguration : IEntityTypeConfiguration<JudicialRevi
         builder.HasKey(j => j.Id);
         builder.Property(j => j.Id).HasColumnName("id").HasDefaultValueSql("gen_random_uuid()");
         builder.Property(j => j.DecisionId).HasColumnName("decision_id").IsRequired();
+        builder.Property(j => j.OrganizationId).HasColumnName("organization_id").IsRequired();
         builder.Property(j => j.Ground)
             .HasColumnName("ground")
             .HasConversion(

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DiscretionaryPowers.Infrastructure.Services;
 
-public class CommentService(AppDbContext db) : ICommentService
+public class CommentService(AppDbContext db, ITenantService tenantService) : ICommentService
 {
     public async Task<Comment> Create(Guid decisionId, Guid userId, string content, bool isInternal)
     {
@@ -15,6 +15,7 @@ public class CommentService(AppDbContext db) : ICommentService
             Id = Guid.NewGuid(),
             DecisionId = decisionId,
             UserId = userId,
+            OrganizationId = tenantService.CurrentTenantId ?? Guid.Empty,
             Content = content,
             IsInternal = isInternal,
             CreatedAt = DateTime.UtcNow,

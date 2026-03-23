@@ -6,6 +6,7 @@ public class JudicialReview
 {
     public Guid Id { get; set; }
     public Guid DecisionId { get; set; }
+    public Guid OrganizationId { get; set; }
     public JudicialReviewGround Ground { get; set; }
     public string Status { get; set; } = "filed";
     public DateOnly FiledDate { get; set; }

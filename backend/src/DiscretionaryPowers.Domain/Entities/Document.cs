@@ -6,6 +6,7 @@ public class Document
 {
     public Guid Id { get; set; }
     public Guid DecisionId { get; set; }
+    public Guid OrganizationId { get; set; }
     public string Filename { get; set; } = null!;
     public string OriginalFilename { get; set; } = null!;
     public string MimeType { get; set; } = null!;

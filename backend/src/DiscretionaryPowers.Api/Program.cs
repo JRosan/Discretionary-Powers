@@ -137,6 +137,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 app.UseAuthentication();
+app.UseMiddleware<TenantResolutionMiddleware>();
 app.UseAuthorization();
 app.UseRateLimiter();
 app.MapControllers();

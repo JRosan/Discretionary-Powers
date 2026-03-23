@@ -14,6 +14,7 @@ public class AuditEntryConfiguration : IEntityTypeConfiguration<AuditEntry>
         builder.Property(a => a.Id).HasColumnName("id").UseIdentityAlwaysColumn().ValueGeneratedOnAdd();
         builder.Property(a => a.DecisionId).HasColumnName("decision_id");
         builder.Property(a => a.UserId).HasColumnName("user_id").IsRequired();
+        builder.Property(a => a.OrganizationId).HasColumnName("organization_id").IsRequired();
         builder.Property(a => a.Action).HasColumnName("action").IsRequired();
         builder.Property(a => a.StepNumber).HasColumnName("step_number");
         builder.Property(a => a.Detail).HasColumnName("detail").HasColumnType("jsonb");
@@ -22,6 +23,7 @@ public class AuditEntryConfiguration : IEntityTypeConfiguration<AuditEntry>
         builder.Property(a => a.EntryHash).HasColumnName("entry_hash").IsRequired();
         builder.Property(a => a.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()").IsRequired();
 
+        builder.HasIndex(a => a.OrganizationId).HasDatabaseName("audit_entries_organization_id_idx");
         builder.HasIndex(a => a.DecisionId).HasDatabaseName("audit_entries_decision_id_idx");
         builder.HasIndex(a => a.UserId).HasDatabaseName("audit_entries_user_id_idx");
         builder.HasIndex(a => a.CreatedAt).HasDatabaseName("audit_entries_created_at_idx");

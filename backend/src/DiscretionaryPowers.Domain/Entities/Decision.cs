@@ -10,6 +10,7 @@ public class Decision
     public string Title { get; set; } = null!;
     public string? Description { get; set; }
     public Guid MinistryId { get; set; }
+    public Guid OrganizationId { get; set; }
     public DecisionType DecisionType { get; set; }
     public DecisionStatus Status { get; set; } = DecisionStatus.Draft;
     public int CurrentStep { get; set; } = 1;
@@ -24,6 +25,7 @@ public class Decision
     public DateTime UpdatedAt { get; set; }
 
     // Navigation properties
+    public Organization Organization { get; set; } = null!;
     public Ministry Ministry { get; set; } = null!;
     public User Creator { get; set; } = null!;
     public User? Assignee { get; set; }

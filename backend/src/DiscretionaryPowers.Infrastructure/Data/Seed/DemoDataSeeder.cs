@@ -23,6 +23,7 @@ public static class DemoDataSeeder
         var admin = users["admin@gov.vg"];
 
         var now = DateTime.UtcNow;
+        var orgId = DataSeeder.DefaultOrgId;
 
         // ── Decision 1: Published — Financial Services Licensing ──
         var d1 = new Decision
@@ -32,6 +33,7 @@ public static class DemoDataSeeder
             Title = "Financial Services Licence — Caribbean Trust Holdings Ltd",
             Description = "Application for a Class III restricted investment business licence under the Securities and Investment Business Act, 2010. The applicant seeks to operate a fund management business from Road Town, Tortola.",
             MinistryId = ministries["FIN"],
+            OrganizationId = orgId,
             DecisionType = DecisionType.Licensing,
             Status = DecisionStatus.Published,
             CurrentStep = 10,
@@ -51,6 +53,7 @@ public static class DemoDataSeeder
             Title = "Environmental Impact Assessment — Anegada Reef Resort Expansion",
             Description = "Review of proposed expansion of resort facilities on Anegada, including potential impact on the Horseshoe Reef protected area and nesting grounds for the Anegada rock iguana.",
             MinistryId = ministries["NAT"],
+            OrganizationId = orgId,
             DecisionType = DecisionType.Regulatory,
             Status = DecisionStatus.InProgress,
             CurrentStep = 4,
@@ -70,6 +73,7 @@ public static class DemoDataSeeder
             Title = "School Zoning Redistricting — East End Primary",
             Description = "Proposal to redistrict primary school boundaries in the Eastern District following population growth in the Long Look and East End areas. Affects approximately 120 families.",
             MinistryId = ministries["EDU"],
+            OrganizationId = orgId,
             DecisionType = DecisionType.Planning,
             Status = DecisionStatus.UnderReview,
             CurrentStep = 10,
@@ -89,6 +93,7 @@ public static class DemoDataSeeder
             Title = "Appointment of Chief Medical Officer",
             Description = "Appointment under Section 92 of the Public Service Commission Regulations for the position of Chief Medical Officer at Peebles Hospital.",
             MinistryId = ministries["HEA"],
+            OrganizationId = orgId,
             DecisionType = DecisionType.Appointment,
             Status = DecisionStatus.Approved,
             CurrentStep = 10,
@@ -107,6 +112,7 @@ public static class DemoDataSeeder
             Title = "Road Improvement Priority — West End Access Road",
             Description = "Determination of priority classification for the West End access road rehabilitation project under the Public Works Programme 2025–2027.",
             MinistryId = ministries["COM"],
+            OrganizationId = orgId,
             DecisionType = DecisionType.Policy,
             Status = DecisionStatus.Draft,
             CurrentStep = 1,
@@ -124,6 +130,7 @@ public static class DemoDataSeeder
             Title = "Revocation of Trade Licence — BVI Marine Supplies Ltd",
             Description = "Enforcement action for persistent non-compliance with the Trade Licensing Act, including failure to file annual returns for three consecutive years and operating outside licensed premises.",
             MinistryId = ministries["FIN"],
+            OrganizationId = orgId,
             DecisionType = DecisionType.Enforcement,
             Status = DecisionStatus.Challenged,
             CurrentStep = 10,
@@ -172,6 +179,7 @@ public static class DemoDataSeeder
             {
                 DecisionId = d1.Id,
                 UserId = legal,
+                OrganizationId = orgId,
                 Content = "Legal basis verified. The Securities and Investment Business Act, 2010 grants the Financial Services Commission authority to issue licences under Part III. The applicant meets all statutory preconditions.",
                 IsInternal = true,
                 CreatedAt = now.AddDays(-40),
@@ -181,6 +189,7 @@ public static class DemoDataSeeder
             {
                 DecisionId = d1.Id,
                 UserId = minister,
+                OrganizationId = orgId,
                 Content = "Approved. The due diligence process was thorough and the applicant has demonstrated the requisite experience and capitalisation. Ensure the licence conditions include the quarterly reporting requirements.",
                 IsInternal = true,
                 CreatedAt = now.AddDays(-10),
@@ -190,6 +199,7 @@ public static class DemoDataSeeder
             {
                 DecisionId = d2.Id,
                 UserId = legal,
+                OrganizationId = orgId,
                 Content = "Note: The Environmental Protection and Conservation Ordinance requires a public consultation period of at least 30 days for projects within 500 metres of a protected area. Please confirm this requirement is reflected in Step 7.",
                 IsInternal = true,
                 CreatedAt = now.AddDays(-10),
@@ -199,6 +209,7 @@ public static class DemoDataSeeder
             {
                 DecisionId = d3.Id,
                 UserId = secretary,
+                OrganizationId = orgId,
                 Content = "Parent consultation sessions were held at the East End community hall on 15 February and 22 February. Approximately 80 parents attended across both sessions. Summary of representations attached.",
                 IsInternal = false,
                 CreatedAt = now.AddDays(-15),
@@ -208,6 +219,7 @@ public static class DemoDataSeeder
             {
                 DecisionId = d3.Id,
                 UserId = auditor,
+                OrganizationId = orgId,
                 Content = "Reviewed the decision record for completeness. All ten steps are documented. Recommending that the weighting applied in Step 8 be more explicitly justified — the current language could be strengthened.",
                 IsInternal = true,
                 CreatedAt = now.AddDays(-5),
@@ -217,6 +229,7 @@ public static class DemoDataSeeder
             {
                 DecisionId = d6.Id,
                 UserId = legal,
+                OrganizationId = orgId,
                 Content = "Judicial review has been filed. The applicant challenges on grounds of procedural impropriety, arguing that the 14-day notice period under the Trade Licensing Act was not observed. We are preparing the government response.",
                 IsInternal = true,
                 CreatedAt = now.AddDays(-7),
@@ -262,6 +275,7 @@ public static class DemoDataSeeder
             {
                 DecisionId = decisionId,
                 UserId = userId,
+                OrganizationId = orgId,
                 Action = action,
                 StepNumber = stepNumber,
                 Detail = detailDoc,
@@ -288,6 +302,7 @@ public static class DemoDataSeeder
         {
             Id = Guid.NewGuid(),
             DecisionId = d6.Id,
+            OrganizationId = orgId,
             Ground = JudicialReviewGround.ProceduralImpropriety,
             Status = "filed",
             FiledDate = DateOnly.FromDateTime(now.AddDays(-7)),

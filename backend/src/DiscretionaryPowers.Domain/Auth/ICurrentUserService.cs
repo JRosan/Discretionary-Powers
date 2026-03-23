@@ -9,4 +9,5 @@ public interface ICurrentUserService
     string Name { get; }
     UserRole Role { get; }
     Guid? MinistryId { get; }
+    Guid? OrganizationId { get; }
 }

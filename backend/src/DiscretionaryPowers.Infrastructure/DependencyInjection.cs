@@ -45,6 +45,9 @@ public static class DependencyInjection
         // HTTP context
         services.AddHttpContextAccessor();
 
+        // Multi-tenancy
+        services.AddScoped<ITenantService, TenantService>();
+
         // Application services
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IAuditService, AuditService>();

@@ -17,6 +17,7 @@ public class DecisionConfiguration : IEntityTypeConfiguration<Decision>
         builder.Property(d => d.Title).HasColumnName("title").IsRequired();
         builder.Property(d => d.Description).HasColumnName("description");
         builder.Property(d => d.MinistryId).HasColumnName("ministry_id").IsRequired();
+        builder.Property(d => d.OrganizationId).HasColumnName("organization_id").IsRequired();
         builder.Property(d => d.DecisionType)
             .HasColumnName("decision_type")
             .HasConversion(
@@ -47,6 +48,13 @@ public class DecisionConfiguration : IEntityTypeConfiguration<Decision>
         builder.HasIndex(d => d.CreatedBy).HasDatabaseName("decisions_created_by_idx");
         builder.HasIndex(d => d.AssignedTo).HasDatabaseName("decisions_assigned_to_idx");
         builder.HasIndex(d => d.ReferenceNumber).HasDatabaseName("decisions_reference_number_idx");
+
+        builder.HasIndex(d => d.OrganizationId).HasDatabaseName("decisions_organization_id_idx");
+
+        builder.HasOne(d => d.Organization)
+            .WithMany()
+            .HasForeignKey(d => d.OrganizationId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(d => d.Ministry)
             .WithMany(m => m.Decisions)

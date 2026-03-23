@@ -28,6 +28,7 @@ const GlobalSearch = dynamic(
 import { api } from "@/lib/api";
 import { OfflineIndicator } from "@/components/common/offline-indicator";
 import { useTranslations } from "@/i18n";
+import { useTenant } from "@/lib/tenant-context";
 
 interface NavItemDef {
   labelKey: string;
@@ -49,6 +50,9 @@ const navItemDefs: NavItemDef[] = [
     roles: ["permanent_secretary"],
     children: [
       { labelKey: "users", href: "/admin/users" },
+      { labelKey: "workflows", href: "/admin/workflows" },
+      { labelKey: "decisionTypes", href: "/admin/decision-types" },
+      { labelKey: "organization", href: "/admin/organization" },
       { labelKey: "settings", href: "/admin/settings" },
       { labelKey: "mfa", href: "/admin/mfa" },
     ],
@@ -62,6 +66,7 @@ interface AppShellProps {
 export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const tenant = useTenant();
   const tNav = useTranslations('nav');
   const tCommon = useTranslations('common');
   const [adminOpen, setAdminOpen] = React.useState(false);
@@ -134,11 +139,11 @@ export function AppShell({ children }: AppShellProps) {
       <aside className="flex w-64 flex-col bg-primary text-white">
         {/* Logo — links to landing page */}
         <Link href="/" className="flex items-center gap-3 px-6 py-5 border-b border-primary-light hover:bg-primary-light transition-colors">
-          <img src="/images/logos/crest-white.png" alt="BVI Coat of Arms" className="h-10 w-auto" />
+          <img src={tenant.logoUrl ?? "/images/logos/crest-white.png"} alt={`${tenant.name} logo`} className="h-10 w-auto" />
           <div>
             <span className="text-sm font-bold leading-tight block">DPMS</span>
             <span className="text-xs text-white/70 leading-tight block">
-              {tCommon('government')}
+              {tenant.name}
             </span>
           </div>
         </Link>

@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import {
   FileText,
@@ -11,6 +13,7 @@ import {
 } from "lucide-react";
 import { PublicFooter } from "@/components/layout/public-footer";
 import { AuthNavLink } from "@/components/common/auth-nav-link";
+import { useTenant } from "@/lib/tenant-context";
 
 const features = [
   {
@@ -65,16 +68,18 @@ const steps = [
 ];
 
 export default function Home() {
+  const tenant = useTenant();
+
   return (
     <div className="min-h-screen bg-background h-screen overflow-y-auto">
       {/* Header */}
       <header className="border-b border-border bg-white">
         <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/images/logos/crest-bw.png" alt="BVI Coat of Arms" className="h-9 w-auto" />
+            <img src={tenant.logoUrl ?? "/images/logos/crest-bw.png"} alt={`${tenant.name} logo`} className="h-9 w-auto" />
             <div>
               <p className="text-sm font-semibold text-primary">
-                Government of the Virgin Islands
+                {tenant.name}
               </p>
               <p className="text-xs text-text-muted">
                 Discretionary Powers Management System
@@ -97,7 +102,7 @@ export default function Home() {
       <section
         className="relative text-white bg-primary"
         style={{
-          backgroundImage: "url('/images/hero-bg.jpg')",
+          backgroundImage: `url('${tenant.heroImageUrl ?? "/images/hero-bg.jpg"}')`,
           backgroundSize: "cover",
           backgroundPosition: "center 40%",
         }}

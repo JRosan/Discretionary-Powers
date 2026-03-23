@@ -1,4 +1,5 @@
 using DiscretionaryPowers.Api.Auth;
+using DiscretionaryPowers.Domain.Auth;
 using DiscretionaryPowers.Domain.Entities;
 using DiscretionaryPowers.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
@@ -10,7 +11,7 @@ namespace DiscretionaryPowers.Api.Controllers;
 [ApiController]
 [Route("api/settings")]
 [Authorize(Policy = PermissionPolicies.CanManageSettings)]
-public class SettingsController(AppDbContext db) : ControllerBase
+public class SettingsController(AppDbContext db, ICurrentUserService currentUser) : ControllerBase
 {
     private static readonly Dictionary<string, string> Defaults = new()
     {
@@ -54,6 +55,7 @@ public class SettingsController(AppDbContext db) : ControllerBase
                 {
                     Key = key,
                     Value = value,
+                    OrganizationId = currentUser.OrganizationId ?? Guid.Empty,
                     UpdatedAt = now,
                 });
             }

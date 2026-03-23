@@ -10,6 +10,7 @@ public class User
     public string? PasswordHash { get; set; }
     public UserRole Role { get; set; }
     public Guid? MinistryId { get; set; }
+    public Guid OrganizationId { get; set; }
     public bool MfaEnabled { get; set; }
     public string? MfaSecret { get; set; }
     public bool Active { get; set; } = true;
@@ -19,5 +20,6 @@ public class User
     public DateTime UpdatedAt { get; set; }
 
     // Navigation properties
+    public Organization Organization { get; set; } = null!;
     public Ministry? Ministry { get; set; }
 }

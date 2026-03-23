@@ -14,6 +14,7 @@ public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
         builder.HasKey(n => n.Id);
         builder.Property(n => n.Id).HasColumnName("id").HasDefaultValueSql("gen_random_uuid()");
         builder.Property(n => n.UserId).HasColumnName("user_id").IsRequired();
+        builder.Property(n => n.OrganizationId).HasColumnName("organization_id").IsRequired();
         builder.Property(n => n.DecisionId).HasColumnName("decision_id");
         builder.Property(n => n.Type)
             .HasColumnName("type")

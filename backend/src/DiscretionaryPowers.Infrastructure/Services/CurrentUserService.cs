@@ -30,4 +30,13 @@ public class CurrentUserService(IHttpContextAccessor httpContextAccessor) : ICur
             return value is not null ? Guid.Parse(value) : null;
         }
     }
+
+    public Guid? OrganizationId
+    {
+        get
+        {
+            var value = User.FindFirstValue("organization_id");
+            return value is not null ? Guid.Parse(value) : null;
+        }
+    }
 }

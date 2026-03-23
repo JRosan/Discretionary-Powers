@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DiscretionaryPowers.Infrastructure.Services;
 
-public class NotificationService(AppDbContext db) : INotificationService
+public class NotificationService(AppDbContext db, ITenantService tenantService) : INotificationService
 {
     public async Task<Notification> Create(Guid userId, Guid? decisionId, NotificationType type, string title, string message)
     {
@@ -16,6 +16,7 @@ public class NotificationService(AppDbContext db) : INotificationService
             Id = Guid.NewGuid(),
             UserId = userId,
             DecisionId = decisionId,
+            OrganizationId = tenantService.CurrentTenantId ?? Guid.Empty,
             Type = type,
             Title = title,
             Message = message,

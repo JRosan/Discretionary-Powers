@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { PublicFooter } from "./public-footer";
 import { AuthNavLink } from "@/components/common/auth-nav-link";
 import { cn } from "@/lib/utils";
+import { useTenant } from "@/lib/tenant-context";
 
 const navLinks = [
   { label: "Home", href: "/portal" },
@@ -20,6 +21,7 @@ interface PublicLayoutProps {
 
 export function PublicLayout({ children }: PublicLayoutProps) {
   const pathname = usePathname();
+  const tenant = useTenant();
 
   return (
     <div className="flex min-h-screen flex-col h-screen overflow-y-auto">
@@ -28,10 +30,10 @@ export function PublicLayout({ children }: PublicLayoutProps) {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <Link href="/portal" className="flex items-center gap-3">
-              <img src="/images/logos/crest-white.png" alt="BVI Coat of Arms" className="h-10 w-auto" />
+              <img src={tenant.logoUrl ?? "/images/logos/crest-white.png"} alt={`${tenant.name} logo`} className="h-10 w-auto" />
               <div className="flex flex-col">
                 <span className="text-lg font-bold leading-tight">
-                  Government of the Virgin Islands
+                  {tenant.name}
                 </span>
                 <span className="text-xs text-white/60 leading-tight">
                   Transparency Initiative

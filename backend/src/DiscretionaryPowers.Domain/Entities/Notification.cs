@@ -7,6 +7,7 @@ public class Notification
     public Guid Id { get; set; }
     public Guid UserId { get; set; }
     public Guid? DecisionId { get; set; }
+    public Guid OrganizationId { get; set; }
     public NotificationType Type { get; set; }
     public string Title { get; set; } = null!;
     public string Message { get; set; } = null!;

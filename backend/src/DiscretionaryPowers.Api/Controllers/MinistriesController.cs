@@ -1,5 +1,6 @@
 using DiscretionaryPowers.Api.Auth;
 using DiscretionaryPowers.Application.DTOs.Ministries;
+using DiscretionaryPowers.Domain.Auth;
 using DiscretionaryPowers.Domain.Entities;
 using DiscretionaryPowers.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
@@ -11,7 +12,7 @@ namespace DiscretionaryPowers.Api.Controllers;
 [ApiController]
 [Route("api/ministries")]
 [Authorize]
-public class MinistriesController(AppDbContext db) : ControllerBase
+public class MinistriesController(AppDbContext db, ICurrentUserService currentUser) : ControllerBase
 {
     [HttpGet]
     [AllowAnonymous]
@@ -43,6 +44,7 @@ public class MinistriesController(AppDbContext db) : ControllerBase
             Id = Guid.NewGuid(),
             Name = request.Name,
             Code = request.Code,
+            OrganizationId = currentUser.OrganizationId ?? Guid.Empty,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
         };

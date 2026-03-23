@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DiscretionaryPowers.Infrastructure.Services;
 
-public class AuditService(AppDbContext db) : IAuditService
+public class AuditService(AppDbContext db, ITenantService tenantService) : IAuditService
 {
     public async Task<AuditEntry> Log(Guid? decisionId, Guid userId, string action, int? stepNumber, JsonDocument? detail, string? ipAddress)
     {
@@ -20,6 +20,7 @@ public class AuditService(AppDbContext db) : IAuditService
         {
             DecisionId = decisionId,
             UserId = userId,
+            OrganizationId = tenantService.CurrentTenantId ?? Guid.Empty,
             Action = action,
             StepNumber = stepNumber,
             Detail = detail,

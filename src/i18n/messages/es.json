@@ -20,6 +20,9 @@
     "users": "Gestión de Usuarios",
     "settings": "Configuración del Sistema",
     "mfa": "Autenticación de Dos Factores",
+    "workflows": "Flujos de Trabajo",
+    "decisionTypes": "Tipos de Decisión",
+    "organization": "Organización",
     "signOut": "Cerrar sesión"
   },
   "auth": {

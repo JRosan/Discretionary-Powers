@@ -14,6 +14,7 @@ public class DocumentConfiguration : IEntityTypeConfiguration<Document>
         builder.HasKey(d => d.Id);
         builder.Property(d => d.Id).HasColumnName("id").HasDefaultValueSql("gen_random_uuid()");
         builder.Property(d => d.DecisionId).HasColumnName("decision_id").IsRequired();
+        builder.Property(d => d.OrganizationId).HasColumnName("organization_id").IsRequired();
         builder.Property(d => d.Filename).HasColumnName("filename").IsRequired();
         builder.Property(d => d.OriginalFilename).HasColumnName("original_filename").IsRequired();
         builder.Property(d => d.MimeType).HasColumnName("mime_type").IsRequired();
