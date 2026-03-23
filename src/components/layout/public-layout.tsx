@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PublicFooter } from "./public-footer";
+import { AuthNavLink } from "@/components/common/auth-nav-link";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
@@ -44,12 +45,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
               >
                 Home
               </Link>
-              <Link
-                href="/login"
-                className="rounded-md bg-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/20 transition-colors"
-              >
-                Staff Sign In
-              </Link>
+              <AuthNavLink variant="dark" />
             </div>
           </div>
         </div>

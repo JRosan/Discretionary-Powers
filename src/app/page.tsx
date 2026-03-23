@@ -10,6 +10,7 @@ import {
   Shield,
 } from "lucide-react";
 import { PublicFooter } from "@/components/layout/public-footer";
+import { AuthNavLink } from "@/components/common/auth-nav-link";
 
 const features = [
   {
@@ -87,12 +88,7 @@ export default function Home() {
             >
               Public Portal
             </Link>
-            <Link
-              href="/login"
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-light transition-colors"
-            >
-              Staff Sign In
-            </Link>
+            <AuthNavLink variant="light" />
           </div>
         </div>
       </header>
