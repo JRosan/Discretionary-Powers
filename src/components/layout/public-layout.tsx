@@ -84,7 +84,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
               <ul className="space-y-2 text-sm text-text-secondary">
                 <li>
                   <Link
-                    href="/about"
+                    href="/portal/about"
                     className="hover:text-accent transition-colors"
                   >
                     About the Framework
@@ -92,7 +92,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
                 </li>
                 <li>
                   <Link
-                    href="/decisions"
+                    href="/portal/decisions"
                     className="hover:text-accent transition-colors"
                   >
                     Published Decisions
@@ -100,7 +100,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
                 </li>
                 <li>
                   <Link
-                    href="/ministries"
+                    href="/portal/ministries"
                     className="hover:text-accent transition-colors"
                   >
                     Government Ministries
@@ -135,10 +135,14 @@ export function PublicLayout({ children }: PublicLayoutProps) {
                   </Link>
                 </li>
                 <li>
-                  <span className="text-text-muted">Accessibility Statement</span>
+                  <Link href="/portal/accessibility" className="hover:text-accent transition-colors">
+                    Accessibility Statement
+                  </Link>
                 </li>
                 <li>
-                  <span className="text-text-muted">Privacy Policy</span>
+                  <Link href="/portal/privacy" className="hover:text-accent transition-colors">
+                    Privacy Policy
+                  </Link>
                 </li>
               </ul>
             </div>
