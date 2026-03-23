@@ -30,6 +30,11 @@
     "revenue": "Revenue",
     "platformAudit": "Audit Log",
     "platformSettings": "Platform Settings",
+    "security": "Security",
+    "sessions": "Sessions",
+    "compliance": "Compliance",
+    "health": "System Health",
+    "announcements": "Announcements",
     "signOut": "Sign out"
   },
   "auth": {

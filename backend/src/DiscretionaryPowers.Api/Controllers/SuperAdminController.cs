@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using DiscretionaryPowers.Domain.Entities;
 using DiscretionaryPowers.Domain.Enums;
 using DiscretionaryPowers.Infrastructure.Data;
@@ -430,6 +431,344 @@ public class SuperAdminController(AppDbContext db, IConfiguration configuration)
             lastActivity = lastActivity != default ? lastActivity : (DateTime?)null,
         });
     }
+
+    // ── Login Activity ──────────────────────────────────────────────────
+
+    [HttpGet("login-activity")]
+    public async Task<IActionResult> GetLoginActivity(
+        [FromQuery] int limit = 50,
+        [FromQuery] int offset = 0,
+        [FromQuery] string? status = null,
+        [FromQuery] string? email = null,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null)
+    {
+        var query = db.LoginEvents.AsNoTracking().AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(status))
+            query = query.Where(e => e.Status == status);
+        if (!string.IsNullOrWhiteSpace(email))
+            query = query.Where(e => e.Email.Contains(email));
+        if (from.HasValue)
+            query = query.Where(e => e.CreatedAt >= from.Value);
+        if (to.HasValue)
+            query = query.Where(e => e.CreatedAt <= to.Value);
+
+        var total = await query.CountAsync();
+
+        var today = DateTime.UtcNow.Date;
+        var loginsToday = await db.LoginEvents.CountAsync(e => e.Status == "success" && e.CreatedAt >= today);
+        var failedToday = await db.LoginEvents.CountAsync(e => e.Status == "failed" && e.CreatedAt >= today);
+        var mfaToday = await db.LoginEvents.CountAsync(e => (e.Status == "mfa_required" || e.Status == "mfa_verified") && e.CreatedAt >= today);
+
+        var items = await query
+            .OrderByDescending(e => e.CreatedAt)
+            .Skip(offset)
+            .Take(limit)
+            .Select(e => new
+            {
+                e.Id,
+                e.Email,
+                e.UserId,
+                e.OrganizationId,
+                OrganizationName = e.OrganizationId != null
+                    ? db.Organizations.Where(o => o.Id == e.OrganizationId).Select(o => o.Name).FirstOrDefault()
+                    : null,
+                e.Status,
+                e.IpAddress,
+                e.UserAgent,
+                e.FailureReason,
+                e.CreatedAt,
+            })
+            .ToListAsync();
+
+        return Ok(new
+        {
+            items,
+            total,
+            hasMore = offset + limit < total,
+            stats = new { loginsToday, failedToday, mfaToday },
+        });
+    }
+
+    // ── Active Sessions ─────────────────────────────────────────────────
+
+    [HttpGet("sessions")]
+    public async Task<IActionResult> GetActiveSessions()
+    {
+        var recentLogins = await db.LoginEvents
+            .AsNoTracking()
+            .Where(e => e.Status == "success" && e.CreatedAt > DateTime.UtcNow.AddHours(-24))
+            .OrderByDescending(e => e.CreatedAt)
+            .Take(200)
+            .ToListAsync();
+
+        var sessions = recentLogins
+            .GroupBy(e => e.Email)
+            .Select(g => g.First())
+            .Select(s => new
+            {
+                s.Email,
+                s.UserId,
+                s.OrganizationId,
+                OrganizationName = (string?)null,
+                s.IpAddress,
+                s.UserAgent,
+                LastSeen = s.CreatedAt,
+            })
+            .ToList();
+
+        // Resolve org names
+        var orgIds = sessions.Where(s => s.OrganizationId.HasValue).Select(s => s.OrganizationId!.Value).Distinct().ToList();
+        var orgNames = await db.Organizations.Where(o => orgIds.Contains(o.Id)).ToDictionaryAsync(o => o.Id, o => o.Name);
+
+        var result = sessions.Select(s => new
+        {
+            s.Email,
+            s.UserId,
+            s.OrganizationId,
+            OrganizationName = s.OrganizationId.HasValue && orgNames.TryGetValue(s.OrganizationId.Value, out var name) ? name : null,
+            s.IpAddress,
+            s.UserAgent,
+            s.LastSeen,
+        });
+
+        return Ok(new { count = sessions.Count, items = result });
+    }
+
+    // ── Tenant Data Export (GDPR) ───────────────────────────────────────
+
+    [HttpPost("tenants/{id:guid}/export")]
+    public async Task<IActionResult> ExportTenantData(Guid id)
+    {
+        var org = await db.Organizations.AsNoTracking().FirstOrDefaultAsync(o => o.Id == id);
+        if (org is null) return NotFound();
+
+        var users = await db.Users.IgnoreQueryFilters().Where(u => u.OrganizationId == id).AsNoTracking().ToListAsync();
+        var decisions = await db.Decisions.IgnoreQueryFilters().Where(d => d.OrganizationId == id).AsNoTracking().ToListAsync();
+        var decisionIds = decisions.Select(d => d.Id).ToList();
+        var steps = await db.DecisionSteps.IgnoreQueryFilters().Where(s => decisionIds.Contains(s.DecisionId)).AsNoTracking().ToListAsync();
+        var documents = await db.Documents.IgnoreQueryFilters().Where(d => d.OrganizationId == id).AsNoTracking().ToListAsync();
+        var auditEntries = await db.AuditEntries.IgnoreQueryFilters().Where(a => a.OrganizationId == id).AsNoTracking().ToListAsync();
+        var comments = await db.Comments.IgnoreQueryFilters().Where(c => c.OrganizationId == id).AsNoTracking().ToListAsync();
+        var notifications = await db.Notifications.IgnoreQueryFilters().Where(n => n.OrganizationId == id).AsNoTracking().ToListAsync();
+        var ministries = await db.Ministries.IgnoreQueryFilters().Where(m => m.OrganizationId == id).AsNoTracking().ToListAsync();
+        var settings = await db.SystemSettings.IgnoreQueryFilters().Where(s => s.OrganizationId == id).AsNoTracking().ToListAsync();
+        var subscriptions = await db.Subscriptions.IgnoreQueryFilters().Where(s => s.OrganizationId == id).AsNoTracking().ToListAsync();
+        var payments = await db.PaymentRecords.IgnoreQueryFilters().Where(p => p.OrganizationId == id).AsNoTracking().ToListAsync();
+        var apiKeys = await db.ApiKeys.IgnoreQueryFilters().Where(k => k.OrganizationId == id).AsNoTracking().ToListAsync();
+        var loginEvents = await db.LoginEvents.Where(e => e.OrganizationId == id).AsNoTracking().ToListAsync();
+        var judicialReviews = await db.JudicialReviews.IgnoreQueryFilters().Where(j => j.OrganizationId == id).AsNoTracking().ToListAsync();
+
+        var exportData = new
+        {
+            exportedAt = DateTime.UtcNow,
+            organization = org,
+            users,
+            ministries,
+            decisions,
+            decisionSteps = steps,
+            documents,
+            auditEntries,
+            comments,
+            notifications,
+            settings,
+            subscriptions,
+            payments,
+            apiKeys = apiKeys.Select(k => new { k.Id, k.Name, k.KeyPrefix, k.Scopes, k.IsActive, k.CreatedAt }),
+            loginEvents,
+            judicialReviews,
+        };
+
+        return Ok(exportData);
+    }
+
+    // ── Tenant Data Deletion (GDPR) ────────────────────────────────────
+
+    [HttpPost("tenants/{id:guid}/delete")]
+    public async Task<IActionResult> DeleteTenantData(Guid id, [FromBody] DeleteTenantRequest request)
+    {
+        var org = await db.Organizations.FirstOrDefaultAsync(o => o.Id == id);
+        if (org is null) return NotFound();
+
+        if (request.ConfirmSlug != org.Slug)
+            return BadRequest(new { message = "Confirmation slug does not match the organization slug." });
+
+        // Delete in dependency order
+        var decisionIds = await db.Decisions.IgnoreQueryFilters().Where(d => d.OrganizationId == id).Select(d => d.Id).ToListAsync();
+
+        await db.AuditEntries.IgnoreQueryFilters().Where(a => a.OrganizationId == id).ExecuteDeleteAsync();
+        await db.Comments.IgnoreQueryFilters().Where(c => c.OrganizationId == id).ExecuteDeleteAsync();
+        await db.Notifications.IgnoreQueryFilters().Where(n => n.OrganizationId == id).ExecuteDeleteAsync();
+        await db.Documents.IgnoreQueryFilters().Where(d => d.OrganizationId == id).ExecuteDeleteAsync();
+        await db.DecisionSteps.IgnoreQueryFilters().Where(s => decisionIds.Contains(s.DecisionId)).ExecuteDeleteAsync();
+        await db.JudicialReviews.IgnoreQueryFilters().Where(j => j.OrganizationId == id).ExecuteDeleteAsync();
+        await db.Decisions.IgnoreQueryFilters().Where(d => d.OrganizationId == id).ExecuteDeleteAsync();
+        await db.Users.IgnoreQueryFilters().Where(u => u.OrganizationId == id).ExecuteDeleteAsync();
+        await db.Ministries.IgnoreQueryFilters().Where(m => m.OrganizationId == id).ExecuteDeleteAsync();
+        await db.SystemSettings.IgnoreQueryFilters().Where(s => s.OrganizationId == id).ExecuteDeleteAsync();
+        await db.Subscriptions.IgnoreQueryFilters().Where(s => s.OrganizationId == id).ExecuteDeleteAsync();
+        await db.PaymentRecords.IgnoreQueryFilters().Where(p => p.OrganizationId == id).ExecuteDeleteAsync();
+        await db.ApiKeys.IgnoreQueryFilters().Where(k => k.OrganizationId == id).ExecuteDeleteAsync();
+        await db.LoginEvents.Where(e => e.OrganizationId == id).ExecuteDeleteAsync();
+        await db.DecisionTypeConfigs.IgnoreQueryFilters().Where(t => t.OrganizationId == id).ExecuteDeleteAsync();
+        await db.WorkflowStepTemplates.IgnoreQueryFilters()
+            .Where(s => db.WorkflowTemplates.IgnoreQueryFilters().Where(w => w.OrganizationId == id).Select(w => w.Id).Contains(s.WorkflowTemplateId))
+            .ExecuteDeleteAsync();
+        await db.WorkflowTemplates.IgnoreQueryFilters().Where(w => w.OrganizationId == id).ExecuteDeleteAsync();
+
+        db.Organizations.Remove(org);
+        await db.SaveChangesAsync();
+
+        return Ok(new { message = $"Organization '{org.Name}' and all associated data have been permanently deleted." });
+    }
+
+    // ── System Health ───────────────────────────────────────────────────
+
+    [HttpGet("health-detailed")]
+    public async Task<IActionResult> GetDetailedHealth()
+    {
+        // Database check
+        var dbStatus = "connected";
+        long dbResponseMs = 0;
+        int tableCount = 0;
+        try
+        {
+            var sw = Stopwatch.StartNew();
+            await db.Database.ExecuteSqlRawAsync("SELECT 1");
+            sw.Stop();
+            dbResponseMs = sw.ElapsedMilliseconds;
+
+            tableCount = await db.Database.SqlQueryRaw<int>(
+                "SELECT COUNT(*)::int AS \"Value\" FROM information_schema.tables WHERE table_schema = 'public'"
+            ).FirstOrDefaultAsync();
+        }
+        catch
+        {
+            dbStatus = "disconnected";
+        }
+
+        // Storage check
+        var s3Endpoint = configuration["S3:Endpoint"] ?? "";
+        var s3Configured = !string.IsNullOrEmpty(s3Endpoint);
+
+        // Email check
+        var smtpHost = configuration["Smtp:Host"] ?? "";
+        var emailConfigured = !string.IsNullOrEmpty(smtpHost);
+
+        // Payment check
+        var paymentConfigured = !string.IsNullOrEmpty(configuration["PlaceToPay:Login"]);
+
+        // Metrics
+        var today = DateTime.UtcNow.Date;
+        var activeUsers24h = await db.LoginEvents
+            .Where(e => e.Status == "success" && e.CreatedAt > DateTime.UtcNow.AddHours(-24))
+            .Select(e => e.Email)
+            .Distinct()
+            .CountAsync();
+
+        var loginsToday = await db.LoginEvents.CountAsync(e => e.CreatedAt >= today);
+        var failedToday = await db.LoginEvents.CountAsync(e => e.Status == "failed" && e.CreatedAt >= today);
+
+        // Uptime — use process start time
+        var uptime = DateTime.UtcNow - Process.GetCurrentProcess().StartTime.ToUniversalTime();
+        var uptimeStr = $"{(int)uptime.TotalDays}d {uptime.Hours}h {uptime.Minutes}m";
+
+        return Ok(new
+        {
+            status = dbStatus == "connected" ? "healthy" : "degraded",
+            uptime = uptimeStr,
+            database = new
+            {
+                status = dbStatus,
+                responseMs = dbResponseMs,
+                tableCount,
+            },
+            storage = new
+            {
+                status = s3Configured ? "configured" : "not_configured",
+                endpoint = s3Endpoint,
+            },
+            email = new
+            {
+                provider = "SMTP",
+                configured = emailConfigured,
+            },
+            payments = new
+            {
+                provider = "PlaceToPay",
+                configured = paymentConfigured,
+            },
+            metrics = new
+            {
+                apiRequestsToday = loginsToday, // Approximate via login events
+                errorRate = loginsToday > 0 ? Math.Round((double)failedToday / loginsToday * 100, 1) : 0,
+                activeUsers24h,
+            },
+        });
+    }
+
+    // ── Announcements ───────────────────────────────────────────────────
+
+    [HttpPost("announcements")]
+    public async Task<IActionResult> CreateAnnouncement([FromBody] CreateAnnouncementRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Message))
+            return BadRequest(new { message = "Message is required." });
+
+        var announcement = new PlatformAnnouncement
+        {
+            Id = Guid.NewGuid(),
+            Message = request.Message,
+            Type = request.Type ?? "info",
+            IsActive = true,
+            ExpiresAt = request.ExpiresAt,
+            CreatedAt = DateTime.UtcNow,
+        };
+        db.PlatformAnnouncements.Add(announcement);
+        await db.SaveChangesAsync();
+
+        return CreatedAtAction(nameof(GetAnnouncements), new { }, new
+        {
+            announcement.Id,
+            announcement.Message,
+            announcement.Type,
+            announcement.IsActive,
+            announcement.ExpiresAt,
+            announcement.CreatedAt,
+        });
+    }
+
+    [HttpGet("announcements")]
+    public async Task<IActionResult> GetAnnouncements()
+    {
+        var announcements = await db.PlatformAnnouncements
+            .AsNoTracking()
+            .OrderByDescending(a => a.CreatedAt)
+            .ToListAsync();
+
+        return Ok(announcements.Select(a => new
+        {
+            a.Id,
+            a.Message,
+            a.Type,
+            a.IsActive,
+            a.ExpiresAt,
+            a.CreatedAt,
+        }));
+    }
+
+    [HttpDelete("announcements/{announcementId:guid}")]
+    public async Task<IActionResult> DeleteAnnouncement(Guid announcementId)
+    {
+        var announcement = await db.PlatformAnnouncements.FindAsync(announcementId);
+        if (announcement is null) return NotFound();
+
+        db.PlatformAnnouncements.Remove(announcement);
+        await db.SaveChangesAsync();
+
+        return NoContent();
+    }
 }
 
 public class CreateTenantRequest
@@ -449,4 +788,16 @@ public class UpdateTenantRequest
     public bool? IsActive { get; set; }
     public string? PrimaryColor { get; set; }
     public string? AccentColor { get; set; }
+}
+
+public class DeleteTenantRequest
+{
+    public string ConfirmSlug { get; set; } = null!;
+}
+
+public class CreateAnnouncementRequest
+{
+    public string Message { get; set; } = null!;
+    public string? Type { get; set; }
+    public DateTime? ExpiresAt { get; set; }
 }

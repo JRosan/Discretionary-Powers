@@ -3,6 +3,7 @@ using DiscretionaryPowers.Application.DTOs.Auth;
 using DiscretionaryPowers.Application.DTOs.Users;
 using static DiscretionaryPowers.Infrastructure.Data.EnumConverter;
 using DiscretionaryPowers.Domain.Auth;
+using DiscretionaryPowers.Domain.Entities;
 using DiscretionaryPowers.Infrastructure.Data;
 using DiscretionaryPowers.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -78,6 +79,9 @@ public class MfaController(AppDbContext db, MfaService mfaService, JwtTokenServi
     [AllowAnonymous]
     public async Task<IActionResult> VerifyLogin([FromBody] MfaVerifyLoginRequest request)
     {
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
+
         var userId = jwtService.ValidateMfaToken(request.MfaToken);
         if (userId is null)
             return Unauthorized(new { message = "Invalid or expired MFA token." });
@@ -91,7 +95,35 @@ public class MfaController(AppDbContext db, MfaService mfaService, JwtTokenServi
             return Unauthorized(new { message = "Invalid MFA session." });
 
         if (!mfaService.VerifyCode(user.MfaSecret, request.Code))
+        {
+            db.LoginEvents.Add(new LoginEvent
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                Email = user.Email,
+                OrganizationId = user.OrganizationId,
+                Status = "failed",
+                IpAddress = ipAddress,
+                UserAgent = userAgent,
+                FailureReason = "Invalid MFA code",
+                CreatedAt = DateTime.UtcNow,
+            });
+            await db.SaveChangesAsync();
             return Unauthorized(new { message = "Invalid verification code." });
+        }
+
+        db.LoginEvents.Add(new LoginEvent
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            Email = user.Email,
+            OrganizationId = user.OrganizationId,
+            Status = "mfa_verified",
+            IpAddress = ipAddress,
+            UserAgent = userAgent,
+            CreatedAt = DateTime.UtcNow,
+        });
+        await db.SaveChangesAsync();
 
         var token = jwtService.GenerateToken(user);
 

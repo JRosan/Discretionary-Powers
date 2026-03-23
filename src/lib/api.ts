@@ -381,6 +381,33 @@ export const api = {
       request<Record<string, unknown>>(`/super-admin/audit${qs(params)}`),
     getSettings: () =>
       request<Record<string, unknown>>("/super-admin/settings"),
+    getLoginActivity: (params?: Record<string, unknown>) =>
+      request<Record<string, unknown>>(`/super-admin/login-activity${qs(params)}`),
+    getSessions: () =>
+      request<Record<string, unknown>>("/super-admin/sessions"),
+    exportTenantData: (id: string) =>
+      request<Record<string, unknown>>(`/super-admin/tenants/${id}/export`, { method: "POST" }),
+    deleteTenantData: (id: string, confirmSlug: string) =>
+      request<void>(`/super-admin/tenants/${id}/delete`, {
+        method: "POST",
+        body: JSON.stringify({ confirmSlug }),
+      }),
+    getDetailedHealth: () =>
+      request<Record<string, unknown>>("/super-admin/health-detailed"),
+    getAnnouncements: () =>
+      request<ApiAnnouncement[]>("/super-admin/announcements"),
+    createAnnouncement: (data: { message: string; type?: string; expiresAt?: string }) =>
+      request<ApiAnnouncement>("/super-admin/announcements", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    deleteAnnouncement: (id: string) =>
+      request<void>(`/super-admin/announcements/${id}`, { method: "DELETE" }),
+  },
+
+  announcements: {
+    getActive: () =>
+      request<ApiAnnouncement[]>("/announcements/active"),
   },
 };
 
@@ -626,4 +653,13 @@ export interface ApiPaymentRecord {
   receiptNumber: string | null;
   createdAt: string;
   paidAt: string | null;
+}
+
+export interface ApiAnnouncement {
+  id: string;
+  message: string;
+  type: string;
+  isActive?: boolean;
+  expiresAt: string | null;
+  createdAt: string;
 }

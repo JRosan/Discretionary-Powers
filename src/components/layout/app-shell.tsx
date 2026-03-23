@@ -28,6 +28,7 @@ const GlobalSearch = dynamic(
 );
 import { api } from "@/lib/api";
 import { OfflineIndicator } from "@/components/common/offline-indicator";
+import { PlatformBanner } from "@/components/common/platform-banner";
 import { useTranslations } from "@/i18n";
 import { useTenant } from "@/lib/tenant-context";
 
@@ -69,6 +70,11 @@ const navItemDefs: NavItemDef[] = [
       { labelKey: "dashboard", href: "/super-admin/dashboard" },
       { labelKey: "tenants", href: "/super-admin/tenants" },
       { labelKey: "revenue", href: "/super-admin/revenue" },
+      { labelKey: "security", href: "/super-admin/security" },
+      { labelKey: "sessions", href: "/super-admin/sessions" },
+      { labelKey: "compliance", href: "/super-admin/compliance" },
+      { labelKey: "health", href: "/super-admin/health" },
+      { labelKey: "announcements", href: "/super-admin/announcements" },
       { labelKey: "platformAudit", href: "/super-admin/audit" },
       { labelKey: "platformSettings", href: "/super-admin/settings" },
     ],
@@ -325,6 +331,9 @@ export function AppShell({ children }: AppShellProps) {
             </AvatarFallback>
           </Avatar>
         </header>
+
+        {/* Platform announcements */}
+        <PlatformBanner />
 
         {/* Offline indicator */}
         <OfflineIndicator />

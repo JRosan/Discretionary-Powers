@@ -2,6 +2,7 @@ using DiscretionaryPowers.Api.Auth;
 using DiscretionaryPowers.Application.DTOs.Auth;
 using DiscretionaryPowers.Application.DTOs.Users;
 using DiscretionaryPowers.Domain.Auth;
+using DiscretionaryPowers.Domain.Entities;
 using DiscretionaryPowers.Infrastructure.Data;
 using static DiscretionaryPowers.Infrastructure.Data.EnumConverter;
 using Microsoft.AspNetCore.Authorization;
@@ -19,22 +20,81 @@ public class AuthController(AppDbContext db, JwtTokenService jwtService, ICurren
     [AllowAnonymous]
     public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
     {
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
+
         var user = await db.Users
             .Include(u => u.Ministry)
             .Include(u => u.Organization)
             .FirstOrDefaultAsync(u => u.Email == request.Email);
 
         if (user is null || user.PasswordHash is null)
+        {
+            db.LoginEvents.Add(new LoginEvent
+            {
+                Id = Guid.NewGuid(),
+                Email = request.Email,
+                Status = "failed",
+                IpAddress = ipAddress,
+                UserAgent = userAgent,
+                FailureReason = "Invalid email or password",
+                CreatedAt = DateTime.UtcNow,
+            });
+            await db.SaveChangesAsync();
             return Unauthorized(new { message = "Invalid email or password." });
+        }
 
         if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+        {
+            db.LoginEvents.Add(new LoginEvent
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                Email = user.Email,
+                OrganizationId = user.OrganizationId,
+                Status = "failed",
+                IpAddress = ipAddress,
+                UserAgent = userAgent,
+                FailureReason = "Invalid password",
+                CreatedAt = DateTime.UtcNow,
+            });
+            await db.SaveChangesAsync();
             return Unauthorized(new { message = "Invalid email or password." });
+        }
 
         if (!user.Active)
+        {
+            db.LoginEvents.Add(new LoginEvent
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                Email = user.Email,
+                OrganizationId = user.OrganizationId,
+                Status = "failed",
+                IpAddress = ipAddress,
+                UserAgent = userAgent,
+                FailureReason = "Account deactivated",
+                CreatedAt = DateTime.UtcNow,
+            });
+            await db.SaveChangesAsync();
             return Unauthorized(new { message = "Account is deactivated." });
+        }
 
         if (user.MfaEnabled && user.MfaSecret is not null)
         {
+            db.LoginEvents.Add(new LoginEvent
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                Email = user.Email,
+                OrganizationId = user.OrganizationId,
+                Status = "mfa_required",
+                IpAddress = ipAddress,
+                UserAgent = userAgent,
+                CreatedAt = DateTime.UtcNow,
+            });
+            await db.SaveChangesAsync();
+
             var mfaToken = jwtService.GenerateMfaToken(user);
             return Ok(new LoginResponse
             {
@@ -42,6 +102,19 @@ public class AuthController(AppDbContext db, JwtTokenService jwtService, ICurren
                 MfaToken = mfaToken,
             });
         }
+
+        db.LoginEvents.Add(new LoginEvent
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            Email = user.Email,
+            OrganizationId = user.OrganizationId,
+            Status = "success",
+            IpAddress = ipAddress,
+            UserAgent = userAgent,
+            CreatedAt = DateTime.UtcNow,
+        });
+        await db.SaveChangesAsync();
 
         var token = jwtService.GenerateToken(user);
 

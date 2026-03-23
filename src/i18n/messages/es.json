@@ -30,6 +30,11 @@
     "revenue": "Ingresos",
     "platformAudit": "Registro de Auditoría",
     "platformSettings": "Configuración de Plataforma",
+    "security": "Seguridad",
+    "sessions": "Sesiones",
+    "compliance": "Cumplimiento",
+    "health": "Estado del Sistema",
+    "announcements": "Anuncios",
     "signOut": "Cerrar sesión"
   },
   "auth": {

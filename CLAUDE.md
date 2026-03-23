@@ -118,6 +118,40 @@ npm run test:load                            # Run k6 load tests
 - **Phase 4**: Quality assurance (tests, security, documentation) — Complete
 - **Phase 5**: Launch readiness (E2E tests, performance, i18n, CI/CD) — Complete
 - **Phase 6**: SaaS transformation (multi-tenancy, configurable workflows, white-label) — Complete
+- **Phase 7**: Platform operations (super-admin, billing, API keys, security monitoring) — Complete
+
+## Platform Owner (Super Admin)
+
+Login: `superadmin@govdecision.com` / `password`
+
+Pages:
+- `/super-admin/dashboard` — Platform metrics (tenants, users, MRR/ARR)
+- `/super-admin/tenants` — Tenant CRUD, provisioning, detail with stats
+- `/super-admin/revenue` — Revenue dashboard, payment history, plan breakdown
+- `/super-admin/security` — Login activity log (success/failed/MFA events)
+- `/super-admin/sessions` — Active sessions (24h window)
+- `/super-admin/compliance` — GDPR data export/deletion, compliance checklist
+- `/super-admin/health` — System health (DB, storage, email, payments, metrics)
+- `/super-admin/announcements` — Platform-wide banners (info/warning/maintenance)
+- `/super-admin/audit` — Cross-tenant audit log with filters
+- `/super-admin/settings` — Platform configuration (read-only)
+
+## Subscription Tiers
+
+| Plan | Annual | Users | Storage | Key Features |
+|------|--------|-------|---------|-------------|
+| Starter | $40,000 | 50 | 5GB | Core workflow, audit trail, basic reports |
+| Professional | $85,000 | 200 | 25GB | Custom workflows, API keys, MFA, redaction |
+| Enterprise | $200,000 | Unlimited | 100GB | All features, custom branding, SLA |
+
+Feature gating enforced by `SubscriptionGuardService` on every API call.
+
+## Database Tables (18)
+
+organizations, ministries, users, decisions, decision_steps, documents,
+audit_entries, judicial_reviews, notifications, comments, system_settings,
+workflow_templates, workflow_step_templates, decision_type_configs,
+api_keys, subscriptions, payment_records, login_events, platform_announcements
 
 ## Documentation
 
