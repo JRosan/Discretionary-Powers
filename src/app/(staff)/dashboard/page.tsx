@@ -104,12 +104,13 @@ export default function DashboardPage() {
             {t('subtitle')}
           </p>
         </div>
-        <Button asChild variant="accent">
-          <Link href="/decisions/new">
-            <Plus className="h-4 w-4" />
-            {t('newDecision')}
-          </Link>
-        </Button>
+        <Link
+          href="/decisions/new"
+          className="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-light transition-colors"
+        >
+          <Plus className="h-4 w-4" />
+          {t('newDecision')}
+        </Link>
       </div>
 
       {/* Stats cards */}
@@ -157,11 +158,12 @@ export default function DashboardPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-3">
           <CardTitle className="text-base">{t('recentDecisions')}</CardTitle>
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/decisions">
-              View all <ArrowRight className="ml-1 h-3 w-3" />
-            </Link>
-          </Button>
+          <Link
+            href="/decisions"
+            className="inline-flex items-center text-sm text-text-secondary hover:text-accent transition-colors"
+          >
+            View all <ArrowRight className="ml-1 h-3 w-3" />
+          </Link>
         </CardHeader>
         <CardContent>
           {isLoading ? (
