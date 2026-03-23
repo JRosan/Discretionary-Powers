@@ -303,7 +303,8 @@ export default function StepPage() {
         </Link>
 
         {/* Step progress stepper */}
-        <div className="rounded-lg border border-border bg-white p-4 mb-6">
+        <div className="rounded-lg border border-border bg-white px-4 pt-4 pb-3 mb-6">
+          {/* Circles and connectors row */}
           <div className="flex items-center">
             {DECISION_STEPS.map((s, i) => {
               const sd = decision?.steps?.find((st: { stepNumber: number }) => st.stepNumber === s.number);
@@ -313,20 +314,19 @@ export default function StepPage() {
               const isPast = s.number < stepNumber;
 
               return (
-                <div key={s.number} className="flex items-center flex-1 last:flex-none">
+                <div key={s.number} className="contents">
                   <Link
                     href={`/decisions/${decisionId}/step/${s.number}`}
                     title={`Step ${s.number}: ${s.name}`}
-                    className="flex flex-col items-center group relative"
+                    className="group shrink-0"
                   >
-                    {/* Circle */}
                     <div
                       className={`flex items-center justify-center rounded-full text-xs font-bold transition-all ${
                         isDone
                           ? "h-8 w-8 bg-accent text-white"
                           : isActive
-                          ? "h-8 w-8 border-2 border-accent bg-accent/10 text-accent ring-4 ring-accent/10"
-                          : "h-7 w-7 border-2 border-border bg-white text-text-muted group-hover:border-accent/50"
+                          ? "h-9 w-9 border-2 border-accent bg-accent/10 text-accent ring-4 ring-accent/10"
+                          : "h-8 w-8 border-2 border-border bg-white text-text-muted group-hover:border-accent/50 group-hover:text-accent"
                       }`}
                     >
                       {isDone ? (
@@ -335,27 +335,32 @@ export default function StepPage() {
                         s.number
                       )}
                     </div>
-                    {/* Label — only show on active and adjacent steps on larger screens */}
-                    <span
-                      className={`mt-1 text-[10px] leading-tight text-center max-w-[60px] truncate hidden sm:block ${
-                        isActive
-                          ? "text-accent-dark font-semibold"
-                          : isDone
-                          ? "text-accent"
-                          : "text-text-muted"
-                      }`}
-                    >
-                      {s.name.split(" ").slice(0, 2).join(" ")}
-                    </span>
                   </Link>
-                  {/* Connecting line */}
                   {i < DECISION_STEPS.length - 1 && (
-                    <div
-                      className={`flex-1 h-0.5 mx-1 rounded-full ${
-                        isDone || isPast ? "bg-accent/40" : "bg-border"
-                      }`}
-                    />
+                    <div className={`flex-1 h-0.5 ${isDone || isPast ? "bg-accent/40" : "bg-border"}`} />
                   )}
+                </div>
+              );
+            })}
+          </div>
+          {/* Labels row */}
+          <div className="hidden sm:flex items-start mt-1.5">
+            {DECISION_STEPS.map((s, i) => {
+              const sd = decision?.steps?.find((st: { stepNumber: number }) => st.stepNumber === s.number);
+              const st = sd?.status ?? "not_started";
+              const isActive = s.number === stepNumber;
+              const isDone = st === "completed" || st === "skipped_with_reason";
+
+              return (
+                <div key={s.number} className="contents">
+                  <span
+                    className={`shrink-0 w-8 text-[10px] leading-tight text-center truncate ${
+                      isActive ? "w-9 text-accent-dark font-semibold" : isDone ? "text-accent" : "text-text-muted"
+                    }`}
+                  >
+                    {s.name.split(" ")[0]}
+                  </span>
+                  {i < DECISION_STEPS.length - 1 && <div className="flex-1" />}
                 </div>
               );
             })}
