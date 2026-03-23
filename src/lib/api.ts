@@ -290,7 +290,11 @@ export interface ApiDecision {
   status: string;
   currentStep: number;
   ministryId: string;
+  ministryName: string | null;
   createdBy: string;
+  createdByName: string | null;
+  assignedTo: string | null;
+  assignedToName: string | null;
   deadline: string | null;
   createdAt: string | null;
   updatedAt: string | null;

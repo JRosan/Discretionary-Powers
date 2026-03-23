@@ -97,6 +97,9 @@ public class DecisionService(
     {
         var decision = await db.Decisions
             .AsNoTracking()
+            .Include(d => d.Ministry)
+            .Include(d => d.Creator)
+            .Include(d => d.Assignee)
             .FirstOrDefaultAsync(d => d.Id == id);
 
         if (decision is null) return null;
@@ -132,6 +135,9 @@ public class DecisionService(
         var limit = Math.Clamp(query.Limit, 1, 100);
 
         var items = await q
+            .Include(d => d.Ministry)
+            .Include(d => d.Creator)
+            .Include(d => d.Assignee)
             .OrderByDescending(d => d.CreatedAt)
             .Take(limit + 1)
             .ToListAsync();
@@ -380,11 +386,14 @@ public class DecisionService(
             Title = d.Title,
             Description = d.Description,
             MinistryId = d.MinistryId,
-            DecisionType = d.DecisionType.ToString().ToLowerInvariant(),
-            Status = d.Status.ToString().ToLowerInvariant(),
+            MinistryName = d.Ministry?.Name,
+            DecisionType = Data.EnumConverter.ToSnakeCase(d.DecisionType.ToString()),
+            Status = Data.EnumConverter.ToSnakeCase(d.Status.ToString()),
             CurrentStep = d.CurrentStep,
             CreatedBy = d.CreatedBy,
+            CreatedByName = d.Creator?.Name,
             AssignedTo = d.AssignedTo,
+            AssignedToName = d.Assignee?.Name,
             IsPublic = d.IsPublic,
             JudicialReviewFlag = d.JudicialReviewFlag,
             Deadline = d.Deadline,
@@ -394,7 +403,7 @@ public class DecisionService(
             {
                 Id = s.Id,
                 StepNumber = s.StepNumber,
-                Status = s.Status.ToString().ToLowerInvariant(),
+                Status = Data.EnumConverter.ToSnakeCase(s.Status.ToString()),
                 StartedAt = s.StartedAt,
                 CompletedAt = s.CompletedAt,
                 CompletedBy = s.CompletedBy,

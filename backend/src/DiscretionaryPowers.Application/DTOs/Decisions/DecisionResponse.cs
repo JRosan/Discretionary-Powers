@@ -7,11 +7,14 @@ public class DecisionResponse
     public string Title { get; set; } = null!;
     public string? Description { get; set; }
     public Guid MinistryId { get; set; }
+    public string? MinistryName { get; set; }
     public string DecisionType { get; set; } = null!;
     public string Status { get; set; } = null!;
     public int CurrentStep { get; set; }
     public Guid CreatedBy { get; set; }
+    public string? CreatedByName { get; set; }
     public Guid? AssignedTo { get; set; }
+    public string? AssignedToName { get; set; }
     public bool IsPublic { get; set; }
     public bool JudicialReviewFlag { get; set; }
     public DateTime? Deadline { get; set; }

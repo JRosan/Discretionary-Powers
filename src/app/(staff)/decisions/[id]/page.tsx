@@ -164,14 +164,14 @@ export default function DecisionDetailPage() {
           <Building2 className="h-5 w-5 text-text-muted" />
           <div>
             <p className="text-xs text-text-muted">Ministry</p>
-            <p className="text-sm font-medium text-text">{decision.ministryId}</p>
+            <p className="text-sm font-medium text-text">{decision.ministryName ?? decision.ministryId}</p>
           </div>
         </div>
         <div className="flex items-center gap-3 rounded-lg border border-border bg-white p-4">
           <User className="h-5 w-5 text-text-muted" />
           <div>
             <p className="text-xs text-text-muted">Created By</p>
-            <p className="text-sm font-medium text-text">{decision.createdBy}</p>
+            <p className="text-sm font-medium text-text">{decision.createdByName ?? decision.createdBy}</p>
           </div>
         </div>
         <div className="flex items-center gap-3 rounded-lg border border-border bg-white p-4">
