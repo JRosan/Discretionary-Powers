@@ -1,23 +1,26 @@
-# Discretionary Powers Management System
+# GovDecision — Discretionary Powers Management Platform
 
 ![Build](https://img.shields.io/badge/build-passing-brightgreen)
-![Tests](https://img.shields.io/badge/tests-passing-brightgreen)
-![Coverage](https://img.shields.io/badge/coverage-85%25-yellowgreen)
+![Tests](https://img.shields.io/badge/tests-88_passing-brightgreen)
+![SaaS](https://img.shields.io/badge/SaaS-multi--tenant-blue)
 
-**Government of the Virgin Islands**
+**Multi-tenant SaaS platform for government decision management**
 
-A digital platform for managing the 10-step framework for the exercise of discretionary powers in the British Virgin Islands. The system guides government officers through each stage of the decision-making process, ensuring transparency, accountability, and compliance with established procedures.
+A white-label platform enabling governments to manage the structured exercise of discretionary powers. Each jurisdiction gets configurable workflows, branded portals, and cryptographic audit trails — ensuring transparency, accountability, and compliance with administrative law.
+
+Originally built for the Government of the British Virgin Islands following the 2022 Commission of Inquiry governance reforms.
 
 ## Architecture
 
-| Layer        | Technology                             |
-| ------------ | -------------------------------------- |
-| Frontend     | Next.js 15 (App Router), TypeScript    |
-| Backend API  | ASP.NET Core (.NET 10), C#             |
-| Database     | PostgreSQL 17 + Entity Framework Core  |
-| Auth         | JWT Bearer + role-based policies       |
-| UI           | Tailwind CSS 4 + Radix UI             |
-| Storage      | MinIO (S3-compatible)                  |
+| Layer           | Technology                             |
+| --------------- | -------------------------------------- |
+| Frontend        | Next.js 15 (App Router), TypeScript    |
+| Backend API     | ASP.NET Core (.NET 10), C#             |
+| Database        | PostgreSQL 17 + Entity Framework Core  |
+| Multi-tenancy   | Organization-scoped with EF Core global query filters |
+| Auth            | JWT Bearer + role-based + tenant-scoped policies |
+| UI              | Tailwind CSS 4 + Radix UI (white-label) |
+| Storage         | MinIO (S3-compatible), tenant-isolated |
 | Email        | MailKit + Mailpit (dev)                |
 | Cache        | Redis 7                                |
 | Testing      | Vitest + Playwright (frontend), xUnit (backend) |
@@ -55,12 +58,13 @@ npm run dev
 
 ## Demo Credentials
 
-| Email              | Password   | Role                 |
-| ------------------ | ---------- | -------------------- |
-| minister@gov.vg    | password   | Minister             |
-| secretary@gov.vg   | password   | Permanent Secretary  |
-| legal@gov.vg       | password   | Legal Advisor        |
-| auditor@gov.vg     | password   | Auditor              |
+| Email                        | Password   | Role                 |
+| ---------------------------- | ---------- | -------------------- |
+| minister@gov.vg              | password   | Minister             |
+| secretary@gov.vg             | password   | Permanent Secretary  |
+| legal@gov.vg                 | password   | Legal Advisor        |
+| auditor@gov.vg               | password   | Auditor              |
+| superadmin@govdecision.com   | password   | Super Admin (SaaS)   |
 
 ## Project Structure
 
