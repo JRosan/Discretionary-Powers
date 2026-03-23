@@ -32,23 +32,24 @@ interface NavItemDef {
   labelKey: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
-  children?: { labelKey: string; href: string }[];
+  roles?: string[]; // if set, only these roles see the item
+  children?: { labelKey: string; href: string; roles?: string[] }[];
 }
 
 const navItemDefs: NavItemDef[] = [
   { labelKey: "dashboard", href: "/dashboard", icon: LayoutDashboard },
   { labelKey: "decisions", href: "/decisions", icon: FileText },
   { labelKey: "reports", href: "/reports", icon: BarChart3 },
-  { labelKey: "judicialReviews", href: "/judicial-reviews", icon: Scale },
+  { labelKey: "judicialReviews", href: "/judicial-reviews", icon: Scale, roles: ["legal_advisor", "auditor", "permanent_secretary", "minister"] },
   {
     labelKey: "admin",
     href: "/admin",
     icon: Settings,
+    roles: ["permanent_secretary"],
     children: [
       { labelKey: "users", href: "/admin/users" },
-      { labelKey: "ministries", href: "/admin/ministries" },
-      { labelKey: "templates", href: "/admin/templates" },
       { labelKey: "settings", href: "/admin/settings" },
+      { labelKey: "mfa", href: "/admin/mfa" },
     ],
   },
 ];
@@ -134,7 +135,7 @@ export function AppShell({ children }: AppShellProps) {
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-          {navItemDefs.map((item) => {
+          {navItemDefs.filter((item) => !item.roles || (user?.role && item.roles.includes(user.role))).map((item) => {
             const isActive =
               pathname === item.href || pathname.startsWith(item.href + "/");
             const Icon = item.icon;

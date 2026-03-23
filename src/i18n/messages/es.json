@@ -18,9 +18,8 @@
     "judicialReviews": "Revisiones Judiciales",
     "admin": "Administración",
     "users": "Gestión de Usuarios",
-    "ministries": "Ministerios",
-    "templates": "Plantillas",
     "settings": "Configuración del Sistema",
+    "mfa": "Autenticación de Dos Factores",
     "signOut": "Cerrar sesión"
   },
   "auth": {

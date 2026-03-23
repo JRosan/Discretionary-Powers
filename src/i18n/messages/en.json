@@ -18,9 +18,8 @@
     "judicialReviews": "Judicial Reviews",
     "admin": "Administration",
     "users": "User Management",
-    "ministries": "Ministries",
-    "templates": "Templates",
     "settings": "System Settings",
+    "mfa": "Two-Factor Auth",
     "signOut": "Sign out"
   },
   "auth": {
