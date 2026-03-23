@@ -11,8 +11,193 @@ namespace DiscretionaryPowers.Api.Controllers;
 [ApiController]
 [Route("api/super-admin")]
 [Authorize(Policy = "SuperAdmin")]
-public class SuperAdminController(AppDbContext db) : ControllerBase
+public class SuperAdminController(AppDbContext db, IConfiguration configuration) : ControllerBase
 {
+    [HttpGet("dashboard")]
+    public async Task<IActionResult> GetDashboard()
+    {
+        var totalTenants = await db.Organizations.CountAsync();
+        var activeTenants = await db.Organizations.CountAsync(o => o.IsActive);
+        var totalUsers = await db.Users.IgnoreQueryFilters().CountAsync();
+        var totalDecisions = await db.Decisions.IgnoreQueryFilters().CountAsync();
+
+        var activeSubscriptions = await db.Subscriptions.IgnoreQueryFilters()
+            .Where(s => s.Status == "active")
+            .ToListAsync();
+
+        var mrr = activeSubscriptions.Sum(s => s.MonthlyPrice);
+        var arr = mrr * 12;
+
+        var byPlan = activeSubscriptions
+            .GroupBy(s => s.Plan)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        var recentTenants = await db.Organizations
+            .AsNoTracking()
+            .OrderByDescending(o => o.CreatedAt)
+            .Take(5)
+            .Select(o => new
+            {
+                o.Id,
+                o.Name,
+                o.Slug,
+                o.IsActive,
+                o.CreatedAt,
+                UserCount = db.Users.IgnoreQueryFilters().Count(u => u.OrganizationId == o.Id),
+            })
+            .ToListAsync();
+
+        return Ok(new
+        {
+            totalTenants,
+            activeTenants,
+            totalUsers,
+            totalDecisions,
+            mrr,
+            arr,
+            recentTenants,
+            subscriptionsByPlan = byPlan,
+        });
+    }
+
+    [HttpGet("revenue")]
+    public async Task<IActionResult> GetRevenue()
+    {
+        var activeSubscriptions = await db.Subscriptions.IgnoreQueryFilters()
+            .Where(s => s.Status == "active")
+            .ToListAsync();
+
+        var mrr = activeSubscriptions.Sum(s => s.MonthlyPrice);
+        var arr = mrr * 12;
+
+        var byPlan = activeSubscriptions
+            .GroupBy(s => s.Plan)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        var startOfMonth = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        var cancelledThisMonth = await db.Subscriptions.IgnoreQueryFilters()
+            .CountAsync(s => s.Status == "cancelled" && s.CancelledAt != null && s.CancelledAt >= startOfMonth);
+
+        var recentPayments = await db.PaymentRecords.IgnoreQueryFilters()
+            .AsNoTracking()
+            .OrderByDescending(p => p.CreatedAt)
+            .Take(20)
+            .Select(p => new
+            {
+                p.Id,
+                p.OrganizationId,
+                TenantName = db.Organizations.Where(o => o.Id == p.OrganizationId).Select(o => o.Name).FirstOrDefault(),
+                p.Reference,
+                p.Status,
+                p.Amount,
+                p.Currency,
+                p.PaymentMethod,
+                p.ReceiptNumber,
+                p.CreatedAt,
+                p.PaidAt,
+            })
+            .ToListAsync();
+
+        return Ok(new
+        {
+            mrr,
+            arr,
+            activeSubscriptions = activeSubscriptions.Count,
+            byPlan,
+            recentPayments,
+            cancelledThisMonth,
+        });
+    }
+
+    [HttpGet("audit")]
+    public async Task<IActionResult> GetAuditLog(
+        [FromQuery] int limit = 50,
+        [FromQuery] int offset = 0,
+        [FromQuery] Guid? organizationId = null,
+        [FromQuery] string? action = null)
+    {
+        var query = db.AuditEntries.IgnoreQueryFilters().AsNoTracking().AsQueryable();
+
+        if (organizationId.HasValue)
+            query = query.Where(a => a.OrganizationId == organizationId.Value);
+        if (!string.IsNullOrWhiteSpace(action))
+            query = query.Where(a => a.Action == action);
+
+        var total = await query.CountAsync();
+
+        var entries = await query
+            .OrderByDescending(a => a.CreatedAt)
+            .Skip(offset)
+            .Take(limit)
+            .Select(a => new
+            {
+                a.Id,
+                a.DecisionId,
+                a.Action,
+                a.StepNumber,
+                a.OrganizationId,
+                OrganizationName = db.Organizations.Where(o => o.Id == a.OrganizationId).Select(o => o.Name).FirstOrDefault(),
+                a.UserId,
+                UserName = db.Users.IgnoreQueryFilters().Where(u => u.Id == a.UserId).Select(u => u.Name).FirstOrDefault(),
+                DecisionReference = a.DecisionId != null
+                    ? db.Decisions.IgnoreQueryFilters().Where(d => d.Id == a.DecisionId).Select(d => d.ReferenceNumber).FirstOrDefault()
+                    : null,
+                a.IpAddress,
+                a.EntryHash,
+                a.CreatedAt,
+            })
+            .ToListAsync();
+
+        return Ok(new { items = entries, total, hasMore = offset + limit < total });
+    }
+
+    [HttpGet("settings")]
+    public async Task<IActionResult> GetSettings()
+    {
+        // Check database connectivity
+        var dbStatus = "connected";
+        try
+        {
+            await db.Database.CanConnectAsync();
+        }
+        catch
+        {
+            dbStatus = "disconnected";
+        }
+
+        var placeToPayEndpoint = configuration["PlaceToPay:Endpoint"] ?? "";
+        var placeToPayConfigured = !string.IsNullOrEmpty(configuration["PlaceToPay:Login"]);
+
+        var smtpHost = configuration["Smtp:Host"] ?? "";
+        var emailConfigured = !string.IsNullOrEmpty(smtpHost);
+
+        // Plans (same as BillingController)
+        var plans = new[]
+        {
+            new { id = "starter", name = "Government Starter", price = 3333m, currency = "USD", userLimit = 50, storageGb = 5 },
+            new { id = "professional", name = "Government Professional", price = 7083m, currency = "USD", userLimit = 200, storageGb = 25 },
+            new { id = "enterprise", name = "Government Enterprise", price = 16667m, currency = "USD", userLimit = -1, storageGb = 100 },
+        };
+
+        return Ok(new
+        {
+            version = "1.0.0",
+            database = dbStatus,
+            paymentGateway = new
+            {
+                provider = "PlaceToPay",
+                endpoint = placeToPayEndpoint,
+                configured = placeToPayConfigured,
+            },
+            email = new
+            {
+                provider = "SMTP",
+                configured = emailConfigured,
+            },
+            plans,
+        });
+    }
+
     [HttpGet("tenants")]
     public async Task<IActionResult> ListTenants()
     {

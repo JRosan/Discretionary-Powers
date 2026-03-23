@@ -27,6 +27,9 @@
     "billing": "Facturación",
     "superAdmin": "Super Administrador",
     "tenants": "Inquilinos",
+    "revenue": "Ingresos",
+    "platformAudit": "Registro de Auditoría",
+    "platformSettings": "Configuración de Plataforma",
     "signOut": "Cerrar sesión"
   },
   "auth": {

@@ -27,6 +27,9 @@
     "billing": "Billing",
     "superAdmin": "Super Admin",
     "tenants": "Tenants",
+    "revenue": "Revenue",
+    "platformAudit": "Audit Log",
+    "platformSettings": "Platform Settings",
     "signOut": "Sign out"
   },
   "auth": {

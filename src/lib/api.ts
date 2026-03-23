@@ -373,6 +373,14 @@ export const api = {
       }),
     getTenantStats: (id: string) =>
       request<Record<string, unknown>>(`/super-admin/tenants/${id}/stats`),
+    getDashboard: () =>
+      request<Record<string, unknown>>("/super-admin/dashboard"),
+    getRevenue: () =>
+      request<Record<string, unknown>>("/super-admin/revenue"),
+    getAuditLog: (params?: Record<string, unknown>) =>
+      request<Record<string, unknown>>(`/super-admin/audit${qs(params)}`),
+    getSettings: () =>
+      request<Record<string, unknown>>("/super-admin/settings"),
   },
 };
 

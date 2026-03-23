@@ -66,7 +66,11 @@ const navItemDefs: NavItemDef[] = [
     icon: Shield,
     roles: ["super_admin"],
     children: [
+      { labelKey: "dashboard", href: "/super-admin/dashboard" },
       { labelKey: "tenants", href: "/super-admin/tenants" },
+      { labelKey: "revenue", href: "/super-admin/revenue" },
+      { labelKey: "platformAudit", href: "/super-admin/audit" },
+      { labelKey: "platformSettings", href: "/super-admin/settings" },
     ],
   },
 ];
