@@ -13,7 +13,6 @@ import {
   Search,
   LogOut,
   KeyRound,
-  Eye,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -133,13 +132,13 @@ export function AppShell({ children }: AppShellProps) {
       </a>
       {/* Sidebar */}
       <aside className="flex w-64 flex-col bg-primary text-white">
-        {/* Logo */}
-        <div className="flex flex-col items-start px-6 py-5 border-b border-primary-light">
+        {/* Logo — links to landing page */}
+        <Link href="/" className="flex flex-col items-start px-6 py-5 border-b border-primary-light hover:bg-primary-light transition-colors">
           <span className="text-xl font-bold tracking-wide">DPMS</span>
           <span className="text-xs text-white/70 mt-0.5">
             {tCommon('government')}
           </span>
-        </div>
+        </Link>
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
@@ -216,18 +215,6 @@ export function AppShell({ children }: AppShellProps) {
             );
           })}
         </nav>
-
-        {/* Quick links */}
-        <div className="px-3 pb-2">
-          <Link
-            href="/portal"
-            target="_blank"
-            className="flex items-center gap-2 rounded-md px-3 py-2 text-xs text-white/50 hover:text-white hover:bg-primary-light transition-colors"
-          >
-            <Eye className="h-3.5 w-3.5" />
-            Public Portal
-          </Link>
-        </div>
 
         {/* User info */}
         <div className="border-t border-primary-light px-4 py-3">
