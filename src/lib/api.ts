@@ -335,6 +335,23 @@ export const api = {
       request<void>(`/api-keys/${id}`, { method: "DELETE" }),
   },
 
+  billing: {
+    getSubscription: () =>
+      request<ApiBillingSubscription>("/billing/subscription"),
+    getPlans: () => request<ApiBillingPlan[]>("/billing/plans"),
+    checkout: (planId: string) =>
+      request<{ processUrl: string; requestId: string }>("/billing/checkout", {
+        method: "POST",
+        body: JSON.stringify({ planId }),
+      }),
+    checkStatus: (requestId: string) =>
+      request<{ status: string; placeToPayStatus: string }>(
+        `/billing/checkout/${requestId}/status`,
+      ),
+    getInvoices: () => request<ApiPaymentRecord[]>("/billing/invoices"),
+    cancel: () => request<void>("/billing/cancel", { method: "POST" }),
+  },
+
   health: {
     check: () => request<{ status: string }>("/health"),
   },
@@ -545,4 +562,36 @@ export interface ApiOrganization {
   updatedAt: string;
   userCount?: number;
   decisionCount?: number;
+}
+
+export interface ApiBillingSubscription {
+  id?: string;
+  plan: string | null;
+  status: string;
+  monthlyPrice?: number;
+  currency?: string;
+  currentPeriodStart?: string;
+  currentPeriodEnd?: string;
+  cancelledAt?: string | null;
+  createdAt?: string;
+}
+
+export interface ApiBillingPlan {
+  id: string;
+  name: string;
+  price: number;
+  currency: string;
+  features: string[];
+}
+
+export interface ApiPaymentRecord {
+  id: string;
+  reference: string | null;
+  status: string;
+  amount: number;
+  currency: string;
+  paymentMethod: string | null;
+  receiptNumber: string | null;
+  createdAt: string;
+  paidAt: string | null;
 }

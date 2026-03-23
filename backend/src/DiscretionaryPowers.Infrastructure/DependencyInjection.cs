@@ -3,6 +3,7 @@ using DiscretionaryPowers.Domain.Auth;
 using DiscretionaryPowers.Domain.Interfaces;
 using DiscretionaryPowers.Infrastructure.Data;
 using DiscretionaryPowers.Infrastructure.Email;
+using DiscretionaryPowers.Infrastructure.Payments;
 using DiscretionaryPowers.Infrastructure.Services;
 using DiscretionaryPowers.Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -41,6 +42,10 @@ public static class DependencyInjection
             services.AddTransient<IEmailService, GraphEmailService>();
         else
             services.AddTransient<IEmailService, SmtpEmailService>();
+
+        // PlaceToPay payment gateway
+        services.AddHttpClient("PlaceToPay");
+        services.AddScoped<PlaceToPayService>();
 
         // HTTP context
         services.AddHttpContextAccessor();

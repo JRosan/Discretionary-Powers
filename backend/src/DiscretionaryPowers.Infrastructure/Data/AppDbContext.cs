@@ -29,6 +29,8 @@ public class AppDbContext : DbContext
     public DbSet<WorkflowStepTemplate> WorkflowStepTemplates => Set<WorkflowStepTemplate>();
     public DbSet<DecisionTypeConfig> DecisionTypeConfigs => Set<DecisionTypeConfig>();
     public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
+    public DbSet<Subscription> Subscriptions => Set<Subscription>();
+    public DbSet<PaymentRecord> PaymentRecords => Set<PaymentRecord>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -49,5 +51,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<WorkflowTemplate>().HasQueryFilter(e => _tenantId == null || e.OrganizationId == _tenantId);
         modelBuilder.Entity<DecisionTypeConfig>().HasQueryFilter(e => _tenantId == null || e.OrganizationId == _tenantId);
         modelBuilder.Entity<ApiKey>().HasQueryFilter(e => _tenantId == null || e.OrganizationId == _tenantId);
+        modelBuilder.Entity<Subscription>().HasQueryFilter(e => _tenantId == null || e.OrganizationId == _tenantId);
+        modelBuilder.Entity<PaymentRecord>().HasQueryFilter(e => _tenantId == null || e.OrganizationId == _tenantId);
     }
 }
