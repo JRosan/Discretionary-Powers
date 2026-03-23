@@ -1,28 +1,56 @@
 "use client";
 
-import { use } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Download } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowLeft, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { api, type ApiAuditEntry } from "@/lib/api";
 
-const MOCK_AUDIT = [
-  { id: "a1", timestamp: "2026-03-15 09:00:12", action: "Decision created", user: "Hon. Minister Smith", role: "Minister", details: "Decision DP-2026-001 initiated under Physical Planning Act s.12(3)." },
-  { id: "a2", timestamp: "2026-03-16 10:30:45", action: "Step 1 completed", user: "Hon. Minister Smith", role: "Minister", details: "Authority confirmed. Legal basis: Physical Planning Act, 2004 — Section 12(3)." },
-  { id: "a3", timestamp: "2026-03-16 14:22:08", action: "Document uploaded", user: "John Legal", role: "Legal Advisor", details: "Uploaded: Legal Opinion — Planning Authority.pdf (legal_opinion)" },
-  { id: "a4", timestamp: "2026-03-17 09:15:33", action: "Step 2 completed", user: "Hon. Minister Smith", role: "Minister", details: "Procedures identified per Environmental Protection and Coastal Management guidelines." },
-  { id: "a5", timestamp: "2026-03-17 11:00:00", action: "Document uploaded", user: "PS Williams", role: "Permanent Secretary", details: "Uploaded: Environmental Impact Assessment.pdf (evidence)" },
-  { id: "a6", timestamp: "2026-03-18 10:45:19", action: "Document uploaded", user: "PS Williams", role: "Permanent Secretary", details: "Uploaded: Public Consultation Summary.pdf (correspondence)" },
-  { id: "a7", timestamp: "2026-03-18 16:30:00", action: "Step 3 completed", user: "PS Williams", role: "Permanent Secretary", details: "Information gathering complete. 12 public submissions received." },
-  { id: "a8", timestamp: "2026-03-19 09:30:00", action: "Step 4 started", user: "Hon. Minister Smith", role: "Minister", details: "Evidence evaluation commenced." },
-];
+function formatTimestamp(dateStr: string | null) {
+  if (!dateStr) return "-";
+  return new Date(dateStr).toLocaleString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+}
 
-export default function AuditTrailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = use(params);
+function formatAction(action: string) {
+  return action
+    .replace(/[._]/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function renderDetails(details: Record<string, unknown> | null) {
+  if (!details || Object.keys(details).length === 0) return null;
+  return (
+    <div className="mt-1 space-y-0.5 rounded bg-surface p-2 text-xs text-text-muted">
+      {Object.entries(details).map(([key, value]) => (
+        <div key={key} className="flex gap-2">
+          <span className="font-medium text-text-secondary min-w-[80px]">
+            {key}:
+          </span>
+          <span className="break-all">
+            {typeof value === "object" ? JSON.stringify(value) : String(value)}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default function AuditTrailPage() {
+  const { id } = useParams<{ id: string }>();
+
+  const { data: entries, isLoading } = useQuery({
+    queryKey: ["audit", id],
+    queryFn: () => api.audit.getByDecision(id),
+  });
 
   return (
     <div className="space-y-6">
@@ -48,46 +76,58 @@ export default function AuditTrailPage({
         </div>
       </div>
 
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">
-            {MOCK_AUDIT.length} entries
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-0">
-            {MOCK_AUDIT.map((entry, i) => (
-              <div key={entry.id} className="flex gap-4">
-                <div className="flex flex-col items-center">
-                  <div className="h-2.5 w-2.5 rounded-full bg-accent mt-2" />
-                  {i < MOCK_AUDIT.length - 1 && (
-                    <div className="w-px flex-1 bg-border" />
-                  )}
-                </div>
-                <div className="pb-6 flex-1">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-text">
-                      {entry.action}
-                    </p>
-                    <span className="text-xs font-mono text-text-muted">
-                      {entry.timestamp}
-                    </span>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-text-muted" />
+        </div>
+      ) : !entries || entries.length === 0 ? (
+        <Card>
+          <CardContent className="py-12">
+            <p className="text-center text-sm text-text-muted">
+              No audit entries recorded yet.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">
+              {entries.length} {entries.length === 1 ? "entry" : "entries"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-0">
+              {entries.map((entry: ApiAuditEntry, i: number) => (
+                <div key={entry.id} className="flex gap-4">
+                  <div className="flex flex-col items-center">
+                    <div className="h-2.5 w-2.5 rounded-full bg-accent mt-2" />
+                    {i < entries.length - 1 && (
+                      <div className="w-px flex-1 bg-border" />
+                    )}
                   </div>
-                  <p className="text-xs text-text-secondary mt-0.5">
-                    {entry.user}{" "}
-                    <span className="text-text-muted">({entry.role})</span>
-                  </p>
-                  {entry.details && (
-                    <p className="text-xs text-text-muted mt-1 bg-surface rounded p-2">
-                      {entry.details}
+                  <div className="pb-6 flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-medium text-text">
+                        {formatAction(entry.action)}
+                      </p>
+                      <span className="text-xs font-mono text-text-muted shrink-0">
+                        {formatTimestamp(entry.createdAt)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-text-secondary mt-0.5">
+                      User: {entry.performedBy}
                     </p>
-                  )}
+                    {renderDetails(entry.details)}
+                    <p className="text-xs font-mono text-text-muted mt-1">
+                      Hash: {entry.hash.slice(0, 16)}...
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

@@ -71,9 +71,9 @@ export const api = {
         body: JSON.stringify(data),
       }),
     advanceStep: (id: string, stepNumber: number, data: Record<string, unknown>) =>
-      request<void>(`/decisions/${id}/steps/${stepNumber}`, {
-        method: "PUT",
-        body: JSON.stringify(data),
+      request<void>(`/decisions/${id}/advance-step`, {
+        method: "POST",
+        body: JSON.stringify({ ...data, stepNumber }),
       }),
     approve: (id: string, notes?: string) =>
       request<void>(`/decisions/${id}/approve`, {
@@ -83,7 +83,7 @@ export const api = {
     publish: (id: string) =>
       request<void>(`/decisions/${id}/publish`, { method: "POST" }),
     flagForReview: (id: string, data: Record<string, unknown>) =>
-      request<void>(`/decisions/${id}/flag-review`, {
+      request<void>(`/decisions/${id}/flag-for-review`, {
         method: "POST",
         body: JSON.stringify(data),
       }),
@@ -206,6 +206,23 @@ export const api = {
     getPublic: () => request<Record<string, unknown>>("/statistics/public"),
   },
 
+  judicialReviews: {
+    list: () =>
+      request<Array<{
+        id: string;
+        decisionId: string;
+        decisionTitle: string | null;
+        decisionReference: string | null;
+        ground: string;
+        status: string;
+        filedDate: string;
+        courtReference: string | null;
+        outcome: string | null;
+        notes: string | null;
+        createdAt: string;
+      }>>("/judicial-reviews"),
+  },
+
   health: {
     check: () => request<{ status: string }>("/health"),
   },
@@ -219,8 +236,10 @@ export interface ApiUser {
   name: string;
   role: string;
   ministryId: string | null;
-  isActive: boolean;
+  active: boolean;
+  ministryName: string | null;
   createdAt: string | null;
+  updatedAt: string | null;
 }
 
 export interface ApiMinistry {

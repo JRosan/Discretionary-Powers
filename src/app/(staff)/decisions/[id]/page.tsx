@@ -1,8 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
   FileText,
@@ -14,9 +15,12 @@ import {
   Loader2,
   Download,
   MessageSquare,
+  Shield,
+  AlertTriangle,
 } from "lucide-react";
 import { DECISION_STEPS } from "@/lib/constants";
 import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 
 const statusColors: Record<string, string> = {
   draft: "bg-surface text-text-secondary",
@@ -48,12 +52,45 @@ function StepIcon({ status }: { status: string }) {
 export default function DecisionDetailPage() {
   const params = useParams();
   const decisionId = params.id as string;
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const [actionMessage, setActionMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["decision", decisionId],
     queryFn: () => api.decisions.getById(decisionId),
     enabled: !!decisionId,
   });
+
+  const approveMutation = useMutation({
+    mutationFn: () => api.decisions.approve(decisionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["decision", decisionId] });
+      setActionMessage({ type: "success", text: "Decision approved successfully." });
+    },
+    onError: (err: Error) => setActionMessage({ type: "error", text: err.message }),
+  });
+
+  const publishMutation = useMutation({
+    mutationFn: () => api.decisions.publish(decisionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["decision", decisionId] });
+      setActionMessage({ type: "success", text: "Decision published successfully." });
+    },
+    onError: (err: Error) => setActionMessage({ type: "error", text: err.message }),
+  });
+
+  const flagMutation = useMutation({
+    mutationFn: (data: Record<string, unknown>) => api.decisions.flagForReview(decisionId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["decision", decisionId] });
+      setActionMessage({ type: "success", text: "Decision flagged for judicial review." });
+    },
+    onError: (err: Error) => setActionMessage({ type: "error", text: err.message }),
+  });
+
+  const isActioning = approveMutation.isPending || publishMutation.isPending || flagMutation.isPending;
+  const canFlagForReview = user?.role === "legal_advisor" || user?.role === "auditor";
 
   if (isLoading) {
     return (
@@ -155,6 +192,76 @@ export default function DecisionDetailPage() {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Decision Actions */}
+      {actionMessage && (
+        <div className={`rounded-lg border p-4 text-sm ${
+          actionMessage.type === "success"
+            ? "bg-accent/10 border-accent/20 text-accent-dark"
+            : "bg-error/10 border-error/20 text-error"
+        }`}>
+          {actionMessage.text}
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center gap-3">
+        {decision.status === "under_review" && (
+          <button
+            onClick={() => approveMutation.mutate()}
+            disabled={isActioning}
+            className="inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-white hover:bg-accent-dark transition-colors disabled:opacity-50"
+          >
+            {approveMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <CheckCircle2 className="h-4 w-4" />
+            )}
+            Approve Decision
+          </button>
+        )}
+
+        {decision.status === "approved" && (
+          <button
+            onClick={() => publishMutation.mutate()}
+            disabled={isActioning}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-dark transition-colors disabled:opacity-50"
+          >
+            {publishMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Shield className="h-4 w-4" />
+            )}
+            Publish Decision
+          </button>
+        )}
+
+        {decision.status === "published" && (
+          <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
+            <CheckCircle2 className="h-4 w-4" />
+            Published
+          </span>
+        )}
+
+        {canFlagForReview && (decision.status === "approved" || decision.status === "published") && (
+          <button
+            onClick={() => {
+              const reason = prompt("Enter the ground for judicial review:");
+              if (!reason) return;
+              const notes = prompt("Additional notes (optional):");
+              flagMutation.mutate({ ground: reason, notes: notes || undefined });
+            }}
+            disabled={isActioning}
+            className="inline-flex items-center gap-2 rounded-lg border border-warning bg-warning/10 px-4 py-2 text-sm font-medium text-warning-dark hover:bg-warning/20 transition-colors disabled:opacity-50"
+          >
+            {flagMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <AlertTriangle className="h-4 w-4" />
+            )}
+            Flag for Judicial Review
+          </button>
+        )}
       </div>
 
       {/* Quick Actions */}

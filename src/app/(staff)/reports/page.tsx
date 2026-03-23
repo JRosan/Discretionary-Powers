@@ -20,10 +20,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import dynamic from "next/dynamic";
 import { SkeletonChart } from "@/components/common/loading-skeleton";
 import { DECISION_STEPS } from "@/lib/constants";
+import { api } from "@/lib/api";
 
 const StatusChart = dynamic(
   () => import("@/components/dashboard/status-chart").then((m) => ({ default: m.StatusChart })),
@@ -42,128 +42,62 @@ const StepBottleneckChart = dynamic(
   { ssr: false, loading: () => <SkeletonChart /> },
 );
 
-// ── Mock data (replace with real API calls) ─────────────────────────
-
-const MOCK_STATUS_DATA: Record<string, number> = {
-  draft: 8,
-  in_progress: 12,
-  under_review: 7,
-  approved: 5,
-  published: 14,
-  challenged: 1,
-  withdrawn: 0,
-};
-
-const MOCK_MINISTRY_DATA = [
-  { name: "Ministry of Finance", count: 12 },
-  { name: "Ministry of Natural Resources", count: 8 },
-  { name: "Ministry of Education", count: 7 },
-  { name: "Ministry of Health", count: 6 },
-  { name: "Ministry of Communications", count: 5 },
-  { name: "Ministry of Labour", count: 5 },
-  { name: "Ministry of Trade & Commerce", count: 4 },
-];
-
-const MOCK_MINISTRY_BREAKDOWN = [
-  { name: "Ministry of Finance", total: 12, draft: 2, inProgress: 3, underReview: 2, approved: 1, published: 4 },
-  { name: "Ministry of Natural Resources", total: 8, draft: 1, inProgress: 2, underReview: 1, approved: 1, published: 3 },
-  { name: "Ministry of Education", total: 7, draft: 1, inProgress: 1, underReview: 1, approved: 1, published: 3 },
-  { name: "Ministry of Health", total: 6, draft: 1, inProgress: 2, underReview: 1, approved: 0, published: 2 },
-  { name: "Ministry of Communications", total: 5, draft: 1, inProgress: 1, underReview: 1, approved: 1, published: 1 },
-  { name: "Ministry of Labour", total: 5, draft: 1, inProgress: 1, underReview: 0, approved: 1, published: 2 },
-  { name: "Ministry of Trade & Commerce", total: 4, draft: 1, inProgress: 1, underReview: 1, approved: 0, published: 1 },
-];
-
-const MOCK_TIMELINE_DATA = [
-  { month: "Oct 2025", count: 3 },
-  { month: "Nov 2025", count: 5 },
-  { month: "Dec 2025", count: 4 },
-  { month: "Jan 2026", count: 7 },
-  { month: "Feb 2026", count: 9 },
-  { month: "Mar 2026", count: 6 },
-];
-
-const MOCK_STEP_BOTTLENECK_DATA = DECISION_STEPS.map((step) => ({
-  step: `${step.number}. ${step.name}`,
-  avgDays: [1.2, 1.8, 3.5, 4.2, 2.1, 2.9, 3.8, 2.7, 1.5, 0.9][step.number - 1],
-}));
-
-const MOCK_STEP_TABLE_DATA = DECISION_STEPS.map((step) => {
-  const avgDays = [1.2, 1.8, 3.5, 4.2, 2.1, 2.9, 3.8, 2.7, 1.5, 0.9][step.number - 1];
-  const completionRate = [98, 95, 88, 82, 91, 85, 80, 87, 93, 97][step.number - 1];
-  const issues = [
-    "Missing delegation letters",
-    "Incomplete checklists",
-    "Delayed responses from stakeholders",
-    "Insufficient supporting evidence",
-    "Inconsistent proof standards",
-    "Undisclosed conflicts of interest",
-    "Late stakeholder consultations",
-    "Incomplete merit assessments",
-    "Delayed notification to parties",
-    "Incomplete record filing",
-  ][step.number - 1];
-  return { step, avgDays, completionRate, commonIssue: issues };
-});
-
-const MOCK_RECENT_ACTIVITY = [
-  { id: "1", title: "Coastal Development Permit", status: "published", date: "2 hours ago" },
-  { id: "2", title: "Import License Renewal", status: "approved", date: "5 hours ago" },
-  { id: "3", title: "Financial Aid Distribution", status: "under_review", date: "1 day ago" },
-  { id: "4", title: "Environmental Impact Assessment", status: "in_progress", date: "1 day ago" },
-  { id: "5", title: "Teacher Certification Review", status: "draft", date: "2 days ago" },
-];
-
-const STATUS_BADGE_VARIANT: Record<string, "default" | "accent" | "warning" | "error" | "success" | "outline"> = {
-  draft: "outline",
-  in_progress: "accent",
-  under_review: "warning",
-  approved: "success",
-  published: "default",
-  challenged: "error",
-  withdrawn: "outline",
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  draft: "Draft",
-  in_progress: "In Progress",
-  under_review: "Under Review",
-  approved: "Approved",
-  published: "Published",
-  challenged: "Challenged",
-  withdrawn: "Withdrawn",
-};
+interface DashboardResponse {
+  total: number;
+  byStatus: Record<string, number>;
+  byMinistry: { name: string; count: number }[];
+  overTime: { month: string; count: number }[];
+  stepTimes: { step: number; avgDays: number }[];
+}
 
 // ── Component ────────────────────────────────────────────────────────
 
 export default function ReportsPage() {
   const [dateRange, setDateRange] = useState("this_quarter");
 
-  const { data: reportData } = useQuery({
-    queryKey: ["reports", dateRange],
-    queryFn: async () => {
-      // TODO: Replace with real API call — api.reports.getDashboard({ dateRange })
-      return {
-        totalDecisions: 47,
-        avgCompletionDays: 18,
-        publishedThisMonth: 6,
-        overdueCount: 4,
-        byStatus: MOCK_STATUS_DATA,
-        byMinistry: MOCK_MINISTRY_DATA,
-        ministryBreakdown: MOCK_MINISTRY_BREAKDOWN,
-        timeline: MOCK_TIMELINE_DATA,
-        stepBottlenecks: MOCK_STEP_BOTTLENECK_DATA,
-        stepTable: MOCK_STEP_TABLE_DATA,
-        recentActivity: MOCK_RECENT_ACTIVITY,
-      };
-    },
+  const { data: dashboard, isLoading } = useQuery({
+    queryKey: ["reports", "dashboard"],
+    queryFn: () => api.reports.getDashboard() as unknown as Promise<DashboardResponse>,
     staleTime: 5 * 60 * 1000,
   });
 
+  // Derive display data from API response
+  const byStatus = dashboard?.byStatus ?? {};
+  const publishedCount = byStatus["Published"] ?? byStatus["published"] ?? 0;
+  const totalDecisions = dashboard?.total ?? 0;
+
+  // Map step times from API into chart format
+  const stepTimesMap = new Map(
+    (dashboard?.stepTimes ?? []).map((s) => [s.step, s.avgDays]),
+  );
+  const stepBottlenecks = DECISION_STEPS.map((step) => ({
+    step: `${step.number}. ${step.name}`,
+    avgDays: stepTimesMap.get(step.number) ?? 0,
+  }));
+
+  // Map step times into table format
+  const stepTable = DECISION_STEPS.map((step) => ({
+    step,
+    avgDays: stepTimesMap.get(step.number) ?? 0,
+  }));
+
+  // Format timeline months for display (2026-03 -> Mar 2026)
+  const timeline = (dashboard?.overTime ?? []).map((item) => {
+    const [year, month] = item.month.split("-");
+    const date = new Date(Number(year), Number(month) - 1);
+    const label = date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+    return { month: label, count: item.count };
+  });
+
+  // Compute average completion days from step times
+  const avgCompletionDays =
+    dashboard?.stepTimes && dashboard.stepTimes.length > 0
+      ? Math.round(dashboard.stepTimes.reduce((sum, s) => sum + s.avgDays, 0))
+      : 0;
+
   const handleExport = (format: "csv" | "json") => {
-    // TODO: Replace with real API call — api.reports.export({ dateRange, format })
     const blob = new Blob(
-      [JSON.stringify(reportData, null, 2)],
+      [JSON.stringify(dashboard, null, 2)],
       { type: format === "json" ? "application/json" : "text/csv" },
     );
     const url = URL.createObjectURL(blob);
@@ -177,25 +111,26 @@ export default function ReportsPage() {
   const stats = [
     {
       label: "Total Decisions",
-      value: reportData?.totalDecisions ?? "--",
+      value: isLoading ? "--" : totalDecisions,
       icon: FileText,
       color: "text-primary",
     },
     {
       label: "Avg. Completion Time",
-      value: reportData ? `${reportData.avgCompletionDays} days` : "--",
+      value: isLoading ? "--" : `${avgCompletionDays} days`,
       icon: Clock,
       color: "text-accent",
     },
     {
-      label: "Published This Month",
-      value: reportData?.publishedThisMonth ?? "--",
+      label: "Published",
+      value: isLoading ? "--" : publishedCount,
       icon: CheckCircle2,
       color: "text-success",
     },
     {
       label: "Overdue",
-      value: reportData?.overdueCount ?? "--",
+      value: "--",
+      // TODO: Backend doesn't track overdue yet
       icon: AlertTriangle,
       color: "text-error",
     },
@@ -214,6 +149,7 @@ export default function ReportsPage() {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-text-muted" />
+            {/* TODO: Date range filtering not yet implemented in backend */}
             <Select value={dateRange} onValueChange={setDateRange}>
               <SelectTrigger className="w-[170px]">
                 <SelectValue />
@@ -227,11 +163,11 @@ export default function ReportsPage() {
             </Select>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => handleExport("csv")}>
+            <Button variant="outline" size="sm" onClick={() => handleExport("csv")} disabled={isLoading}>
               <Download className="h-4 w-4" />
               CSV
             </Button>
-            <Button variant="outline" size="sm" onClick={() => handleExport("json")}>
+            <Button variant="outline" size="sm" onClick={() => handleExport("json")} disabled={isLoading}>
               <Download className="h-4 w-4" />
               JSON
             </Button>
@@ -279,7 +215,7 @@ export default function ReportsPage() {
                   <CardTitle className="text-base">Decisions by Status</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <StatusChart data={reportData?.byStatus ?? {}} />
+                  {isLoading ? <SkeletonChart /> : <StatusChart data={byStatus} />}
                 </CardContent>
               </Card>
 
@@ -288,37 +224,10 @@ export default function ReportsPage() {
                   <CardTitle className="text-base">Decisions Over Time</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <TimelineChart data={reportData?.timeline ?? []} />
+                  {isLoading ? <SkeletonChart /> : <TimelineChart data={timeline} />}
                 </CardContent>
               </Card>
             </div>
-
-            {/* Recent activity */}
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">Recent Activity</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="divide-y divide-border">
-                  {(reportData?.recentActivity ?? []).map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between py-3 first:pt-0 last:pb-0"
-                    >
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-text truncate">
-                          {item.title}
-                        </p>
-                        <p className="text-xs text-text-muted">{item.date}</p>
-                      </div>
-                      <Badge variant={STATUS_BADGE_VARIANT[item.status] ?? "outline"}>
-                        {STATUS_LABEL[item.status] ?? item.status}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </TabsContent>
 
@@ -330,13 +239,17 @@ export default function ReportsPage() {
                 <CardTitle className="text-base">Decisions by Ministry</CardTitle>
               </CardHeader>
               <CardContent>
-                <MinistryChart data={reportData?.byMinistry ?? []} />
+                {isLoading ? (
+                  <SkeletonChart />
+                ) : (
+                  <MinistryChart data={dashboard?.byMinistry ?? []} />
+                )}
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-base">Ministry Breakdown</CardTitle>
+                <CardTitle className="text-base">Ministry Summary</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
@@ -344,24 +257,14 @@ export default function ReportsPage() {
                     <thead>
                       <tr className="border-b border-border text-left">
                         <th className="pb-3 pr-4 font-medium text-text-secondary">Ministry</th>
-                        <th className="pb-3 px-4 font-medium text-text-secondary text-right">Total</th>
-                        <th className="pb-3 px-4 font-medium text-text-secondary text-right">Draft</th>
-                        <th className="pb-3 px-4 font-medium text-text-secondary text-right">In Progress</th>
-                        <th className="pb-3 px-4 font-medium text-text-secondary text-right">Under Review</th>
-                        <th className="pb-3 px-4 font-medium text-text-secondary text-right">Approved</th>
-                        <th className="pb-3 pl-4 font-medium text-text-secondary text-right">Published</th>
+                        <th className="pb-3 pl-4 font-medium text-text-secondary text-right">Decisions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {(reportData?.ministryBreakdown ?? []).map((row) => (
+                      {(dashboard?.byMinistry ?? []).map((row) => (
                         <tr key={row.name} className="border-b border-border last:border-0">
                           <td className="py-3 pr-4 font-medium text-text">{row.name}</td>
-                          <td className="py-3 px-4 text-right text-text">{row.total}</td>
-                          <td className="py-3 px-4 text-right text-text-secondary">{row.draft}</td>
-                          <td className="py-3 px-4 text-right text-text-secondary">{row.inProgress}</td>
-                          <td className="py-3 px-4 text-right text-text-secondary">{row.underReview}</td>
-                          <td className="py-3 px-4 text-right text-text-secondary">{row.approved}</td>
-                          <td className="py-3 pl-4 text-right text-text-secondary">{row.published}</td>
+                          <td className="py-3 pl-4 text-right text-text">{row.count}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -380,7 +283,11 @@ export default function ReportsPage() {
                 <CardTitle className="text-base">Average Time per Step</CardTitle>
               </CardHeader>
               <CardContent>
-                <StepBottleneckChart data={reportData?.stepBottlenecks ?? []} />
+                {isLoading ? (
+                  <SkeletonChart />
+                ) : (
+                  <StepBottleneckChart data={stepBottlenecks} />
+                )}
               </CardContent>
             </Card>
 
@@ -394,13 +301,11 @@ export default function ReportsPage() {
                     <thead>
                       <tr className="border-b border-border text-left">
                         <th className="pb-3 pr-4 font-medium text-text-secondary">Step</th>
-                        <th className="pb-3 px-4 font-medium text-text-secondary text-right">Avg. Time</th>
-                        <th className="pb-3 px-4 font-medium text-text-secondary text-right">Completion Rate</th>
-                        <th className="pb-3 pl-4 font-medium text-text-secondary">Most Common Issues</th>
+                        <th className="pb-3 pl-4 font-medium text-text-secondary text-right">Avg. Time</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {(reportData?.stepTable ?? []).map((row) => (
+                      {stepTable.map((row) => (
                         <tr
                           key={row.step.number}
                           className="border-b border-border last:border-0"
@@ -413,7 +318,7 @@ export default function ReportsPage() {
                               <span className="font-medium text-text">{row.step.name}</span>
                             </div>
                           </td>
-                          <td className="py-3 px-4 text-right">
+                          <td className="py-3 pl-4 text-right">
                             <span
                               className={
                                 row.avgDays >= 4
@@ -423,24 +328,8 @@ export default function ReportsPage() {
                                     : "text-text"
                               }
                             >
-                              {row.avgDays} days
+                              {row.avgDays > 0 ? `${row.avgDays} days` : "No data"}
                             </span>
-                          </td>
-                          <td className="py-3 px-4 text-right">
-                            <span
-                              className={
-                                row.completionRate >= 90
-                                  ? "text-accent"
-                                  : row.completionRate >= 80
-                                    ? "text-warning-dark"
-                                    : "text-error"
-                              }
-                            >
-                              {row.completionRate}%
-                            </span>
-                          </td>
-                          <td className="py-3 pl-4 text-text-secondary">
-                            {row.commonIssue}
                           </td>
                         </tr>
                       ))}
