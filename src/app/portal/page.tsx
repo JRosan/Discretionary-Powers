@@ -41,9 +41,9 @@ export default function PublicHomePage() {
 
   return (
     <div>
-      {/* Hero Section */}
-      <section className="bg-primary text-white -mx-4 -mt-8 px-4 py-16 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-        <div className="mx-auto max-w-4xl text-center">
+      {/* Hero Section — Full Width */}
+      <section className="bg-primary text-white">
+        <div className="mx-auto max-w-4xl px-6 py-16 text-center">
           <p className="text-sm font-medium uppercase tracking-widest text-white/70 mb-2">
             Government of the Virgin Islands
           </p>
@@ -78,7 +78,7 @@ export default function PublicHomePage() {
       </section>
 
       {/* Statistics Cards */}
-      <section className="py-12">
+      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid gap-6 sm:grid-cols-3">
           <Card>
             <CardContent className="flex items-center gap-4 p-6">
@@ -131,7 +131,7 @@ export default function PublicHomePage() {
       </section>
 
       {/* Recent Published Decisions */}
-      <section className="pb-12">
+      <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-text">Recent Published Decisions</h2>
           <Link
@@ -185,7 +185,7 @@ export default function PublicHomePage() {
       </section>
 
       {/* Browse by Ministry */}
-      <section className="pb-12">
+      <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-text">Browse by Ministry</h2>
           <Link
@@ -233,7 +233,7 @@ export default function PublicHomePage() {
       </section>
 
       {/* Footer Links */}
-      <section className="border-t border-border pt-8 pb-4">
+      <section className="mx-auto max-w-7xl px-4 border-t border-border pt-8 pb-4 sm:px-6 lg:px-8">
         <div className="grid gap-6 sm:grid-cols-2">
           <div>
             <h3 className="font-semibold text-text mb-3">Learn More</h3>

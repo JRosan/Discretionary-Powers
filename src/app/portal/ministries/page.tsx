@@ -13,7 +13,7 @@ export default function MinistriesPage() {
   });
 
   return (
-    <div>
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <h1 className="text-3xl font-bold text-text mb-2">Government Ministries</h1>
       <p className="text-text-secondary mb-8 max-w-2xl">
         The Government of the Virgin Islands is organised into ministries, each

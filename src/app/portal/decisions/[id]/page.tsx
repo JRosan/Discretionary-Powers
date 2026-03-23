@@ -81,7 +81,7 @@ export default function PublicDecisionDetailPage({
   }
 
   return (
-    <div>
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1 text-sm text-text-muted mb-6">
         <Link href="/portal" className="hover:text-accent transition-colors">
