@@ -5,12 +5,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Check,
   CreditCard,
+  Download,
   FileText,
   Users,
   HardDrive,
   Loader2,
   X,
 } from "lucide-react";
+import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -189,6 +191,28 @@ export default function BillingPage() {
         <p className="mt-1 text-sm text-text-secondary">
           Manage your subscription plan and billing information
         </p>
+      </div>
+
+      {/* Navigation tabs */}
+      <div className="flex gap-4 border-b border-border pb-2">
+        <Link
+          href="/admin/billing"
+          className="text-sm font-medium text-accent border-b-2 border-accent pb-2"
+        >
+          Overview
+        </Link>
+        <Link
+          href="/admin/billing/manage"
+          className="text-sm text-text-secondary hover:text-accent transition-colors pb-2"
+        >
+          Manage Plan
+        </Link>
+        <Link
+          href="/admin/billing/payment-method"
+          className="text-sm text-text-secondary hover:text-accent transition-colors pb-2"
+        >
+          Payment Method
+        </Link>
       </div>
 
       {/* Current Subscription */}
@@ -459,6 +483,7 @@ export default function BillingPage() {
                     <th className="pb-2 pr-4 font-medium">Status</th>
                     <th className="pb-2 pr-4 font-medium">Date</th>
                     <th className="pb-2 font-medium">Paid</th>
+                    <th className="pb-2 font-medium"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -487,6 +512,20 @@ export default function BillingPage() {
                           {inv.paidAt
                             ? new Date(inv.paidAt).toLocaleDateString()
                             : "--"}
+                        </td>
+                        <td className="py-3">
+                          <button
+                            onClick={() =>
+                              window.open(
+                                `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api"}/billing/invoices/${inv.id}/pdf`,
+                                "_blank",
+                              )
+                            }
+                            className="text-text-muted hover:text-accent transition-colors"
+                            title="Download invoice"
+                          >
+                            <Download className="h-4 w-4" />
+                          </button>
                         </td>
                       </tr>
                     );

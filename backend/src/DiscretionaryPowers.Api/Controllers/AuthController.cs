@@ -4,6 +4,7 @@ using DiscretionaryPowers.Application.DTOs.Users;
 using DiscretionaryPowers.Domain.Auth;
 using DiscretionaryPowers.Domain.Entities;
 using DiscretionaryPowers.Infrastructure.Data;
+using DiscretionaryPowers.Infrastructure.Services;
 using static DiscretionaryPowers.Infrastructure.Data.EnumConverter;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,7 +15,11 @@ namespace DiscretionaryPowers.Api.Controllers;
 
 [ApiController]
 [Route("api/auth")]
-public class AuthController(AppDbContext db, JwtTokenService jwtService, ICurrentUserService currentUser) : ControllerBase
+public class AuthController(
+    AppDbContext db,
+    JwtTokenService jwtService,
+    ICurrentUserService currentUser,
+    UsageAlertService usageAlertService) : ControllerBase
 {
     [HttpPost("login")]
     [AllowAnonymous]
@@ -117,6 +122,22 @@ public class AuthController(AppDbContext db, JwtTokenService jwtService, ICurren
         await db.SaveChangesAsync();
 
         var token = jwtService.GenerateToken(user);
+
+        // Fire-and-forget: check usage alerts and trial/renewal reminders on login
+        if (user.OrganizationId != Guid.Empty)
+        {
+            var orgId = user.OrganizationId;
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await usageAlertService.CheckAndAlert(orgId);
+                    await usageAlertService.CheckTrialExpiry(orgId);
+                    await usageAlertService.CheckRenewalReminder(orgId);
+                }
+                catch { /* best-effort, ignore errors */ }
+            });
+        }
 
         return Ok(new LoginResponse
         {

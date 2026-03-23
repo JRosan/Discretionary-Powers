@@ -29,6 +29,7 @@ const GlobalSearch = dynamic(
 import { api } from "@/lib/api";
 import { OfflineIndicator } from "@/components/common/offline-indicator";
 import { PlatformBanner } from "@/components/common/platform-banner";
+import { TrialBanner } from "@/components/common/trial-banner";
 import { useTranslations } from "@/i18n";
 import { useTenant } from "@/lib/tenant-context";
 
@@ -334,6 +335,9 @@ export function AppShell({ children }: AppShellProps) {
 
         {/* Platform announcements */}
         <PlatformBanner />
+
+        {/* Trial banner */}
+        <TrialBanner />
 
         {/* Offline indicator */}
         <OfflineIndicator />

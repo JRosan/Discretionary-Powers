@@ -352,6 +352,28 @@ export const api = {
     cancel: () => request<void>("/billing/cancel", { method: "POST" }),
     getUsage: () =>
       request<ApiBillingUsage>("/billing/usage"),
+    upgrade: (planId: string) =>
+      request<{ processUrl: string; requestId: string }>("/billing/upgrade", {
+        method: "POST",
+        body: JSON.stringify({ planId }),
+      }),
+    downgrade: (planId: string) =>
+      request<void>("/billing/downgrade", {
+        method: "POST",
+        body: JSON.stringify({ planId }),
+      }),
+    getPaymentMethod: () =>
+      request<ApiPaymentMethod>("/billing/payment-method"),
+    updatePaymentMethod: () =>
+      request<{ processUrl: string }>("/billing/payment-method/update", {
+        method: "POST",
+      }),
+    removePaymentMethod: () =>
+      request<void>("/billing/payment-method", { method: "DELETE" }),
+    getTrialStatus: () =>
+      request<{ isTrial: boolean; daysRemaining: number; expiresAt: string }>(
+        "/billing/trial-status",
+      ),
   },
 
   health: {
@@ -653,6 +675,13 @@ export interface ApiPaymentRecord {
   receiptNumber: string | null;
   createdAt: string;
   paidAt: string | null;
+}
+
+export interface ApiPaymentMethod {
+  hasPaymentMethod: boolean;
+  cardType: string | null;
+  lastFourDigits: string | null;
+  expiryDate: string | null;
 }
 
 export interface ApiAnnouncement {

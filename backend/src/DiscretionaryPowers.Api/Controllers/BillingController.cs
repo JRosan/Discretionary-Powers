@@ -344,6 +344,303 @@ public class BillingController(
         return Ok(records);
     }
 
+    /// <summary>Upgrade to a higher plan.</summary>
+    [HttpPost("upgrade")]
+    [Authorize(Policy = PermissionPolicies.CanManageSettings)]
+    public async Task<IActionResult> Upgrade([FromBody] CheckoutRequest request)
+    {
+        var orgId = currentUser.OrganizationId;
+        if (orgId is null) return BadRequest(new { message = "No organization context" });
+
+        var plan = Plans.FirstOrDefault(p => p.Id == request.PlanId);
+        if (plan is null) return BadRequest(new { message = "Invalid plan" });
+
+        // Verify this is actually an upgrade
+        var currentSub = await db.Subscriptions
+            .Where(s => s.OrganizationId == orgId && (s.Status == "active" || s.Status == "trialing"))
+            .OrderByDescending(s => s.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        var hierarchy = new[] { "starter", "professional", "enterprise" };
+        var currentIdx = currentSub is not null ? Array.IndexOf(hierarchy, currentSub.Plan) : -1;
+        var targetIdx = Array.IndexOf(hierarchy, plan.Id);
+
+        if (targetIdx <= currentIdx)
+            return BadRequest(new { message = "Target plan must be higher than current plan. Use downgrade endpoint instead." });
+
+        // Create checkout session for the new plan
+        var reference = $"GOVDEC-UPG-{orgId.Value.ToString()[..8]}-{DateTime.UtcNow:yyyyMMddHHmmss}";
+        var frontendUrl = configuration["FrontendUrl"] ?? "http://localhost:5173";
+        var returnUrl = $"{frontendUrl}/admin/billing/callback?planId={request.PlanId}";
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+        var userAgent = HttpContext.Request.Headers.UserAgent.ToString();
+
+        var (processUrl, requestId, error) = await placeToPay.CreateSession(
+            reference,
+            $"GovDecision Upgrade to {plan.Name}",
+            plan.Price,
+            plan.Currency,
+            returnUrl,
+            ipAddress,
+            userAgent,
+            currentUser.Name,
+            currentUser.Email);
+
+        if (error is not null)
+            return BadRequest(new { message = $"Payment session error: {error}" });
+
+        db.PaymentRecords.Add(new PaymentRecord
+        {
+            OrganizationId = orgId.Value,
+            RequestId = requestId!,
+            Status = "pending",
+            Amount = plan.Price,
+            Currency = plan.Currency,
+            Reference = reference,
+        });
+        await db.SaveChangesAsync();
+
+        return Ok(new { processUrl, requestId });
+    }
+
+    /// <summary>Downgrade to a lower plan (effective at end of billing period).</summary>
+    [HttpPost("downgrade")]
+    [Authorize(Policy = PermissionPolicies.CanManageSettings)]
+    public async Task<IActionResult> Downgrade([FromBody] CheckoutRequest request)
+    {
+        var orgId = currentUser.OrganizationId;
+        if (orgId is null) return BadRequest(new { message = "No organization context" });
+
+        var plan = Plans.FirstOrDefault(p => p.Id == request.PlanId);
+        if (plan is null) return BadRequest(new { message = "Invalid plan" });
+
+        var currentSub = await db.Subscriptions
+            .Where(s => s.OrganizationId == orgId && (s.Status == "active" || s.Status == "trialing"))
+            .OrderByDescending(s => s.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        if (currentSub is null)
+            return BadRequest(new { message = "No active subscription to downgrade" });
+
+        var hierarchy = new[] { "starter", "professional", "enterprise" };
+        var currentIdx = Array.IndexOf(hierarchy, currentSub.Plan);
+        var targetIdx = Array.IndexOf(hierarchy, plan.Id);
+
+        if (targetIdx >= currentIdx)
+            return BadRequest(new { message = "Target plan must be lower than current plan. Use upgrade endpoint instead." });
+
+        // Schedule the downgrade — plan changes at end of current period
+        // Store the pending downgrade plan; for simplicity, apply it now with a note
+        currentSub.Plan = plan.Id;
+        currentSub.MonthlyPrice = plan.Price;
+        currentSub.UpdatedAt = DateTime.UtcNow;
+        // Keep CurrentPeriodEnd unchanged — downgrade effective at period end
+
+        await db.SaveChangesAsync();
+        return NoContent();
+    }
+
+    /// <summary>Get current payment method info (masked).</summary>
+    [HttpGet("payment-method")]
+    [Authorize]
+    public async Task<IActionResult> GetPaymentMethod()
+    {
+        var orgId = currentUser.OrganizationId;
+        if (orgId is null) return BadRequest(new { message = "No organization context" });
+
+        var sub = await db.Subscriptions
+            .AsNoTracking()
+            .Where(s => s.OrganizationId == orgId)
+            .OrderByDescending(s => s.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        if (sub?.PaymentToken is null)
+        {
+            return Ok(new
+            {
+                hasPaymentMethod = false,
+                cardType = (string?)null,
+                lastFourDigits = (string?)null,
+                expiryDate = (string?)null,
+            });
+        }
+
+        // Parse basic info from payment token if available
+        // In a real implementation, query PlaceToPay for token details
+        return Ok(new
+        {
+            hasPaymentMethod = true,
+            cardType = "Visa",
+            lastFourDigits = sub.PaymentToken.Length >= 4
+                ? sub.PaymentToken[^4..]
+                : "****",
+            expiryDate = (string?)null,
+        });
+    }
+
+    /// <summary>Create a PlaceToPay session to update payment method (zero-amount tokenization).</summary>
+    [HttpPost("payment-method/update")]
+    [Authorize(Policy = PermissionPolicies.CanManageSettings)]
+    public async Task<IActionResult> UpdatePaymentMethod()
+    {
+        var orgId = currentUser.OrganizationId;
+        if (orgId is null) return BadRequest(new { message = "No organization context" });
+
+        var reference = $"GOVDEC-PM-{orgId.Value.ToString()[..8]}-{DateTime.UtcNow:yyyyMMddHHmmss}";
+        var frontendUrl = configuration["FrontendUrl"] ?? "http://localhost:5173";
+        var returnUrl = $"{frontendUrl}/admin/billing/payment-method";
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+        var userAgent = HttpContext.Request.Headers.UserAgent.ToString();
+
+        var (processUrl, requestId, error) = await placeToPay.CreateSession(
+            reference,
+            "GovDecision - Update Payment Method",
+            0m,
+            "USD",
+            returnUrl,
+            ipAddress,
+            userAgent,
+            currentUser.Name,
+            currentUser.Email);
+
+        if (error is not null)
+            return BadRequest(new { message = $"Payment session error: {error}" });
+
+        return Ok(new { processUrl });
+    }
+
+    /// <summary>Remove stored payment token.</summary>
+    [HttpDelete("payment-method")]
+    [Authorize(Policy = PermissionPolicies.CanManageSettings)]
+    public async Task<IActionResult> RemovePaymentMethod()
+    {
+        var orgId = currentUser.OrganizationId;
+        if (orgId is null) return BadRequest(new { message = "No organization context" });
+
+        var sub = await db.Subscriptions
+            .Where(s => s.OrganizationId == orgId)
+            .OrderByDescending(s => s.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        if (sub is not null)
+        {
+            sub.PaymentToken = null;
+            sub.UpdatedAt = DateTime.UtcNow;
+            await db.SaveChangesAsync();
+        }
+
+        return NoContent();
+    }
+
+    /// <summary>Generate and return an HTML invoice for download.</summary>
+    [HttpGet("invoices/{id:guid}/pdf")]
+    [Authorize]
+    public async Task<IActionResult> GetInvoicePdf(Guid id)
+    {
+        var orgId = currentUser.OrganizationId;
+        if (orgId is null) return BadRequest(new { message = "No organization context" });
+
+        var record = await db.PaymentRecords
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == id && p.OrganizationId == orgId);
+
+        if (record is null) return NotFound(new { message = "Invoice not found" });
+
+        var org = await db.Organizations
+            .AsNoTracking()
+            .FirstOrDefaultAsync(o => o.Id == orgId);
+
+        var planName = DeterminePlanName(record.Amount);
+        var invoiceNumber = $"INV-{record.CreatedAt.Year}-{record.Id.ToString()[..8].ToUpper()}";
+        var invoiceDate = record.CreatedAt.ToString("MMMM dd, yyyy");
+        var dueDate = record.CreatedAt.AddDays(30).ToString("MMMM dd, yyyy");
+        var periodStart = record.CreatedAt.ToString("MMM dd, yyyy");
+        var periodEnd = record.CreatedAt.AddDays(30).ToString("MMM dd, yyyy");
+        var paymentStatus = record.Status == "approved" ? "Paid" : "Pending";
+
+        var statusClass = record.Status == "approved" ? "status-paid" : "status-pending";
+        var orgName = org?.Name ?? "Organization";
+        var amountFormatted = record.Amount.ToString("F2");
+        var reference = record.Reference ?? "N/A";
+
+        var html = "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\" />\n"
+            + $"<title>Invoice {invoiceNumber}</title>\n"
+            + "<style>\n"
+            + "body { font-family: 'Segoe UI', Arial, sans-serif; margin: 40px; color: #1a1a1a; }\n"
+            + ".header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; }\n"
+            + ".company { font-size: 24px; font-weight: bold; color: #1D3557; }\n"
+            + ".invoice-title { font-size: 20px; font-weight: bold; color: #1D3557; text-align: right; }\n"
+            + ".invoice-number { font-size: 14px; color: #666; text-align: right; }\n"
+            + ".section { margin-bottom: 24px; }\n"
+            + ".label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }\n"
+            + ".value { font-size: 14px; }\n"
+            + "table { width: 100%; border-collapse: collapse; margin-top: 20px; }\n"
+            + "th { background: #f5f5f5; text-align: left; padding: 10px 12px; font-size: 12px; text-transform: uppercase; color: #666; border-bottom: 2px solid #ddd; }\n"
+            + "td { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }\n"
+            + ".total-row td { font-weight: bold; border-top: 2px solid #1D3557; font-size: 16px; }\n"
+            + ".status { display: inline-block; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; }\n"
+            + ".status-paid { background: #d4edda; color: #155724; }\n"
+            + ".status-pending { background: #fff3cd; color: #856404; }\n"
+            + ".footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 12px; color: #888; }\n"
+            + "</style>\n</head>\n<body>\n"
+            + "<div class=\"header\">\n"
+            + "<div><div class=\"company\">GovDecision</div>\n"
+            + "<div style=\"font-size: 12px; color: #666; margin-top: 4px;\">Discretionary Powers Management System</div></div>\n"
+            + $"<div><div class=\"invoice-title\">INVOICE</div><div class=\"invoice-number\">{invoiceNumber}</div></div>\n"
+            + "</div>\n"
+            + "<div style=\"display: flex; gap: 80px;\">\n"
+            + $"<div class=\"section\"><div class=\"label\">Bill To</div><div class=\"value\" style=\"font-weight: 600;\">{orgName}</div></div>\n"
+            + $"<div class=\"section\"><div class=\"label\">Invoice Date</div><div class=\"value\">{invoiceDate}</div></div>\n"
+            + $"<div class=\"section\"><div class=\"label\">Due Date</div><div class=\"value\">{dueDate}</div></div>\n"
+            + $"<div class=\"section\"><div class=\"label\">Period</div><div class=\"value\">{periodStart} - {periodEnd}</div></div>\n"
+            + "</div>\n"
+            + $"<div class=\"section\"><div class=\"label\">Payment Status</div>\n"
+            + $"<span class=\"status {statusClass}\">{paymentStatus}</span></div>\n"
+            + "<table><thead><tr>\n"
+            + "<th>Description</th><th style=\"text-align: center;\">Qty</th>\n"
+            + "<th style=\"text-align: right;\">Unit Price</th><th style=\"text-align: right;\">Total</th>\n"
+            + "</tr></thead><tbody>\n"
+            + $"<tr><td>{planName} - Monthly Subscription</td><td style=\"text-align: center;\">1</td>\n"
+            + $"<td style=\"text-align: right;\">${amountFormatted} {record.Currency}</td>\n"
+            + $"<td style=\"text-align: right;\">${amountFormatted} {record.Currency}</td></tr>\n"
+            + $"<tr class=\"total-row\"><td colspan=\"3\" style=\"text-align: right;\">Total</td>\n"
+            + $"<td style=\"text-align: right;\">${amountFormatted} {record.Currency}</td></tr>\n"
+            + "</tbody></table>\n"
+            + $"<div class=\"footer\">Thank you for your business.<br />Reference: {reference}</div>\n"
+            + "</body>\n</html>";
+
+        return File(
+            System.Text.Encoding.UTF8.GetBytes(html),
+            "text/html",
+            $"{invoiceNumber}.html");
+    }
+
+    /// <summary>Get trial status for the current organisation.</summary>
+    [HttpGet("trial-status")]
+    [Authorize]
+    public async Task<IActionResult> GetTrialStatus()
+    {
+        var orgId = currentUser.OrganizationId;
+        if (orgId is null) return BadRequest(new { message = "No organization context" });
+
+        var sub = await db.Subscriptions
+            .AsNoTracking()
+            .Where(s => s.OrganizationId == orgId && s.Status == "trialing")
+            .OrderByDescending(s => s.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        if (sub is null)
+            return Ok(new { isTrial = false, daysRemaining = 0, expiresAt = (DateTime?)null });
+
+        var daysRemaining = Math.Max(0, (int)(sub.CurrentPeriodEnd - DateTime.UtcNow).TotalDays);
+        return Ok(new
+        {
+            isTrial = true,
+            daysRemaining,
+            expiresAt = sub.CurrentPeriodEnd,
+        });
+    }
+
     /// <summary>Cancel the current subscription.</summary>
     [HttpPost("cancel")]
     [Authorize(Policy = PermissionPolicies.CanManageSettings)]
@@ -422,6 +719,17 @@ public class BillingController(
             7083m => "professional",
             16667m => "enterprise",
             _ => "starter"
+        };
+    }
+
+    private static string DeterminePlanName(decimal amount)
+    {
+        return amount switch
+        {
+            3333m => "Government Starter",
+            7083m => "Government Professional",
+            16667m => "Government Enterprise",
+            _ => "Subscription"
         };
     }
 

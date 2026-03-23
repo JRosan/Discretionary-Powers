@@ -12,7 +12,7 @@ public class SubscriptionGuardService(AppDbContext db, ITenantService tenantServ
         if (!orgId.HasValue) return "starter";
 
         var sub = await db.Subscriptions
-            .Where(s => s.OrganizationId == orgId.Value && s.Status == "active")
+            .Where(s => s.OrganizationId == orgId.Value && (s.Status == "active" || s.Status == "trialing"))
             .FirstOrDefaultAsync();
 
         return sub?.Plan ?? "starter"; // Default to starter if no subscription

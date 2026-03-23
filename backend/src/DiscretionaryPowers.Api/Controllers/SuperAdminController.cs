@@ -369,6 +369,22 @@ public class SuperAdminController(AppDbContext db, IConfiguration configuration)
             });
         }
 
+        // Trial subscription
+        var trialSub = new Subscription
+        {
+            Id = Guid.NewGuid(),
+            OrganizationId = org.Id,
+            Plan = "starter",
+            Status = "trialing",
+            MonthlyPrice = 0,
+            Currency = "USD",
+            CurrentPeriodStart = DateTime.UtcNow,
+            CurrentPeriodEnd = DateTime.UtcNow.AddDays(14),
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+        };
+        db.Subscriptions.Add(trialSub);
+
         await db.SaveChangesAsync();
 
         return CreatedAtAction(nameof(GetTenant), new { id = org.Id }, new
