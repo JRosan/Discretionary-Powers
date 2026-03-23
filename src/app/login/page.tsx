@@ -183,19 +183,23 @@ function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-surface px-4 py-12 h-screen overflow-y-auto">
-      <div className="w-full max-w-lg space-y-6">
-        {/* Login Card */}
-        <div className="overflow-hidden rounded-lg border border-border bg-background shadow-sm">
-          <div className="bg-primary px-6 py-8 text-center text-white">
-            <h1 className="text-xl font-semibold">{tCommon("government")}</h1>
-            <p className="mt-1 text-sm text-white/80">{tCommon("appName")}</p>
+      <div className="w-full max-w-md">
+        <div className="rounded-xl border border-border bg-background shadow-sm overflow-hidden">
+          {/* Logo */}
+          <div className="px-8 pt-8 pb-2 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10">
+              <Shield className="h-7 w-7 text-primary" />
+            </div>
+            <h1 className="text-lg font-semibold text-text">
+              {tCommon("government")}
+            </h1>
+            <p className="mt-0.5 text-xs text-text-muted">
+              {tCommon("appName")}
+            </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4 px-6 py-6">
-            <h2 className="text-lg font-semibold text-text text-center">
-              {tAuth("signInTitle")}
-            </h2>
-
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4 px-8 py-6">
             {loggedOut && !error && (
               <div className="rounded-md bg-accent/10 border border-accent/20 px-3 py-2 text-sm text-accent-dark text-center">
                 You have been signed out successfully.
@@ -203,7 +207,7 @@ function LoginPage() {
             )}
 
             {error && (
-              <div className="rounded-md bg-error/10 px-3 py-2 text-sm text-error">
+              <div role="alert" className="rounded-md bg-error/10 px-3 py-2 text-sm text-error">
                 {error}
               </div>
             )}
@@ -237,51 +241,43 @@ function LoginPage() {
               {loading ? tAuth("signingIn") : tAuth("signIn")}
             </Button>
           </form>
-        </div>
 
-        {/* Demo Accounts */}
-        <div className="rounded-lg border border-border bg-background p-6">
-          <h3 className="text-sm font-semibold text-text mb-1">
-            Demo Accounts
-          </h3>
-          <p className="text-xs text-text-muted mb-4">
-            Click any role below to sign in instantly with a demo account.
-          </p>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            {demoAccounts.map((account) => {
-              const Icon = account.icon;
-              return (
-                <button
-                  key={account.email}
-                  onClick={() => handleDemoLogin(account.email)}
-                  disabled={loading}
-                  className="flex items-start gap-3 rounded-lg border border-border p-3 text-left hover:border-accent hover:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <div
-                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${account.color}`}
+          {/* Demo Accounts */}
+          <div className="border-t border-border px-8 py-5 bg-surface/50">
+            <p className="text-xs font-medium text-text-muted mb-3 text-center uppercase tracking-wide">
+              Demo Accounts
+            </p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {demoAccounts.map((account) => {
+                const Icon = account.icon;
+                return (
+                  <button
+                    key={account.email}
+                    onClick={() => handleDemoLogin(account.email)}
+                    disabled={loading}
+                    className="flex items-center gap-2.5 rounded-lg border border-border bg-background p-2.5 text-left hover:border-accent hover:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-text">
-                      {account.role}
-                    </p>
-                    <p className="text-xs text-text-muted mt-0.5">
-                      {account.description}
-                    </p>
-                  </div>
-                </button>
-              );
-            })}
+                    <div
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${account.color}`}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-text">
+                        {account.role}
+                      </p>
+                      <p className="text-[10px] text-text-muted leading-tight">
+                        {account.description}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[10px] text-text-muted mt-2.5 text-center">
+              Password: <code className="rounded bg-surface px-1 py-0.5 font-mono">password</code>
+            </p>
           </div>
-
-          <p className="text-xs text-text-muted mt-3 text-center">
-            All demo accounts use password:{" "}
-            <code className="rounded bg-surface px-1 py-0.5 font-mono text-xs">
-              password
-            </code>
-          </p>
         </div>
       </div>
     </div>
