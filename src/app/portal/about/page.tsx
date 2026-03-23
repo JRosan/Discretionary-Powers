@@ -147,6 +147,70 @@ export default function AboutPage() {
                 similar cases.
               </p>
             </div>
+            <div className="rounded-md border border-border p-4">
+              <h3 className="text-sm font-semibold text-text mb-1">Crown Land</h3>
+              <p className="text-xs text-text-secondary">
+                Allocation and management of Crown land under the Crown Lands
+                Ordinance. Decisions must consider land use policy, community
+                benefit, and environmental impact.
+              </p>
+            </div>
+            <div className="rounded-md border border-border p-4">
+              <h3 className="text-sm font-semibold text-text mb-1">Belongership</h3>
+              <p className="text-xs text-text-secondary">
+                Grants of Belonger status under the Immigration and Passport Act.
+                Applications must be assessed on individual merit with consistent
+                application of statutory criteria.
+              </p>
+            </div>
+            <div className="rounded-md border border-border p-4">
+              <h3 className="text-sm font-semibold text-text mb-1">Immigration</h3>
+              <p className="text-xs text-text-secondary">
+                Residency permits, visa approvals, and immigration status
+                decisions. Must comply with immigration legislation and consider
+                individual circumstances and public interest.
+              </p>
+            </div>
+            <div className="rounded-md border border-border p-4">
+              <h3 className="text-sm font-semibold text-text mb-1">Trade Licence</h3>
+              <p className="text-xs text-text-secondary">
+                Business and trade licence approvals. Applicants must meet
+                prescribed requirements and decisions must consider economic
+                impact and regulatory compliance.
+              </p>
+            </div>
+            <div className="rounded-md border border-border p-4">
+              <h3 className="text-sm font-semibold text-text mb-1">Work Permit</h3>
+              <p className="text-xs text-text-secondary">
+                Work permit grants and renewals under the Labour Code. Decisions
+                must balance labour market needs with protection of local
+                employment opportunities.
+              </p>
+            </div>
+            <div className="rounded-md border border-border p-4">
+              <h3 className="text-sm font-semibold text-text mb-1">Customs Exemption</h3>
+              <p className="text-xs text-text-secondary">
+                Customs duty exemptions and waivers. Decisions must demonstrate
+                clear policy justification, fiscal responsibility, and equitable
+                treatment of applicants.
+              </p>
+            </div>
+            <div className="rounded-md border border-border p-4">
+              <h3 className="text-sm font-semibold text-text mb-1">Environmental</h3>
+              <p className="text-xs text-text-secondary">
+                Environmental permits, conservation orders, and impact
+                assessments. Decisions must consider ecological sustainability,
+                public health, and compliance with environmental legislation.
+              </p>
+            </div>
+            <div className="rounded-md border border-border p-4">
+              <h3 className="text-sm font-semibold text-text mb-1">Maritime</h3>
+              <p className="text-xs text-text-secondary">
+                Vessel registration, port authority decisions, and maritime
+                permits. Decisions must comply with maritime legislation and
+                international conventions applicable to the BVI.
+              </p>
+            </div>
           </div>
         </section>
 

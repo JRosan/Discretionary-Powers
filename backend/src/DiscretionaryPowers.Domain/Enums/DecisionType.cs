@@ -19,6 +19,22 @@ public enum DecisionType
     Policy,
     // enforcement
     Enforcement,
+    // crown_land
+    CrownLand,
+    // belongership
+    Belongership,
+    // immigration
+    Immigration,
+    // trade_license
+    TradeLicense,
+    // work_permit
+    WorkPermit,
+    // customs_exemption
+    CustomsExemption,
+    // environmental
+    Environmental,
+    // maritime
+    Maritime,
     // other
     Other
 }

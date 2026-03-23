@@ -19,6 +19,7 @@ import {
   MessageSquare,
   Shield,
   AlertTriangle,
+  Printer,
 } from "lucide-react";
 import { DECISION_STEPS, JUDICIAL_REVIEW_GROUNDS } from "@/lib/constants";
 import { api } from "@/lib/api";
@@ -357,6 +358,16 @@ export default function DecisionDetailPage() {
         >
           <MessageSquare className="h-4 w-4" />
           Comments
+        </button>
+        <button
+          onClick={() => {
+            const w = window.open(`${apiBase}/decisions/${decision.id}/export?format=html`);
+            w?.addEventListener('load', () => w.print());
+          }}
+          className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-secondary hover:bg-surface transition-colors"
+        >
+          <Printer className="h-4 w-4" />
+          Print Report
         </button>
         <div className="relative">
           <button

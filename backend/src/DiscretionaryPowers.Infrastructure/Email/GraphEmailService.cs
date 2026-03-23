@@ -48,7 +48,7 @@ public class GraphEmailService : IEmailService
             Body = new ItemBody
             {
                 ContentType = BodyType.Html,
-                Content = WrapInTemplate(htmlBody),
+                Content = htmlBody,
             },
             ToRecipients =
             [
@@ -70,41 +70,21 @@ public class GraphEmailService : IEmailService
 
     public Task SendDecisionAssigned(string to, string decisionTitle, string referenceNumber) =>
         SendEmail(to, $"Decision Assigned: {referenceNumber}",
-            $"<h2>Decision Assigned to You</h2><p>You have been assigned to decision <strong>{referenceNumber}</strong>: {decisionTitle}.</p><p>Please log in to review and take action.</p>");
+            EmailTemplates.DecisionAssigned(decisionTitle, referenceNumber, to));
 
     public Task SendStepCompleted(string to, string decisionTitle, int stepNumber, string stepName) =>
         SendEmail(to, $"Step {stepNumber} Completed: {decisionTitle}",
-            $"<h2>Workflow Step Completed</h2><p>Step {stepNumber} ({stepName}) has been completed for decision: <strong>{decisionTitle}</strong>.</p>");
+            EmailTemplates.StepCompleted(decisionTitle, stepNumber, stepName, "System"));
 
     public Task SendApprovalNeeded(string to, string decisionTitle, string referenceNumber) =>
         SendEmail(to, $"Approval Required: {referenceNumber}",
-            $"<h2>Decision Ready for Approval</h2><p>Decision <strong>{referenceNumber}</strong>: {decisionTitle} is ready for your review and approval.</p>");
+            EmailTemplates.ApprovalNeeded(decisionTitle, referenceNumber));
 
     public Task SendDecisionPublished(string to, string decisionTitle, string referenceNumber) =>
         SendEmail(to, $"Decision Published: {referenceNumber}",
-            $"<h2>Decision Published</h2><p>Decision <strong>{referenceNumber}</strong>: {decisionTitle} has been published to the public portal.</p>");
+            EmailTemplates.DecisionPublished(decisionTitle, referenceNumber));
 
     public Task SendJudicialReviewFiled(string to, string decisionTitle, string referenceNumber) =>
         SendEmail(to, $"Judicial Review Filed: {referenceNumber}",
-            $"<h2>Judicial Review Filed</h2><p>A judicial review has been filed against decision <strong>{referenceNumber}</strong>: {decisionTitle}.</p><p>Immediate attention is required.</p>");
-
-    private static string WrapInTemplate(string body) =>
-        $"""
-        <!DOCTYPE html>
-        <html>
-        <head><meta charset="utf-8"></head>
-        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <div style="background-color: #003366; color: white; padding: 20px; text-align: center;">
-                <h1 style="margin: 0; font-size: 18px;">BVI Government</h1>
-                <p style="margin: 5px 0 0;">Discretionary Powers Management System</p>
-            </div>
-            <div style="padding: 20px; border: 1px solid #ddd; border-top: none;">
-                {body}
-            </div>
-            <div style="padding: 10px 20px; background-color: #f5f5f5; font-size: 12px; color: #666; text-align: center;">
-                <p>Government of the British Virgin Islands</p>
-            </div>
-        </body>
-        </html>
-        """;
+            EmailTemplates.JudicialReviewFiled(decisionTitle, referenceNumber));
 }

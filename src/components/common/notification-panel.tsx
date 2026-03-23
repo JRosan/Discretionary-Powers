@@ -107,6 +107,7 @@ export function NotificationBell({
           setOpen(!open);
           if (!open) onRefresh();
         }}
+        aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
         className="relative rounded-md p-2 text-text-secondary hover:bg-surface transition-colors"
       >
         <Bell className="h-5 w-5" />
@@ -134,6 +135,7 @@ export function NotificationBell({
               )}
               <button
                 onClick={() => setOpen(false)}
+                aria-label="Close notifications"
                 className="rounded p-1 text-text-muted hover:bg-surface transition-colors"
               >
                 <X className="h-4 w-4" />
@@ -183,6 +185,7 @@ export function NotificationBell({
                         e.stopPropagation();
                         onDelete(n.id);
                       }}
+                      aria-label="Delete notification"
                       className="mt-0.5 shrink-0 rounded p-1 text-text-muted opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-500 transition-all"
                     >
                       <X className="h-3.5 w-3.5" />

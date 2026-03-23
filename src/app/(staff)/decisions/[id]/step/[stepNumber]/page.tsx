@@ -277,7 +277,7 @@ export default function StepPage() {
 
   // Step-specific guidance for the right sidebar
   const stepGuidance: Record<number, { tips: string[]; legalRef: string; checklist: string[] }> = {
-    1: { tips: ["Check the specific Act or Regulation that grants this power", "Verify the power hasn't been repealed or amended", "If delegated, ensure the delegation instrument is valid"], legalRef: "Virgin Islands Constitution Order 2007, Section 56", checklist: ["Legal basis identified", "Scope of power confirmed", "Delegation chain documented (if applicable)"] },
+    1: { tips: ["Check the specific Act or Regulation that grants this power", "Verify the power hasn't been repealed or amended", "If delegated, ensure the delegation instrument is valid", "For Crown Land decisions, cite the Crown Lands Ordinance", "For Belongership decisions, cite the Immigration and Passport Act", "For Work Permit decisions, cite the Labour Code"], legalRef: "Virgin Islands Constitution Order 2007, Section 56", checklist: ["Legal basis identified", "Scope of power confirmed", "Delegation chain documented (if applicable)"] },
     2: { tips: ["Review the relevant statute for procedural requirements", "Check if consultation periods are mandated", "Verify all pre-conditions have been met"], legalRef: "Applicable enabling legislation", checklist: ["Statutory procedures identified", "Administrative requirements listed", "All pre-conditions verified"] },
     3: { tips: ["Cast a wide net — consider all relevant sources", "Document where information came from", "Identify gaps and how they were addressed"], legalRef: "Natural justice principles", checklist: ["All relevant sources consulted", "Key facts documented", "Information gaps identified and addressed"] },
     4: { tips: ["Weigh evidence objectively — don't ignore contradictory facts", "Consider the source reliability", "Document your reasoning for each conclusion"], legalRef: "Administrative law — Wednesbury reasonableness", checklist: ["Evidence quality assessed", "Contradictory evidence considered", "Reasoning documented"] },
@@ -417,14 +417,14 @@ export default function StepPage() {
 
       {/* Success banner */}
       {successMessage && (
-        <div className="rounded-lg bg-accent/10 border border-accent/20 p-4 text-sm text-accent flex items-center gap-2 transition-opacity duration-300">
+        <div role="alert" className="rounded-lg bg-accent/10 border border-accent/20 p-4 text-sm text-accent flex items-center gap-2 transition-opacity duration-300">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
           {successMessage}
         </div>
       )}
 
       {error && (
-        <div className="rounded-lg bg-error/10 border border-error/20 p-4 text-sm text-error transition-opacity duration-300">
+        <div role="alert" className="rounded-lg bg-error/10 border border-error/20 p-4 text-sm text-error transition-opacity duration-300">
           {error}
         </div>
       )}

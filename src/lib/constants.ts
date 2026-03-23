@@ -37,6 +37,14 @@ export const DECISION_TYPES = {
   APPOINTMENT: "appointment",
   POLICY: "policy",
   ENFORCEMENT: "enforcement",
+  CROWN_LAND: "crown_land",
+  BELONGERSHIP: "belongership",
+  IMMIGRATION: "immigration",
+  TRADE_LICENSE: "trade_license",
+  WORK_PERMIT: "work_permit",
+  CUSTOMS_EXEMPTION: "customs_exemption",
+  ENVIRONMENTAL: "environmental",
+  MARITIME: "maritime",
   OTHER: "other",
 } as const;
 

@@ -123,6 +123,12 @@ export function AppShell({ children }: AppShellProps) {
 
   return (
     <div className="flex h-screen overflow-hidden">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-accent focus:px-4 focus:py-2 focus:text-white focus:text-sm"
+      >
+        Skip to main content
+      </a>
       {/* Sidebar */}
       <aside className="flex w-64 flex-col bg-primary text-white">
         {/* Logo */}
@@ -173,6 +179,7 @@ export function AppShell({ children }: AppShellProps) {
                         <Link
                           key={child.href}
                           href={child.href}
+                          aria-current={pathname === child.href ? "page" : undefined}
                           className={cn(
                             "block rounded-md px-3 py-1.5 text-sm transition-colors",
                             pathname === child.href
@@ -193,6 +200,7 @@ export function AppShell({ children }: AppShellProps) {
               <Link
                 key={item.href}
                 href={item.href}
+                aria-current={isActive ? "page" : undefined}
                 className={cn(
                   "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                   isActive
@@ -225,6 +233,7 @@ export function AppShell({ children }: AppShellProps) {
               onClick={logout}
               className="text-white/60 hover:text-white transition-colors"
               title={tNav('signOut')}
+              aria-label={tNav('signOut')}
             >
               <LogOut className="h-4 w-4" />
             </button>
@@ -247,6 +256,7 @@ export function AppShell({ children }: AppShellProps) {
           <button
             type="button"
             onClick={() => setSearchOpen(true)}
+            aria-label="Search"
             className="relative flex h-9 w-64 items-center rounded-md border border-border bg-surface pl-9 pr-3 text-sm text-text-muted hover:border-accent transition-colors"
           >
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
@@ -282,7 +292,7 @@ export function AppShell({ children }: AppShellProps) {
         <OfflineIndicator />
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <main id="main-content" className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
     </div>
   );

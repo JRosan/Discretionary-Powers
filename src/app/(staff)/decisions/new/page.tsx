@@ -75,7 +75,7 @@ export default function NewDecisionPage() {
       </div>
 
       {error && (
-        <div className="rounded-lg bg-error/10 border border-error/20 p-4 text-sm text-error">
+        <div role="alert" className="rounded-lg bg-error/10 border border-error/20 p-4 text-sm text-error">
           {error}
         </div>
       )}

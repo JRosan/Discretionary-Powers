@@ -10,6 +10,7 @@ import {
   Plus,
   ArrowRight,
   Loader2,
+  Calendar,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import { queryConfig } from "@/lib/query-config";
 import { useTranslations } from "@/i18n";
+import { DeadlineTimeline } from "@/components/dashboard/deadline-timeline";
 
 const statusVariantMap: Record<string, "default" | "accent" | "warning" | "error" | "success" | "outline"> = {
   draft: "outline",
@@ -61,8 +63,16 @@ export default function DashboardPage() {
     ...queryConfig.decisions,
   });
 
+  const deadlineQuery = useQuery({
+    queryKey: ["decisions", "deadlines"],
+    queryFn: () => api.decisions.list({ limit: 20 }),
+    placeholderData: { items: [], hasMore: false, nextCursor: null },
+    ...queryConfig.decisions,
+  });
+
   const stats = statsQuery.data;
   const recentDecisions = recentQuery.data?.items ?? [];
+  const deadlineDecisions = deadlineQuery.data?.items ?? [];
 
   const statCards = [
     {
@@ -205,6 +215,19 @@ export default function DashboardPage() {
               ))}
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Upcoming Deadlines */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Calendar className="h-4 w-4 text-accent" />
+            Upcoming Deadlines
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <DeadlineTimeline decisions={deadlineDecisions} />
         </CardContent>
       </Card>
     </div>
