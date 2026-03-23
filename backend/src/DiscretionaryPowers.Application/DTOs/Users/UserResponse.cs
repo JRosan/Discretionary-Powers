@@ -11,6 +11,7 @@ public class UserResponse
     public bool Active { get; set; }
     public string? MinistryName { get; set; }
     public string? OrganizationName { get; set; }
+    public bool OrganizationOnboardingCompleted { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }

@@ -302,7 +302,7 @@ export default function PricingPage() {
                       </a>
                     ) : (
                       <Link
-                        href="/login"
+                        href={`/signup?plan=${plan.id}`}
                         className={`flex w-full items-center justify-center rounded-lg px-4 py-3 text-sm font-semibold transition-colors ${
                           isProfessional
                             ? "bg-accent text-white hover:bg-accent-light"

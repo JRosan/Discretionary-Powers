@@ -28,6 +28,8 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.Active).HasColumnName("active").HasDefaultValue(true);
         builder.Property(u => u.PasswordResetToken).HasColumnName("password_reset_token");
         builder.Property(u => u.PasswordResetExpiry).HasColumnName("password_reset_expiry");
+        builder.Property(u => u.EmailVerificationToken).HasColumnName("email_verification_token");
+        builder.Property(u => u.EmailVerified).HasColumnName("email_verified").HasDefaultValue(false);
         builder.Property(u => u.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
         builder.Property(u => u.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
 

@@ -20,6 +20,7 @@ public class OrganizationConfiguration : IEntityTypeConfiguration<Organization>
         builder.Property(o => o.Domain).HasColumnName("domain");
         builder.Property(o => o.HeroImageUrl).HasColumnName("hero_image_url");
         builder.Property(o => o.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+        builder.Property(o => o.OnboardingCompleted).HasColumnName("onboarding_completed").HasDefaultValue(false);
         builder.Property(o => o.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
         builder.Property(o => o.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
 

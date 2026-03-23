@@ -61,6 +61,7 @@ function LoginPage() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const loggedOut = searchParams.get("logged_out") === "true";
+  const verified = searchParams.get("verified") === "true";
   const { login, loginWithMfa } = useAuth();
   const tenant = useTenant();
   const tAuth = useTranslations("auth");
@@ -81,7 +82,12 @@ function LoginPage() {
       if (result.mfaRequired && result.mfaToken) {
         setMfaToken(result.mfaToken);
       } else {
-        router.push(callbackUrl);
+        // Check if onboarding is needed
+        if (result.user?.organizationOnboardingCompleted === false) {
+          router.push("/onboarding");
+        } else {
+          router.push(callbackUrl);
+        }
         router.refresh();
       }
     } catch {
@@ -208,7 +214,13 @@ function LoginPage() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4 px-8 py-6">
-            {loggedOut && !error && (
+            {verified && !error && (
+              <div className="rounded-md bg-accent/10 border border-accent/20 px-3 py-2 text-sm text-accent-dark text-center">
+                Email verified successfully. Please sign in.
+              </div>
+            )}
+
+            {loggedOut && !error && !verified && (
               <div className="rounded-md bg-accent/10 border border-accent/20 px-3 py-2 text-sm text-accent-dark text-center">
                 You have been signed out successfully.
               </div>

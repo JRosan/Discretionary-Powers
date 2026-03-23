@@ -16,6 +16,8 @@ public class User
     public bool Active { get; set; } = true;
     public string? PasswordResetToken { get; set; }
     public DateTime? PasswordResetExpiry { get; set; }
+    public string? EmailVerificationToken { get; set; }
+    public bool EmailVerified { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 

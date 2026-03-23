@@ -72,6 +72,13 @@ export const api = {
         method: "POST",
         body: JSON.stringify({ currentPassword, newPassword }),
       }),
+    signup: (data: Record<string, unknown>) =>
+      request<{ message: string }>("/auth/signup", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    verifyEmail: (token: string) =>
+      request<{ message: string }>(`/auth/verify-email?token=${token}`),
   },
 
   mfa: {
@@ -376,6 +383,20 @@ export const api = {
       ),
   },
 
+  onboarding: {
+    updateMinistries: (ministries: Array<{ name: string; code: string }>) =>
+      request<void>("/onboarding/ministries", {
+        method: "POST",
+        body: JSON.stringify(ministries),
+      }),
+    inviteUsers: (users: Array<{ name: string; email: string; role: string }>) =>
+      request<void>("/onboarding/invite", {
+        method: "POST",
+        body: JSON.stringify(users),
+      }),
+    complete: () => request<void>("/onboarding/complete", { method: "POST" }),
+  },
+
   health: {
     check: () => request<{ status: string }>("/health"),
   },
@@ -452,6 +473,7 @@ export interface ApiUser {
   ministryId: string | null;
   active: boolean;
   ministryName: string | null;
+  organizationOnboardingCompleted?: boolean;
   createdAt: string | null;
   updatedAt: string | null;
 }

@@ -11,6 +11,7 @@ public class Organization
     public string? Domain { get; set; }
     public string? HeroImageUrl { get; set; }
     public bool IsActive { get; set; } = true;
+    public bool OnboardingCompleted { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 
