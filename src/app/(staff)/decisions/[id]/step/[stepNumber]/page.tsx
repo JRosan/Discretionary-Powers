@@ -4,9 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, SkipForward } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, SkipForward, AlertTriangle, Clock } from "lucide-react";
 import { DECISION_STEPS } from "@/lib/constants";
 import { api } from "@/lib/api";
+import { DocumentUpload } from "@/components/documents/document-upload";
+import { DocumentList } from "@/components/documents/document-list";
 import {
   Dialog,
   DialogContent,
@@ -307,6 +309,34 @@ export default function StepPage() {
         <p className="mt-1 text-sm text-text-secondary">{step.description}</p>
       </div>
 
+      {/* Deadline Warning Banner */}
+      {(() => {
+        const deadline = decision?.deadline ? new Date(decision.deadline) : null;
+        const now = new Date();
+        const daysUntilDeadline = deadline ? Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : null;
+        const isOverdue = deadline && daysUntilDeadline !== null && daysUntilDeadline < 0;
+        const isApproaching = deadline && daysUntilDeadline !== null && daysUntilDeadline >= 0 && daysUntilDeadline <= 3;
+        const isTerminal = decision?.status === "published" || decision?.status === "withdrawn";
+
+        if (isOverdue && !isTerminal) {
+          return (
+            <div className="flex items-center gap-2 rounded-lg border border-error/30 bg-error/10 px-4 py-3 text-sm text-error">
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              This decision is overdue. The deadline was {deadline!.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}.
+            </div>
+          );
+        }
+        if (isApproaching && !isTerminal) {
+          return (
+            <div className="flex items-center gap-2 rounded-lg border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning-dark">
+              <Clock className="h-4 w-4 shrink-0" />
+              Deadline approaching: {deadline!.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })} ({daysUntilDeadline} {daysUntilDeadline === 1 ? "day" : "days"} remaining)
+            </div>
+          );
+        }
+        return null;
+      })()}
+
       {/* Completed/Skipped banner */}
       {isCompleted && (
         <div className={`rounded-lg border p-4 text-sm flex items-center gap-2 ${
@@ -460,6 +490,20 @@ export default function StepPage() {
               )}
             </div>
           ))}
+        </div>
+
+        {/* Supporting Documents */}
+        <div className="rounded-lg border border-border bg-white p-6">
+          <h3 className="text-sm font-semibold text-text mb-3">Supporting Documents</h3>
+          <p className="text-xs text-text-muted mb-4">
+            Upload any supporting evidence, legal opinions, or correspondence for this step.
+          </p>
+          <DocumentList decisionId={decisionId} />
+          {!isCompleted && (
+            <div className="mt-4">
+              <DocumentUpload decisionId={decisionId} onUploadComplete={() => {}} />
+            </div>
+          )}
         </div>
 
         {/* Notes */}

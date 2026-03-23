@@ -67,6 +67,8 @@ export default function DecisionDetailPage() {
   const { user } = useAuth();
   const [actionMessage, setActionMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [showFlagDialog, setShowFlagDialog] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
   const [flagGround, setFlagGround] = useState("");
   const [flagNotes, setFlagNotes] = useState("");
 
@@ -233,6 +235,34 @@ export default function DecisionDetailPage() {
         </div>
       </div>
 
+      {/* Deadline Warning Banner */}
+      {(() => {
+        const deadline = decision.deadline ? new Date(decision.deadline) : null;
+        const now = new Date();
+        const daysUntilDeadline = deadline ? Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : null;
+        const isOverdue = deadline && daysUntilDeadline !== null && daysUntilDeadline < 0;
+        const isApproaching = deadline && daysUntilDeadline !== null && daysUntilDeadline >= 0 && daysUntilDeadline <= 3;
+        const isTerminal = decision.status === "published" || decision.status === "withdrawn";
+
+        if (isOverdue && !isTerminal) {
+          return (
+            <div className="flex items-center gap-2 rounded-lg border border-error/30 bg-error/10 px-4 py-3 text-sm text-error">
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              This decision is overdue. The deadline was {deadline!.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}.
+            </div>
+          );
+        }
+        if (isApproaching && !isTerminal) {
+          return (
+            <div className="flex items-center gap-2 rounded-lg border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning-dark">
+              <Clock className="h-4 w-4 shrink-0" />
+              Deadline approaching: {deadline!.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })} ({daysUntilDeadline} {daysUntilDeadline === 1 ? "day" : "days"} remaining)
+            </div>
+          );
+        }
+        return null;
+      })()}
+
       {/* Decision Actions */}
       {actionMessage && (
         <div className={`rounded-lg border p-4 text-sm ${
@@ -282,6 +312,13 @@ export default function DecisionDetailPage() {
           </span>
         )}
 
+        {decision.status === "under_review" && user?.role !== "minister" && (
+          <div className="flex items-center gap-2 rounded-lg bg-surface border border-border px-4 py-3 text-sm text-text-secondary">
+            <Clock className="h-4 w-4 text-warning-dark" />
+            This decision is awaiting ministerial approval.
+          </div>
+        )}
+
         {canFlagForReview && (decision.status === "approved" || decision.status === "published") && (
           <button
             onClick={() => setShowFlagDialog(true)}
@@ -321,6 +358,22 @@ export default function DecisionDetailPage() {
           <MessageSquare className="h-4 w-4" />
           Comments
         </button>
+        <div className="relative">
+          <button
+            onClick={() => setShowExportMenu(!showExportMenu)}
+            className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-secondary hover:bg-surface transition-colors"
+          >
+            <Download className="h-4 w-4" />
+            Export
+          </button>
+          {showExportMenu && (
+            <div className="absolute top-full mt-1 right-0 z-10 rounded-lg border border-border bg-white shadow-md py-1 min-w-[140px]">
+              <button onClick={() => { window.open(`${apiBase}/decisions/${decision.id}/export?format=json`); setShowExportMenu(false); }} className="block w-full px-4 py-2 text-left text-sm hover:bg-surface">JSON</button>
+              <button onClick={() => { window.open(`${apiBase}/decisions/${decision.id}/export?format=csv`); setShowExportMenu(false); }} className="block w-full px-4 py-2 text-left text-sm hover:bg-surface">CSV</button>
+              <button onClick={() => { window.open(`${apiBase}/decisions/${decision.id}/export?format=html`); setShowExportMenu(false); }} className="block w-full px-4 py-2 text-left text-sm hover:bg-surface">HTML Report</button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Progress Bar */}
