@@ -7,6 +7,7 @@ export default function OfflinePage() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-surface px-4">
       {/* Government branding */}
       <div className="mb-8 text-center">
+        <img src="/images/logos/crest-bw.png" alt="BVI Coat of Arms" className="mx-auto mb-3 h-14 w-auto" />
         <h2 className="text-xl font-bold text-primary tracking-wide">DPMS</h2>
         <p className="text-xs text-text-secondary">
           Government of the Virgin Islands

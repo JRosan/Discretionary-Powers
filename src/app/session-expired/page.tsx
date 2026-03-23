@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Shield } from "lucide-react";
 
 export default function SessionExpiredPage() {
   return (
@@ -8,9 +7,7 @@ export default function SessionExpiredPage() {
         <div className="rounded-xl border border-border bg-background shadow-sm overflow-hidden">
           {/* Logo */}
           <div className="px-8 pt-8 pb-2 text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10">
-              <Shield className="h-7 w-7 text-primary" />
-            </div>
+            <img src="/images/logos/crest-bw.png" alt="BVI Coat of Arms" className="mx-auto mb-4 h-16 w-auto" />
             <h1 className="text-lg font-semibold text-text">
               Government of the Virgin Islands
             </h1>

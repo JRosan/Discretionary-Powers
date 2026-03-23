@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  Shield,
   FileText,
   Eye,
   Scale,
@@ -8,6 +7,7 @@ import {
   Lock,
   ArrowRight,
   CheckCircle2,
+  Shield,
 } from "lucide-react";
 import { PublicFooter } from "@/components/layout/public-footer";
 
@@ -70,9 +70,7 @@ export default function Home() {
       <header className="border-b border-border bg-white">
         <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-              <Shield className="h-5 w-5 text-primary" />
-            </div>
+            <img src="/images/logos/crest-bw.png" alt="BVI Coat of Arms" className="h-9 w-auto" />
             <div>
               <p className="text-sm font-semibold text-primary">
                 Government of the Virgin Islands

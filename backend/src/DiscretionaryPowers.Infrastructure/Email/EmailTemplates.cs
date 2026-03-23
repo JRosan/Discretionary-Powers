@@ -10,6 +10,8 @@ public static class EmailTemplates
 <body style='margin:0;padding:0;background:#F8F9FA;font-family:Inter,system-ui,sans-serif;'>
   <div style='max-width:600px;margin:0 auto;background:#fff;'>
     <!-- Header -->
+    <!-- TODO: In production, replace the text header with a hosted BVI Coat of Arms logo image:
+         <img src='https://your-domain.gov.vg/images/logos/gov-logo-white.png' alt='Government of the Virgin Islands' style='height:48px;' /> -->
     <div style='background:#1D3557;padding:24px 32px;text-align:center;'>
       <h1 style='margin:0;color:#fff;font-size:18px;font-weight:600;'>Government of the Virgin Islands</h1>
       <p style='margin:4px 0 0;color:rgba(255,255,255,0.8);font-size:12px;'>Discretionary Powers Management System</p>

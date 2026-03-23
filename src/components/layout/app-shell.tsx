@@ -133,11 +133,14 @@ export function AppShell({ children }: AppShellProps) {
       {/* Sidebar */}
       <aside className="flex w-64 flex-col bg-primary text-white">
         {/* Logo — links to landing page */}
-        <Link href="/" className="flex flex-col items-start px-6 py-5 border-b border-primary-light hover:bg-primary-light transition-colors">
-          <span className="text-xl font-bold tracking-wide">DPMS</span>
-          <span className="text-xs text-white/70 mt-0.5">
-            {tCommon('government')}
-          </span>
+        <Link href="/" className="flex items-center gap-3 px-6 py-5 border-b border-primary-light hover:bg-primary-light transition-colors">
+          <img src="/images/logos/crest-white.png" alt="BVI Coat of Arms" className="h-10 w-auto" />
+          <div>
+            <span className="text-sm font-bold leading-tight block">DPMS</span>
+            <span className="text-xs text-white/70 leading-tight block">
+              {tCommon('government')}
+            </span>
+          </div>
         </Link>
 
         {/* Navigation */}

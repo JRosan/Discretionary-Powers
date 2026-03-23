@@ -26,13 +26,16 @@ export function PublicLayout({ children }: PublicLayoutProps) {
       <header className="bg-primary text-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
-            <Link href="/portal" className="flex flex-col">
-              <span className="text-lg font-bold leading-tight">
-                Government of the Virgin Islands
-              </span>
-              <span className="text-xs text-white/60 leading-tight">
-                Transparency Initiative
-              </span>
+            <Link href="/portal" className="flex items-center gap-3">
+              <img src="/images/logos/crest-white.png" alt="BVI Coat of Arms" className="h-10 w-auto" />
+              <div className="flex flex-col">
+                <span className="text-lg font-bold leading-tight">
+                  Government of the Virgin Islands
+                </span>
+                <span className="text-xs text-white/60 leading-tight">
+                  Transparency Initiative
+                </span>
+              </div>
             </Link>
             <div className="flex items-center gap-3">
               <Link

@@ -432,6 +432,8 @@ public class ExportService(AppDbContext db)
             </head>
             <body>
               <div class="header">
+                <!-- TODO: In production, embed the BVI Coat of Arms as a base64 data URI or hosted URL:
+                     <img src="data:image/png;base64,..." alt="BVI Coat of Arms" style="width:60px;height:60px;" /> -->
                 <div class="crest">BVI<br/>Crest</div>
                 <div class="header-text">
                   <h1>Government of the Virgin Islands</h1>
