@@ -100,16 +100,26 @@ export default function Home() {
       </header>
 
       {/* Hero */}
-      <section className="bg-primary text-white">
-        <div className="mx-auto max-w-7xl px-6 py-20">
+      <section
+        className="relative text-white bg-primary"
+        style={{
+          backgroundImage: "url('/images/hero-bg.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center 40%",
+        }}
+      >
+        {/* Dark overlay for text readability */}
+        <div className="absolute inset-0 bg-primary/70" />
+
+        <div className="relative mx-auto max-w-7xl px-6 py-24 sm:py-32">
           <div className="max-w-3xl">
             <p className="text-sm font-medium text-accent-light uppercase tracking-wide mb-3">
               Digital Governance Platform
             </p>
-            <h1 className="text-4xl font-bold leading-tight sm:text-5xl">
+            <h1 className="text-4xl font-bold leading-tight sm:text-5xl drop-shadow-sm">
               Transparent, accountable exercise of discretionary powers
             </h1>
-            <p className="mt-5 text-lg text-white/80 max-w-2xl">
+            <p className="mt-5 text-lg text-white/90 max-w-2xl drop-shadow-sm">
               A digital platform ensuring every discretionary decision by the
               Government of the Virgin Islands follows the proper 10-step
               framework for lawful, fair, and documented decision-making.
@@ -117,14 +127,14 @@ export default function Home() {
             <div className="mt-8 flex flex-wrap gap-4">
               <Link
                 href="/login"
-                className="inline-flex items-center gap-2 rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-white hover:bg-accent-light transition-colors"
+                className="inline-flex items-center gap-2 rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-white hover:bg-accent-light transition-colors shadow-md"
               >
                 Staff Portal
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
                 href="/portal"
-                className="inline-flex items-center gap-2 rounded-lg border border-white/30 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
+                className="inline-flex items-center gap-2 rounded-lg border border-white/40 bg-white/10 backdrop-blur-sm px-6 py-3 text-sm font-semibold text-white hover:bg-white/20 transition-colors"
               >
                 Public Transparency Portal
               </Link>
