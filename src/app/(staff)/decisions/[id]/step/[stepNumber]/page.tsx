@@ -1,12 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, SkipForward } from "lucide-react";
 import { DECISION_STEPS } from "@/lib/constants";
 import { api } from "@/lib/api";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const stepFields: Record<
   number,
@@ -79,12 +87,19 @@ export default function StepPage() {
   const params = useParams();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const formRef = useRef<HTMLFormElement>(null);
   const stepNumber = Number(params.stepNumber);
   const decisionId = params.id as string;
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showSkipDialog, setShowSkipDialog] = useState(false);
+  const [skipReason, setSkipReason] = useState("");
+  const [isFormComplete, setIsFormComplete] = useState(false);
 
   const step = DECISION_STEPS.find((s) => s.number === stepNumber);
   const fields = stepFields[stepNumber] ?? [];
+  const requiredFields = fields.filter((f) => f.required);
 
   const advanceStepMutation = useMutation({
     mutationFn: (data: Record<string, unknown>) =>
@@ -93,6 +108,67 @@ export default function StepPage() {
       queryClient.invalidateQueries({ queryKey: ["decision", decisionId] });
     },
   });
+
+  // Auto-dismiss success message
+  useEffect(() => {
+    if (!successMessage) return;
+    const timer = setTimeout(() => setSuccessMessage(null), 3000);
+    return () => clearTimeout(timer);
+  }, [successMessage]);
+
+  // Reset state when step changes
+  useEffect(() => {
+    setFieldErrors({});
+    setError(null);
+    setSuccessMessage(null);
+    setIsFormComplete(false);
+  }, [stepNumber]);
+
+  function checkFormCompleteness() {
+    const form = formRef.current;
+    if (!form) return;
+
+    const allFilled = requiredFields.every((field) => {
+      if (field.type === "checkbox") {
+        const input = form.elements.namedItem(field.name) as HTMLInputElement | null;
+        return input?.checked ?? false;
+      }
+      const input = form.elements.namedItem(field.name) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null;
+      return (input?.value ?? "").trim().length > 0;
+    });
+
+    setIsFormComplete(allFilled);
+  }
+
+  function clearFieldError(fieldName: string) {
+    setFieldErrors((prev) => {
+      if (!prev[fieldName]) return prev;
+      const next = { ...prev };
+      delete next[fieldName];
+      return next;
+    });
+  }
+
+  function validateFields(form: HTMLFormElement): boolean {
+    const errors: Record<string, string> = {};
+
+    for (const field of requiredFields) {
+      if (field.type === "checkbox") {
+        const input = form.elements.namedItem(field.name) as HTMLInputElement | null;
+        if (!input?.checked) {
+          errors[field.name] = "This confirmation is required";
+        }
+      } else {
+        const input = form.elements.namedItem(field.name) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null;
+        if (!(input?.value ?? "").trim()) {
+          errors[field.name] = "This field is required";
+        }
+      }
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  }
 
   if (!step) {
     return (
@@ -108,7 +184,10 @@ export default function StepPage() {
     e.preventDefault();
     setError(null);
 
-    const formData = new FormData(e.currentTarget);
+    const form = e.currentTarget;
+    if (!validateFields(form)) return;
+
+    const formData = new FormData(form);
     const data: Record<string, unknown> = {};
     const notes = formData.get("notes") as string;
 
@@ -134,25 +213,32 @@ export default function StepPage() {
         notes: notes || undefined,
       });
 
-      if (stepNumber < 10) {
-        router.push(`/decisions/${decisionId}/step/${stepNumber + 1}`);
-      } else {
-        router.push(`/decisions/${decisionId}`);
-      }
+      setSuccessMessage(`Step ${stepNumber} completed successfully`);
+
+      // Navigate after a brief delay to show the success message
+      setTimeout(() => {
+        if (stepNumber < 10) {
+          router.push(`/decisions/${decisionId}/step/${stepNumber + 1}`);
+        } else {
+          router.push(`/decisions/${decisionId}`);
+        }
+      }, 600);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to complete step");
     }
   }
 
-  async function handleSkip() {
-    const reason = prompt("Please provide a reason for skipping this step:");
-    if (!reason) return;
+  async function handleSkipConfirm() {
+    if (!skipReason.trim()) return;
 
     try {
       await advanceStepMutation.mutateAsync({
         action: "skip",
-        skipReason: reason,
+        skipReason: skipReason.trim(),
       });
+
+      setShowSkipDialog(false);
+      setSkipReason("");
 
       if (stepNumber < 10) {
         router.push(`/decisions/${decisionId}/step/${stepNumber + 1}`);
@@ -161,8 +247,12 @@ export default function StepPage() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to skip step");
+      setShowSkipDialog(false);
     }
   }
+
+  const hasRequiredFields = requiredFields.length > 0;
+  const errorBorderClass = "border-[#E76F51] focus:border-[#E76F51] focus:ring-[#E76F51]";
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -198,37 +288,71 @@ export default function StepPage() {
         <p className="mt-1 text-sm text-text-secondary">{step.description}</p>
       </div>
 
+      {/* Success banner */}
+      {successMessage && (
+        <div className="rounded-lg bg-accent/10 border border-accent/20 p-4 text-sm text-accent flex items-center gap-2 transition-opacity duration-300">
+          <CheckCircle2 className="h-4 w-4 shrink-0" />
+          {successMessage}
+        </div>
+      )}
+
       {error && (
-        <div className="rounded-lg bg-error/10 border border-error/20 p-4 text-sm text-error">
+        <div className="rounded-lg bg-error/10 border border-error/20 p-4 text-sm text-error transition-opacity duration-300">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form ref={formRef} onSubmit={handleSubmit} onChange={checkFormCompleteness} className="space-y-5">
         <div className="rounded-lg border border-border bg-white p-6 space-y-5">
+          {hasRequiredFields && (
+            <p className="text-xs text-text-muted">
+              <span className="text-[#E76F51]">*</span> Required fields
+            </p>
+          )}
+
           {fields.map((field) => (
             <div key={field.name}>
               {field.type === "checkbox" ? (
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    name={field.name}
-                    required={field.required}
-                    className="mt-0.5 h-4 w-4 rounded border-border text-accent focus:ring-accent"
-                  />
-                  <span className="text-sm text-text">{field.label}</span>
-                </label>
+                <div>
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name={field.name}
+                      onChange={() => {
+                        clearFieldError(field.name);
+                        // Defer completeness check to after state update
+                        setTimeout(checkFormCompleteness, 0);
+                      }}
+                      className={`mt-0.5 h-4 w-4 rounded border-border text-accent focus:ring-accent ${
+                        fieldErrors[field.name] ? "border-[#E76F51]" : ""
+                      }`}
+                    />
+                    <span className="text-sm text-text">
+                      {field.label}
+                      {field.required && <span className="text-[#E76F51]"> *</span>}
+                    </span>
+                  </label>
+                  {fieldErrors[field.name] && (
+                    <p className="mt-1 ml-7 text-xs text-[#E76F51] transition-opacity duration-200">
+                      {fieldErrors[field.name]}
+                    </p>
+                  )}
+                </div>
               ) : field.type === "select" ? (
                 <div>
                   <label htmlFor={field.name} className="block text-sm font-medium text-text mb-1.5">
                     {field.label}
-                    {field.required && <span className="text-error"> *</span>}
+                    {field.required && <span className="text-[#E76F51]"> *</span>}
                   </label>
                   <select
                     id={field.name}
                     name={field.name}
-                    required={field.required}
-                    className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-text focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                    onChange={() => clearFieldError(field.name)}
+                    className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-text focus:outline-none focus:ring-1 ${
+                      fieldErrors[field.name]
+                        ? errorBorderClass
+                        : "border-border focus:border-accent focus:ring-accent"
+                    }`}
                   >
                     <option value="">Select...</option>
                     {field.options?.map((opt) => (
@@ -237,36 +361,59 @@ export default function StepPage() {
                       </option>
                     ))}
                   </select>
+                  {fieldErrors[field.name] && (
+                    <p className="mt-1 text-xs text-[#E76F51] transition-opacity duration-200">
+                      {fieldErrors[field.name]}
+                    </p>
+                  )}
                 </div>
               ) : field.type === "textarea" ? (
                 <div>
                   <label htmlFor={field.name} className="block text-sm font-medium text-text mb-1.5">
                     {field.label}
-                    {field.required && <span className="text-error"> *</span>}
+                    {field.required && <span className="text-[#E76F51]"> *</span>}
                   </label>
                   <textarea
                     id={field.name}
                     name={field.name}
-                    required={field.required}
                     rows={4}
                     placeholder={field.placeholder}
-                    className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-text placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent resize-none"
+                    onInput={() => clearFieldError(field.name)}
+                    className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-1 resize-none ${
+                      fieldErrors[field.name]
+                        ? errorBorderClass
+                        : "border-border focus:border-accent focus:ring-accent"
+                    }`}
                   />
+                  {fieldErrors[field.name] && (
+                    <p className="mt-1 text-xs text-[#E76F51] transition-opacity duration-200">
+                      {fieldErrors[field.name]}
+                    </p>
+                  )}
                 </div>
               ) : (
                 <div>
                   <label htmlFor={field.name} className="block text-sm font-medium text-text mb-1.5">
                     {field.label}
-                    {field.required && <span className="text-error"> *</span>}
+                    {field.required && <span className="text-[#E76F51]"> *</span>}
                   </label>
                   <input
                     id={field.name}
                     name={field.name}
                     type="text"
-                    required={field.required}
                     placeholder={field.placeholder}
-                    className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-text placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                    onInput={() => clearFieldError(field.name)}
+                    className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-1 ${
+                      fieldErrors[field.name]
+                        ? errorBorderClass
+                        : "border-border focus:border-accent focus:ring-accent"
+                    }`}
                   />
+                  {fieldErrors[field.name] && (
+                    <p className="mt-1 text-xs text-[#E76F51] transition-opacity duration-200">
+                      {fieldErrors[field.name]}
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -301,7 +448,7 @@ export default function StepPage() {
             )}
             <button
               type="button"
-              onClick={handleSkip}
+              onClick={() => setShowSkipDialog(true)}
               disabled={isPending}
               className="inline-flex items-center gap-1 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-text-muted hover:bg-surface transition-colors disabled:opacity-50"
             >
@@ -311,8 +458,8 @@ export default function StepPage() {
           </div>
           <button
             type="submit"
-            disabled={isPending}
-            className="inline-flex items-center gap-2 rounded-lg bg-accent px-6 py-2.5 text-sm font-medium text-white hover:bg-accent-dark transition-colors disabled:opacity-50"
+            disabled={isPending || (hasRequiredFields && !isFormComplete)}
+            className="inline-flex items-center gap-2 rounded-lg bg-accent px-6 py-2.5 text-sm font-medium text-white hover:bg-accent-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isPending ? (
               <>
@@ -333,6 +480,58 @@ export default function StepPage() {
           </button>
         </div>
       </form>
+
+      {/* Skip confirmation dialog */}
+      <Dialog open={showSkipDialog} onOpenChange={setShowSkipDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Skip Step {stepNumber}: {step.name}</DialogTitle>
+            <DialogDescription>
+              Please provide a reason for skipping this step. This will be recorded for audit purposes.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4">
+            <label htmlFor="skipReason" className="block text-sm font-medium text-text mb-1.5">
+              Reason for skipping <span className="text-[#E76F51]">*</span>
+            </label>
+            <textarea
+              id="skipReason"
+              value={skipReason}
+              onChange={(e) => setSkipReason(e.target.value)}
+              rows={3}
+              placeholder="Explain why this step is being skipped..."
+              className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-text placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent resize-none"
+            />
+          </div>
+          <DialogFooter>
+            <button
+              type="button"
+              onClick={() => {
+                setShowSkipDialog(false);
+                setSkipReason("");
+              }}
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-secondary hover:bg-surface transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSkipConfirm}
+              disabled={!skipReason.trim() || isPending}
+              className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isPending ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Skipping...
+                </span>
+              ) : (
+                "Skip Step"
+              )}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

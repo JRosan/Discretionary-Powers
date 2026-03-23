@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import dynamic from "next/dynamic";
 import { NotificationBell } from "@/components/common/notification-panel";
+import { LanguageSwitcher } from "@/components/common/language-switcher";
 import { useAuth } from "@/lib/auth-context";
 
 const GlobalSearch = dynamic(
@@ -254,6 +255,9 @@ export function AppShell({ children }: AppShellProps) {
             </kbd>
           </button>
           <GlobalSearch />
+
+          {/* Language Switcher */}
+          <LanguageSwitcher />
 
           {/* Notifications */}
           <NotificationBell

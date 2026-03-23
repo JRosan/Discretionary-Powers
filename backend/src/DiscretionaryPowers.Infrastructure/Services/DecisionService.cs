@@ -3,13 +3,19 @@ using DiscretionaryPowers.Application.Common;
 using DiscretionaryPowers.Application.DTOs.Decisions;
 using DiscretionaryPowers.Domain.Entities;
 using DiscretionaryPowers.Domain.Enums;
+using DiscretionaryPowers.Domain.Interfaces;
 using DiscretionaryPowers.Domain.Workflow;
 using DiscretionaryPowers.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace DiscretionaryPowers.Infrastructure.Services;
 
-public class DecisionService(AppDbContext db)
+public class DecisionService(
+    AppDbContext db,
+    INotificationService notificationService,
+    IEmailService emailService,
+    ILogger<DecisionService> logger)
 {
     private static string GenerateReferenceNumber(string ministryCode)
     {
@@ -62,6 +68,27 @@ public class DecisionService(AppDbContext db)
         }
 
         await db.SaveChangesAsync();
+
+        // Notify assigned user
+        if (decision.AssignedTo.HasValue)
+        {
+            try
+            {
+                await notificationService.Create(
+                    decision.AssignedTo.Value, decision.Id,
+                    NotificationType.Assignment,
+                    $"Decision Assigned: {referenceNumber}",
+                    $"You have been assigned to decision {referenceNumber}: {decision.Title}.");
+
+                var assignee = await db.Users.FindAsync(decision.AssignedTo.Value);
+                if (assignee is not null)
+                    await emailService.SendDecisionAssigned(assignee.Email, decision.Title, referenceNumber);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to send assignment notification for decision {DecisionId}", decision.Id);
+            }
+        }
 
         return ServiceResult<DecisionResponse>.Ok(MapToResponse(decision, []));
     }
@@ -170,6 +197,27 @@ public class DecisionService(AppDbContext db)
 
         await db.SaveChangesAsync();
 
+        // Notify decision creator on step completion
+        if (action == TransitionAction.Complete)
+        {
+            try
+            {
+                await notificationService.Create(
+                    decision.CreatedBy, decision.Id,
+                    NotificationType.StatusChange,
+                    $"Step {request.StepNumber} Completed",
+                    $"Step {request.StepNumber} has been completed for decision {decision.ReferenceNumber}: {decision.Title}.");
+
+                var creator = await db.Users.FindAsync(decision.CreatedBy);
+                if (creator is not null)
+                    await emailService.SendStepCompleted(creator.Email, decision.Title, request.StepNumber, $"Step {request.StepNumber}");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to send step completion notification for decision {DecisionId}", decision.Id);
+            }
+        }
+
         return ServiceResult<DecisionResponse>.Ok(MapToResponse(decision, steps));
     }
 
@@ -185,6 +233,24 @@ public class DecisionService(AppDbContext db)
         decision.Status = DecisionStatus.Approved;
         decision.UpdatedAt = DateTime.UtcNow;
         await db.SaveChangesAsync();
+
+        // Notify decision creator of approval
+        try
+        {
+            await notificationService.Create(
+                decision.CreatedBy, decision.Id,
+                NotificationType.StatusChange,
+                $"Decision Approved: {decision.ReferenceNumber}",
+                $"Decision {decision.ReferenceNumber}: {decision.Title} has been approved.");
+
+            var creator = await db.Users.FindAsync(decision.CreatedBy);
+            if (creator is not null)
+                await emailService.SendApprovalNeeded(creator.Email, decision.Title, decision.ReferenceNumber);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to send approval notification for decision {DecisionId}", decision.Id);
+        }
 
         return ServiceResult<bool>.Ok(true);
     }
@@ -202,6 +268,24 @@ public class DecisionService(AppDbContext db)
         decision.IsPublic = true;
         decision.UpdatedAt = DateTime.UtcNow;
         await db.SaveChangesAsync();
+
+        // Notify decision creator of publication
+        try
+        {
+            await notificationService.Create(
+                decision.CreatedBy, decision.Id,
+                NotificationType.StatusChange,
+                $"Decision Published: {decision.ReferenceNumber}",
+                $"Decision {decision.ReferenceNumber}: {decision.Title} has been published to the public portal.");
+
+            var creator = await db.Users.FindAsync(decision.CreatedBy);
+            if (creator is not null)
+                await emailService.SendDecisionPublished(creator.Email, decision.Title, decision.ReferenceNumber);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to send publish notification for decision {DecisionId}", decision.Id);
+        }
 
         return ServiceResult<bool>.Ok(true);
     }

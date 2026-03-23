@@ -48,7 +48,9 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy(PermissionPolicies.CanViewAllAudit, policy =>
         policy.RequireRole(UserRole.Auditor.ToString()))
     .AddPolicy(PermissionPolicies.CanRedactDocument, policy =>
-        policy.RequireRole(UserRole.PermanentSecretary.ToString(), UserRole.LegalAdvisor.ToString()));
+        policy.RequireRole(UserRole.PermanentSecretary.ToString(), UserRole.LegalAdvisor.ToString()))
+    .AddPolicy(PermissionPolicies.CanManageSettings, policy =>
+        policy.RequireRole(UserRole.PermanentSecretary.ToString()));
 
 // Rate limiting
 builder.Services.AddRateLimiter(options =>
@@ -112,6 +114,7 @@ using (var scope = app.Services.CreateScope())
         try
         {
             await DataSeeder.SeedAsync(dbContext);
+            await DemoDataSeeder.SeedAsync(dbContext);
         }
         catch (Exception ex)
         {

@@ -1,0 +1,113 @@
+{
+  "common": {
+    "appName": "Sistema de Gestión de Poderes Discrecionales",
+    "government": "Gobierno de las Islas Vírgenes",
+    "loading": "Cargando...",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "search": "Buscar",
+    "noResults": "No se encontraron resultados",
+    "backTo": "Volver a {page}",
+    "showingOf": "Mostrando {count} de {total}"
+  },
+  "nav": {
+    "dashboard": "Panel de Control",
+    "decisions": "Decisiones",
+    "reports": "Informes y Análisis",
+    "judicialReviews": "Revisiones Judiciales",
+    "admin": "Administración",
+    "users": "Gestión de Usuarios",
+    "ministries": "Ministerios",
+    "templates": "Plantillas",
+    "settings": "Configuración del Sistema",
+    "signOut": "Cerrar sesión"
+  },
+  "auth": {
+    "signIn": "Iniciar sesión",
+    "signInTitle": "Iniciar sesión en su cuenta",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "invalidCredentials": "Correo electrónico o contraseña inválidos",
+    "signingIn": "Iniciando sesión..."
+  },
+  "dashboard": {
+    "title": "Panel de Control",
+    "subtitle": "Resumen de la actividad de poderes discrecionales",
+    "totalDecisions": "Total de Decisiones",
+    "inProgress": "En Progreso",
+    "completed": "Completadas",
+    "overdue": "Vencidas",
+    "recentDecisions": "Decisiones Recientes",
+    "newDecision": "Nueva Decisión"
+  },
+  "decisions": {
+    "title": "Decisiones",
+    "subtitle": "Gestionar las decisiones de poderes discrecionales en todos los ministerios.",
+    "newDecision": "Nueva Decisión",
+    "searchPlaceholder": "Buscar decisiones...",
+    "allStatuses": "Todos los Estados",
+    "allTypes": "Todos los Tipos",
+    "reference": "Referencia",
+    "decisionTitle": "Título",
+    "type": "Tipo",
+    "ministry": "Ministerio",
+    "status": "Estado",
+    "step": "Paso",
+    "deadline": "Fecha Límite",
+    "assignedTo": "Asignado a",
+    "createdBy": "Creado por",
+    "noDecisions": "No se encontraron decisiones",
+    "createFirst": "Cree su primera decisión para comenzar."
+  },
+  "newDecision": {
+    "title": "Nueva Decisión",
+    "subtitle": "Crear una nueva decisión de poder discrecional. Esto iniciará el marco de revisión de 10 pasos.",
+    "decisionTitle": "Título de la Decisión",
+    "titlePlaceholder": "ej., Enmienda de Licencia de Servicios Financieros",
+    "description": "Descripción",
+    "descriptionPlaceholder": "Proporcione una breve descripción de la decisión y su contexto...",
+    "selectMinistry": "Seleccione un ministerio",
+    "selectType": "Seleccione un tipo",
+    "deadlineHelp": "Opcional. Establezca una fecha objetivo para completar esta decisión.",
+    "infoText": "Una vez creada, esta decisión comenzará en el Paso 1 (Confirmar Autoridad) del marco de poderes discrecionales de 10 pasos.",
+    "creating": "Creando...",
+    "createDecision": "Crear Decisión"
+  },
+  "steps": {
+    "stepOf": "Paso {current} de {total}",
+    "completePrevious": "Complete los pasos anteriores primero",
+    "completeAndNext": "Completar y Siguiente",
+    "completeFinal": "Completar Paso Final",
+    "saveDraft": "Guardar Borrador",
+    "skip": "Omitir",
+    "skipReason": "Por favor, proporcione una razón para omitir este paso:",
+    "previousStep": "Anterior",
+    "additionalNotes": "Notas Adicionales",
+    "notesPlaceholder": "Cualquier nota u observación adicional para este paso..."
+  },
+  "status": {
+    "draft": "Borrador",
+    "in_progress": "En Progreso",
+    "under_review": "En Revisión",
+    "approved": "Aprobado",
+    "published": "Publicado",
+    "challenged": "Impugnado",
+    "withdrawn": "Retirado"
+  },
+  "publicPortal": {
+    "heroTitle": "Portal de Transparencia de Poderes Discrecionales",
+    "heroSubtitle": "Acceda a las decisiones publicadas por el Gobierno de las Islas Vírgenes bajo el marco de poderes discrecionales de 10 pasos.",
+    "searchPlaceholder": "Buscar decisiones publicadas...",
+    "publishedDecisions": "Decisiones Publicadas",
+    "browseByMinistry": "Explorar por Ministerio",
+    "recentPublished": "Decisiones Publicadas Recientemente",
+    "viewDecisions": "Ver decisiones"
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "markAllRead": "Marcar todas como leídas",
+    "noNotifications": "Sin notificaciones",
+    "allCaughtUp": "Estás al día"
+  }
+}

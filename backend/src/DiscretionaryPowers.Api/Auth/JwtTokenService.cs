@@ -39,4 +39,60 @@ public class JwtTokenService(IConfiguration configuration)
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
+
+    public string GenerateMfaToken(User user)
+    {
+        var key = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(configuration["Jwt:Key"]
+                ?? throw new InvalidOperationException("JWT key not configured.")));
+
+        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        var claims = new List<Claim>
+        {
+            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new("purpose", "mfa"),
+        };
+
+        var token = new JwtSecurityToken(
+            issuer: configuration["Jwt:Issuer"] ?? "DiscretionaryPowers",
+            audience: configuration["Jwt:Audience"] ?? "DiscretionaryPowers",
+            claims: claims,
+            expires: DateTime.UtcNow.AddMinutes(5),
+            signingCredentials: credentials);
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    public Guid? ValidateMfaToken(string mfaToken)
+    {
+        var key = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(configuration["Jwt:Key"]
+                ?? throw new InvalidOperationException("JWT key not configured.")));
+
+        var handler = new JwtSecurityTokenHandler();
+        try
+        {
+            var principal = handler.ValidateToken(mfaToken, new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = configuration["Jwt:Issuer"] ?? "DiscretionaryPowers",
+                ValidAudience = configuration["Jwt:Audience"] ?? "DiscretionaryPowers",
+                IssuerSigningKey = key,
+            }, out _);
+
+            var purposeClaim = principal.FindFirst("purpose")?.Value;
+            if (purposeClaim != "mfa") return null;
+
+            var sub = principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+            return sub != null ? Guid.Parse(sub) : null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
 }

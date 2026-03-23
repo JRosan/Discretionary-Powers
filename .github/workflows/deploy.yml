@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Deployment environment'
+        description: 'Environment'
         required: true
         type: choice
         options:
@@ -18,6 +18,41 @@ jobs:
     environment: ${{ inputs.environment }}
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy
-        run: echo "Deployment to ${{ inputs.environment }} would happen here"
-        # TODO: Add actual deployment steps (Docker push, Azure/AWS deployment, etc.)
+
+      - uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Build and push API image
+        run: |
+          az acr login --name ${{ vars.ACR_NAME }}
+          docker build \
+            -t ${{ vars.ACR_NAME }}.azurecr.io/dpms-api:${{ github.sha }} \
+            backend/
+          docker push ${{ vars.ACR_NAME }}.azurecr.io/dpms-api:${{ github.sha }}
+
+      - name: Build and push Frontend image
+        run: |
+          docker build \
+            -t ${{ vars.ACR_NAME }}.azurecr.io/dpms-frontend:${{ github.sha }} \
+            -f docker/Dockerfile .
+          docker push ${{ vars.ACR_NAME }}.azurecr.io/dpms-frontend:${{ github.sha }}
+
+      - name: Deploy to Container Apps
+        run: |
+          az containerapp update \
+            --name dpms-api \
+            --resource-group ${{ vars.RESOURCE_GROUP }} \
+            --image ${{ vars.ACR_NAME }}.azurecr.io/dpms-api:${{ github.sha }}
+
+          az containerapp update \
+            --name dpms-frontend \
+            --resource-group ${{ vars.RESOURCE_GROUP }} \
+            --image ${{ vars.ACR_NAME }}.azurecr.io/dpms-frontend:${{ github.sha }}
+
+      - name: Show deployment URLs
+        run: |
+          echo "API URL:"
+          az containerapp show --name dpms-api --resource-group ${{ vars.RESOURCE_GROUP }} --query "properties.configuration.ingress.fqdn" -o tsv
+          echo "Frontend URL:"
+          az containerapp show --name dpms-frontend --resource-group ${{ vars.RESOURCE_GROUP }} --query "properties.configuration.ingress.fqdn" -o tsv

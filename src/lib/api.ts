@@ -51,12 +51,34 @@ function qs(params?: Record<string, unknown>): string {
 export const api = {
   auth: {
     login: (email: string, password: string) =>
-      request<{ token: string; user: ApiUser }>("/auth/login", {
+      request<LoginResult>("/auth/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
       }),
     getCurrentUser: () => request<ApiUser>("/auth/me"),
     logout: () => request<void>("/auth/logout", { method: "POST" }),
+  },
+
+  mfa: {
+    setup: () =>
+      request<{ secret: string; qrCodeUri: string }>("/auth/mfa/setup", {
+        method: "POST",
+      }),
+    enable: (code: string, secret: string) =>
+      request<void>("/auth/mfa/enable", {
+        method: "POST",
+        body: JSON.stringify({ code, secret }),
+      }),
+    disable: (code: string) =>
+      request<void>("/auth/mfa/disable", {
+        method: "POST",
+        body: JSON.stringify({ code }),
+      }),
+    verifyLogin: (mfaToken: string, code: string) =>
+      request<{ token: string; user: ApiUser }>("/auth/mfa/verify-login", {
+        method: "POST",
+        body: JSON.stringify({ mfaToken, code }),
+      }),
   },
 
   decisions: {
@@ -223,6 +245,15 @@ export const api = {
       }>>("/judicial-reviews"),
   },
 
+  settings: {
+    get: () => request<Record<string, string>>("/settings"),
+    update: (data: Record<string, string>) =>
+      request<void>("/settings", {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+  },
+
   health: {
     check: () => request<{ status: string }>("/health"),
   },
@@ -333,6 +364,13 @@ export interface ApiNotification {
   read: boolean | null;
   sentAt: string | Date | null;
   decisionId: string | null;
+}
+
+export interface LoginResult {
+  token?: string;
+  user?: ApiUser;
+  mfaRequired?: boolean;
+  mfaToken?: string;
 }
 
 export interface ApiAuditEntry {

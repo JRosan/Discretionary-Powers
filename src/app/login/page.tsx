@@ -43,7 +43,7 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
-  const { login } = useAuth();
+  const { login, loginWithMfa } = useAuth();
   const tAuth = useTranslations("auth");
   const tCommon = useTranslations("common");
 
@@ -51,18 +51,49 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [mfaToken, setMfaToken] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
 
   async function handleLogin(loginEmail: string, loginPassword: string) {
     setError("");
     setLoading(true);
     try {
-      await login(loginEmail, loginPassword);
-      router.push(callbackUrl);
-      router.refresh();
+      const result = await login(loginEmail, loginPassword);
+      if (result.mfaRequired && result.mfaToken) {
+        setMfaToken(result.mfaToken);
+      } else {
+        router.push(callbackUrl);
+        router.refresh();
+      }
     } catch {
       setError(tAuth("invalidCredentials"));
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleMfaVerify(e?: React.FormEvent) {
+    e?.preventDefault();
+    if (mfaCode.length !== 6 || !mfaToken) return;
+    setError("");
+    setLoading(true);
+    try {
+      await loginWithMfa(mfaToken, mfaCode);
+      router.push(callbackUrl);
+      router.refresh();
+    } catch {
+      setError("Invalid verification code. Please try again.");
+      setMfaCode("");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleMfaCodeChange(value: string) {
+    const digits = value.replace(/\D/g, "").slice(0, 6);
+    setMfaCode(digits);
+    if (digits.length === 6) {
+      setTimeout(() => handleMfaVerify(), 0);
     }
   }
 
@@ -75,6 +106,70 @@ export default function LoginPage() {
     setEmail(demoEmail);
     setPassword("password");
     await handleLogin(demoEmail, "password");
+  }
+
+  if (mfaToken) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-surface px-4 py-12">
+        <div className="w-full max-w-lg space-y-6">
+          <div className="overflow-hidden rounded-lg border border-border bg-background shadow-sm">
+            <div className="bg-primary px-6 py-8 text-center text-white">
+              <h1 className="text-xl font-semibold">{tCommon("government")}</h1>
+              <p className="mt-1 text-sm text-white/80">{tCommon("appName")}</p>
+            </div>
+
+            <form onSubmit={handleMfaVerify} className="space-y-4 px-6 py-6">
+              <h2 className="text-lg font-semibold text-text text-center">
+                Two-Factor Authentication
+              </h2>
+              <p className="text-sm text-text-muted text-center">
+                Enter the 6-digit code from your authenticator app.
+              </p>
+
+              {error && (
+                <div className="rounded-md bg-error/10 px-3 py-2 text-sm text-error">
+                  {error}
+                </div>
+              )}
+
+              <Input
+                label="Verification Code"
+                type="text"
+                inputMode="numeric"
+                placeholder="000000"
+                value={mfaCode}
+                onChange={(e) => handleMfaCodeChange(e.target.value)}
+                maxLength={6}
+                autoFocus
+                autoComplete="one-time-code"
+              />
+
+              <Button
+                type="submit"
+                variant="accent"
+                className="w-full"
+                loading={loading}
+                disabled={mfaCode.length !== 6}
+              >
+                {loading ? "Verifying..." : "Verify"}
+              </Button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMfaToken(null);
+                  setMfaCode("");
+                  setError("");
+                }}
+                className="w-full text-sm text-text-muted hover:text-text"
+              >
+                Back to login
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

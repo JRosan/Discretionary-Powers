@@ -14,6 +14,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<JudicialReview> JudicialReviews => Set<JudicialReview>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<Comment> Comments => Set<Comment>();
+    public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

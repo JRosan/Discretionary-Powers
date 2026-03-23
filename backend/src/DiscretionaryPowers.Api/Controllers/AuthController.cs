@@ -31,6 +31,16 @@ public class AuthController(AppDbContext db, JwtTokenService jwtService, ICurren
         if (!user.Active)
             return Unauthorized(new { message = "Account is deactivated." });
 
+        if (user.MfaEnabled && user.MfaSecret is not null)
+        {
+            var mfaToken = jwtService.GenerateMfaToken(user);
+            return Ok(new LoginResponse
+            {
+                MfaRequired = true,
+                MfaToken = mfaToken,
+            });
+        }
+
         var token = jwtService.GenerateToken(user);
 
         return Ok(new LoginResponse

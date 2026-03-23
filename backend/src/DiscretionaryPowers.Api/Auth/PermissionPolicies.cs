@@ -9,4 +9,5 @@ public static class PermissionPolicies
     public const string CanViewAuditTrail = nameof(CanViewAuditTrail);
     public const string CanViewAllAudit = nameof(CanViewAllAudit);
     public const string CanRedactDocument = nameof(CanRedactDocument);
+    public const string CanManageSettings = nameof(CanManageSettings);
 }

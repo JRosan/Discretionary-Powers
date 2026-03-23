@@ -24,6 +24,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsRequired();
         builder.Property(u => u.MinistryId).HasColumnName("ministry_id");
         builder.Property(u => u.MfaEnabled).HasColumnName("mfa_enabled").HasDefaultValue(false);
+        builder.Property(u => u.MfaSecret).HasColumnName("mfa_secret");
         builder.Property(u => u.Active).HasColumnName("active").HasDefaultValue(true);
         builder.Property(u => u.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
         builder.Property(u => u.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");

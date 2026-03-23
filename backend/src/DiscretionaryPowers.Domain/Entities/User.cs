@@ -11,6 +11,7 @@ public class User
     public UserRole Role { get; set; }
     public Guid? MinistryId { get; set; }
     public bool MfaEnabled { get; set; }
+    public string? MfaSecret { get; set; }
     public bool Active { get; set; } = true;
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

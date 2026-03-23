@@ -36,8 +36,11 @@ public static class DependencyInjection
         });
         services.AddSingleton<IStorageAdapter, S3StorageAdapter>();
 
-        // Email
-        services.AddTransient<IEmailService, SmtpEmailService>();
+        // Email - prefer Microsoft Graph, fall back to SMTP
+        if (!string.IsNullOrEmpty(configuration["MsGraph:ClientId"]))
+            services.AddTransient<IEmailService, GraphEmailService>();
+        else
+            services.AddTransient<IEmailService, SmtpEmailService>();
 
         // HTTP context
         services.AddHttpContextAccessor();
@@ -53,6 +56,7 @@ public static class DependencyInjection
         services.AddScoped<AuditService>();
         services.AddScoped<CommentService>();
         services.AddScoped<NotificationService>();
+        services.AddSingleton<MfaService>();
 
         return services;
     }
