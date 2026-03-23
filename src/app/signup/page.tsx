@@ -176,37 +176,49 @@ function SignupPage() {
 
           {/* Step Indicator */}
           <div className="px-8 pt-4 pb-2">
-            <div className="flex items-center justify-between">
+            {/* Circles and connectors */}
+            <div className="flex items-center">
               {STEPS.map((s, i) => {
                 const stepNum = i + 1;
                 const Icon = s.icon;
                 const isActive = step === stepNum;
                 const isCompleted = step > stepNum;
                 return (
-                  <div key={s.label} className="flex items-center flex-1">
-                    <div className="flex flex-col items-center flex-1">
-                      <div
-                        className={`flex h-9 w-9 items-center justify-center rounded-full border-2 transition-colors ${
-                          isCompleted
-                            ? "border-accent bg-accent text-white"
-                            : isActive
-                            ? "border-accent bg-accent/10 text-accent"
-                            : "border-border bg-surface text-text-muted"
-                        }`}
-                      >
-                        {isCompleted ? (
-                          <Check className="h-4 w-4" />
-                        ) : (
-                          <Icon className="h-4 w-4" />
-                        )}
-                      </div>
-                      <span className={`mt-1 text-[10px] font-medium ${isActive || isCompleted ? "text-text" : "text-text-muted"}`}>
-                        {s.label}
-                      </span>
+                  <div key={s.label} className="contents">
+                    <div
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 transition-all ${
+                        isCompleted
+                          ? "border-accent bg-accent text-white"
+                          : isActive
+                          ? "border-accent bg-accent/10 text-accent ring-4 ring-accent/10"
+                          : "border-border bg-surface text-text-muted"
+                      }`}
+                    >
+                      {isCompleted ? (
+                        <Check className="h-4 w-4" />
+                      ) : (
+                        <Icon className="h-4 w-4" />
+                      )}
                     </div>
                     {i < STEPS.length - 1 && (
-                      <div className={`h-0.5 w-full mx-1 mb-4 ${step > stepNum ? "bg-accent" : "bg-border"}`} />
+                      <div className={`flex-1 h-0.5 ${isCompleted ? "bg-accent" : "bg-border"}`} />
                     )}
+                  </div>
+                );
+              })}
+            </div>
+            {/* Labels */}
+            <div className="flex items-start mt-2">
+              {STEPS.map((s, i) => {
+                const stepNum = i + 1;
+                const isActive = step === stepNum;
+                const isCompleted = step > stepNum;
+                return (
+                  <div key={`label-${s.label}`} className="contents">
+                    <span className={`shrink-0 w-10 text-[10px] font-medium text-center ${isActive || isCompleted ? "text-text" : "text-text-muted"}`}>
+                      {s.label}
+                    </span>
+                    {i < STEPS.length - 1 && <div className="flex-1" />}
                   </div>
                 );
               })}
