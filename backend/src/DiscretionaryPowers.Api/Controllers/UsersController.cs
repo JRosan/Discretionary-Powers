@@ -4,6 +4,7 @@ using DiscretionaryPowers.Domain.Auth;
 using DiscretionaryPowers.Domain.Enums;
 using static DiscretionaryPowers.Infrastructure.Data.EnumConverter;
 using DiscretionaryPowers.Infrastructure.Data;
+using DiscretionaryPowers.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -14,7 +15,7 @@ namespace DiscretionaryPowers.Api.Controllers;
 [ApiController]
 [Route("api/users")]
 [Authorize]
-public class UsersController(AppDbContext db, ICurrentUserService currentUser) : ControllerBase
+public class UsersController(AppDbContext db, ICurrentUserService currentUser, SubscriptionGuardService subscriptionGuard) : ControllerBase
 {
     [HttpGet]
     [Authorize(Policy = PermissionPolicies.CanManageUsers)]
@@ -73,6 +74,9 @@ public class UsersController(AppDbContext db, ICurrentUserService currentUser) :
     [Authorize(Policy = PermissionPolicies.CanManageUsers)]
     public async Task<IActionResult> Create([FromBody] CreateUserRequest request)
     {
+        var (allowed, limitError) = await subscriptionGuard.CheckUserLimit();
+        if (!allowed) return StatusCode(403, new { message = limitError });
+
         if (!Enum.TryParse<UserRole>(request.Role, true, out var role))
             return BadRequest(new { message = "Invalid role." });
 

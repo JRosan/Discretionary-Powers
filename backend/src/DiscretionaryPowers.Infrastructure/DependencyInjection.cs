@@ -65,6 +65,7 @@ public static class DependencyInjection
         services.AddScoped<CommentService>();
         services.AddScoped<NotificationService>();
         services.AddSingleton<MfaService>();
+        services.AddScoped<SubscriptionGuardService>();
 
         return services;
     }

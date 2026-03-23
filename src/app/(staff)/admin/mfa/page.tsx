@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { UpgradePrompt } from "@/components/common/upgrade-prompt";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
 import { Shield, ShieldCheck, ShieldOff } from "lucide-react";
@@ -20,6 +22,13 @@ export default function MfaSetupPage() {
   } | null>(null);
   const [mfaEnabled, setMfaEnabled] = useState(false);
   const [setupStarted, setSetupStarted] = useState(false);
+
+  const { data: usage } = useQuery({
+    queryKey: ["billing", "usage"],
+    queryFn: () => api.billing.getUsage(),
+  });
+
+  const isGated = usage?.plan === "starter";
 
   async function handleSetup() {
     setLoading(true);
@@ -73,6 +82,22 @@ export default function MfaSetupPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (isGated) {
+    return (
+      <div className="mx-auto max-w-2xl space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold text-text">
+            Two-Factor Authentication
+          </h1>
+          <p className="mt-1 text-sm text-text-muted">
+            Add an extra layer of security to your account using an authenticator app.
+          </p>
+        </div>
+        <UpgradePrompt feature="multi-factor authentication" requiredPlan="professional" />
+      </div>
+    );
   }
 
   return (

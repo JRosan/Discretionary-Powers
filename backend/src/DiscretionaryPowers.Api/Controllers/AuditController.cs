@@ -10,7 +10,7 @@ namespace DiscretionaryPowers.Api.Controllers;
 [ApiController]
 [Route("api/audit")]
 [Authorize]
-public class AuditController(AuditService auditService, AppDbContext db) : ControllerBase
+public class AuditController(AuditService auditService, SubscriptionGuardService subscriptionGuard, AppDbContext db) : ControllerBase
 {
     [HttpGet("decisions/{decisionId:guid}")]
     [Authorize(Policy = PermissionPolicies.CanViewAuditTrail)]
@@ -56,6 +56,9 @@ public class AuditController(AuditService auditService, AppDbContext db) : Contr
     [Authorize(Policy = PermissionPolicies.CanViewAllAudit)]
     public async Task<IActionResult> VerifyChain()
     {
+        if (!await subscriptionGuard.CanUseFeature("audit_verification"))
+            return StatusCode(403, new { message = "Audit verification requires a Professional or Enterprise plan." });
+
         var (valid, checkedCount, firstInvalidId) = await auditService.VerifyChain();
         return Ok(new { valid, checkedCount, firstInvalidId });
     }

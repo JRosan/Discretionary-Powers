@@ -4,6 +4,7 @@ using DiscretionaryPowers.Api.Auth;
 using DiscretionaryPowers.Domain.Auth;
 using DiscretionaryPowers.Domain.Entities;
 using DiscretionaryPowers.Infrastructure.Data;
+using DiscretionaryPowers.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +14,7 @@ namespace DiscretionaryPowers.Api.Controllers;
 [ApiController]
 [Route("api/api-keys")]
 [Authorize(Policy = PermissionPolicies.CanManageSettings)]
-public class ApiKeysController(AppDbContext db, ICurrentUserService currentUser) : ControllerBase
+public class ApiKeysController(AppDbContext db, ICurrentUserService currentUser, SubscriptionGuardService subscriptionGuard) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> List()
@@ -40,6 +41,9 @@ public class ApiKeysController(AppDbContext db, ICurrentUserService currentUser)
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateApiKeyRequest request)
     {
+        if (!await subscriptionGuard.CanUseFeature("api_keys"))
+            return StatusCode(403, new { message = "API access requires a Professional or Enterprise plan." });
+
         if (string.IsNullOrWhiteSpace(request.Name))
             return BadRequest(new { message = "Name is required." });
 

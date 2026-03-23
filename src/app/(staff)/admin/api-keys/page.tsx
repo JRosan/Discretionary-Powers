@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Plus, Copy, Check, Trash2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { UpgradePrompt } from "@/components/common/upgrade-prompt";
 import { api, ApiKeyResponse } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 
@@ -27,10 +28,18 @@ export default function ApiKeysPage() {
   const [createdKey, setCreatedKey] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  const { data: usage } = useQuery({
+    queryKey: ["billing", "usage"],
+    queryFn: () => api.billing.getUsage(),
+    enabled: isPermanentSecretary,
+  });
+
+  const isGated = usage?.plan === "starter";
+
   const { data: keys, isLoading, error } = useQuery({
     queryKey: ["api-keys"],
     queryFn: () => api.apiKeys.list(),
-    enabled: isPermanentSecretary,
+    enabled: isPermanentSecretary && !isGated,
   });
 
   const createMutation = useMutation({
@@ -77,6 +86,20 @@ export default function ApiKeysPage() {
         <p className="mt-2 text-sm text-text-secondary">
           You do not have permission to access this page.
         </p>
+      </div>
+    );
+  }
+
+  if (isGated) {
+    return (
+      <div className="max-w-4xl space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold text-text">API Keys</h1>
+          <p className="mt-1 text-sm text-text-secondary">
+            Manage API keys for external system integrations
+          </p>
+        </div>
+        <UpgradePrompt feature="API access and integration keys" requiredPlan="professional" />
       </div>
     );
   }

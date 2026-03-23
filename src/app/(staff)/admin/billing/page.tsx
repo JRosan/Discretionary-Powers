@@ -9,8 +9,7 @@ import {
   Users,
   HardDrive,
   Loader2,
-  AlertTriangle,
-  XCircle,
+  X,
 } from "lucide-react";
 import {
   Card,
@@ -53,6 +52,59 @@ const PAYMENT_STATUS_BADGES: Record<string, { label: string; className: string }
   expired: { label: "Expired", className: "text-text-muted" },
 };
 
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return "0 B";
+  const gb = bytes / (1024 * 1024 * 1024);
+  if (gb >= 1) return `${gb.toFixed(1)}GB`;
+  const mb = bytes / (1024 * 1024);
+  if (mb >= 1) return `${mb.toFixed(1)}MB`;
+  const kb = bytes / 1024;
+  return `${kb.toFixed(0)}KB`;
+}
+
+function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+function UsageBar({
+  label,
+  current,
+  limit,
+  unit,
+}: {
+  label: string;
+  current: string;
+  limit: string;
+  unit: string;
+}) {
+  const currentNum = parseFloat(current);
+  const limitNum = parseFloat(limit);
+  const pct = limitNum > 0 ? Math.min((currentNum / limitNum) * 100, 100) : 0;
+  const isHigh = pct > 80;
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-sm text-text-secondary">{label}</span>
+        <span className="text-sm font-medium text-text">
+          {current} / {limitNum < 0 ? "Unlimited" : `${limit}${unit}`}
+        </span>
+      </div>
+      <div className="h-2 rounded-full bg-surface overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all ${isHigh ? "bg-error" : "bg-accent"}`}
+          style={{ width: limitNum < 0 ? "5%" : `${Math.max(pct, 2)}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function BillingPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -68,6 +120,12 @@ export default function BillingPage() {
   const { data: plans, isLoading: plansLoading } = useQuery({
     queryKey: ["billing", "plans"],
     queryFn: () => api.billing.getPlans(),
+  });
+
+  const { data: usage, isLoading: usageLoading } = useQuery({
+    queryKey: ["billing", "usage"],
+    queryFn: () => api.billing.getUsage(),
+    enabled: isPermanentSecretary,
   });
 
   const { data: invoices, isLoading: invoicesLoading } = useQuery({
@@ -95,6 +153,10 @@ export default function BillingPage() {
   }
 
   const handleCheckout = async (planId: string) => {
+    if (planId === "enterprise") {
+      window.location.href = "mailto:sales@govdecision.com?subject=Enterprise Plan Inquiry";
+      return;
+    }
     setCheckoutLoading(planId);
     try {
       const result = await api.billing.checkout(planId);
@@ -121,7 +183,7 @@ export default function BillingPage() {
   const badge = STATUS_BADGES[subscription?.status ?? "none"] ?? STATUS_BADGES.none;
 
   return (
-    <div className="max-w-5xl space-y-6">
+    <div className="max-w-6xl space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-text">Billing</h1>
         <p className="mt-1 text-sm text-text-secondary">
@@ -152,7 +214,7 @@ export default function BillingPage() {
                 {subscription?.monthlyPrice !== undefined &&
                   subscription.monthlyPrice > 0 && (
                     <p className="mt-1 text-sm text-text-secondary">
-                      ${subscription.monthlyPrice}/{subscription.currency ?? "USD"} per month
+                      {formatCurrency(subscription.monthlyPrice)}/{subscription.currency ?? "USD"} per month
                     </p>
                   )}
                 {subscription?.currentPeriodEnd && (
@@ -190,22 +252,83 @@ export default function BillingPage() {
         </CardContent>
       </Card>
 
+      {/* Usage Stats */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Current Usage</CardTitle>
+          <CardDescription>Resource consumption against your plan limits</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {usageLoading ? (
+            <div className="flex items-center gap-2 text-sm text-text-muted">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Loading usage...
+            </div>
+          ) : usage ? (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium text-text">Users</span>
+                </div>
+                <UsageBar
+                  label=""
+                  current={String(usage.usage.users)}
+                  limit={String(usage.limits.users)}
+                  unit=""
+                />
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-accent" />
+                  <span className="text-sm font-medium text-text">Decisions</span>
+                </div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm text-text-secondary">&nbsp;</span>
+                  <span className="text-sm font-medium text-text">
+                    {usage.usage.decisions} total
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <HardDrive className="h-4 w-4 text-warning" />
+                  <span className="text-sm font-medium text-text">Storage</span>
+                </div>
+                <UsageBar
+                  label=""
+                  current={formatBytes(usage.usage.storageBytes)}
+                  limit={String(usage.limits.storageGb)}
+                  unit="GB"
+                />
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-text-muted">No usage data available.</p>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Plans */}
       <div>
         <h2 className="text-lg font-semibold text-text mb-4">Available Plans</h2>
+        <p className="text-sm text-text-secondary mb-6">
+          Annual pricing shown. Multi-year discounts: 2-year saves 10%, 3-year saves 16%.
+        </p>
         {plansLoading ? (
           <div className="flex items-center gap-2 text-sm text-text-muted">
             <Loader2 className="h-4 w-4 animate-spin" />
             Loading plans...
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             {plans?.map((plan) => {
               const isCurrent = currentPlan === plan.id;
               const isUpgrade =
                 currentPlan &&
                 plans.findIndex((p) => p.id === currentPlan) <
                   plans.findIndex((p) => p.id === plan.id);
+              const isEnterprise = plan.id === "enterprise";
 
               return (
                 <Card
@@ -216,15 +339,32 @@ export default function BillingPage() {
                     <CardTitle className="text-base">{plan.name}</CardTitle>
                     <div className="mt-2">
                       <span className="text-3xl font-bold text-text">
-                        ${plan.price}
+                        {formatCurrency(plan.price)}
                       </span>
                       <span className="text-sm text-text-muted">
-                        /{plan.currency}/mo
+                        /mo
                       </span>
+                    </div>
+                    <p className="text-xs text-text-muted mt-1">
+                      {formatCurrency(plan.annualPrice)}/year
+                    </p>
+                    {plan.multiYearDiscounts && (
+                      <div className="mt-2 space-y-0.5">
+                        <p className="text-xs text-text-muted">
+                          2-year: {formatCurrency(plan.multiYearDiscounts.twoYear)}/yr
+                        </p>
+                        <p className="text-xs text-text-muted">
+                          3-year: {formatCurrency(plan.multiYearDiscounts.threeYear)}/yr
+                        </p>
+                      </div>
+                    )}
+                    <div className="mt-2 flex items-center gap-3 text-xs text-text-muted">
+                      <span>{plan.userLimit < 0 ? "Unlimited" : `${plan.userLimit}`} users</span>
+                      <span>{plan.storageGb}GB storage</span>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <ul className="space-y-2 mb-6">
+                    <ul className="space-y-2 mb-4">
                       {plan.features.map((feature) => (
                         <li
                           key={feature}
@@ -235,9 +375,31 @@ export default function BillingPage() {
                         </li>
                       ))}
                     </ul>
+                    {plan.restrictions.length > 0 && (
+                      <ul className="space-y-1 mb-6">
+                        {plan.restrictions.map((r) => (
+                          <li
+                            key={r}
+                            className="flex items-center gap-2 text-xs text-text-muted"
+                          >
+                            <X className="h-3 w-3 text-error shrink-0" />
+                            {r}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {plan.restrictions.length === 0 && <div className="mb-6" />}
                     {isCurrent ? (
                       <Button disabled className="w-full">
                         Current Plan
+                      </Button>
+                    ) : isEnterprise ? (
+                      <Button
+                        className="w-full"
+                        variant="outline"
+                        onClick={() => handleCheckout(plan.id)}
+                      >
+                        Contact Sales
                       </Button>
                     ) : (
                       <Button
@@ -263,49 +425,6 @@ export default function BillingPage() {
             })}
           </div>
         )}
-      </div>
-
-      {/* Usage Stats */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card>
-          <CardContent className="p-5">
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-primary/10 p-2">
-                <Users className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm text-text-secondary">Active Users</p>
-                <p className="text-xl font-semibold text-text">--</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-5">
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-accent/10 p-2">
-                <FileText className="h-5 w-5 text-accent" />
-              </div>
-              <div>
-                <p className="text-sm text-text-secondary">Total Decisions</p>
-                <p className="text-xl font-semibold text-text">--</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-5">
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-warning/10 p-2">
-                <HardDrive className="h-5 w-5 text-warning" />
-              </div>
-              <div>
-                <p className="text-sm text-text-secondary">Storage Used</p>
-                <p className="text-xl font-semibold text-text">--</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Invoice History */}

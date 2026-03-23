@@ -3,6 +3,7 @@ using DiscretionaryPowers.Domain.Auth;
 using DiscretionaryPowers.Domain.Entities;
 using DiscretionaryPowers.Infrastructure.Data;
 using DiscretionaryPowers.Infrastructure.Payments;
+using DiscretionaryPowers.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -15,51 +16,111 @@ public class BillingController(
     AppDbContext db,
     ICurrentUserService currentUser,
     PlaceToPayService placeToPay,
+    SubscriptionGuardService subscriptionGuard,
     IConfiguration configuration) : ControllerBase
 {
-    private static readonly object[] Plans =
+    private static readonly PlanDefinition[] Plans =
     [
-        new
+        new()
         {
-            id = "starter",
-            name = "Government Starter",
-            price = 399m,
-            currency = "USD",
-            features = new[]
-            {
-                "Up to 50 users", "10-step workflow", "5GB document storage", "Email support"
-            }
+            Id = "starter",
+            Name = "Government Starter",
+            Price = 3333m,
+            AnnualPrice = 40000m,
+            Currency = "USD",
+            UserLimit = 50,
+            StorageGb = 5,
+            Features =
+            [
+                "Up to 50 users",
+                "Standard 10-step workflow",
+                "Cryptographic audit trail",
+                "5GB document storage",
+                "Basic reporting (counts only)",
+                "Public transparency portal",
+                "Email notifications",
+                "JSON data export",
+                "Email support (48h response)",
+            ],
+            Restrictions = ["No custom workflows", "No API access", "No document redaction", "No MFA"],
         },
-        new
+        new()
         {
-            id = "professional",
-            name = "Government Professional",
-            price = 799m,
-            currency = "USD",
-            features = new[]
-            {
-                "Up to 200 users", "Custom workflows", "25GB storage", "Priority support",
-                "API access"
-            }
+            Id = "professional",
+            Name = "Government Professional",
+            Price = 7083m,
+            AnnualPrice = 85000m,
+            Currency = "USD",
+            UserLimit = 200,
+            StorageGb = 25,
+            Features =
+            [
+                "Up to 200 users",
+                "Custom workflow templates",
+                "Advanced reporting & analytics",
+                "25GB document storage",
+                "API access & integration keys",
+                "Document redaction engine",
+                "Audit trail verification",
+                "Judicial review tracking",
+                "CSV & JSON export",
+                "MFA for elevated roles",
+                "Priority support (24h response)",
+            ],
+            Restrictions = ["No custom branding", "No HTML report export"],
         },
-        new
+        new()
         {
-            id = "enterprise",
-            name = "Government Enterprise",
-            price = 1499m,
-            currency = "USD",
-            features = new[]
-            {
-                "Unlimited users", "Custom workflows", "100GB storage", "Dedicated support",
-                "API access", "Custom branding", "SLA guarantee"
-            }
-        }
+            Id = "enterprise",
+            Name = "Government Enterprise",
+            Price = 16667m,
+            AnnualPrice = 200000m,
+            Currency = "USD",
+            UserLimit = -1,
+            StorageGb = 100,
+            Features =
+            [
+                "Unlimited users",
+                "Everything in Professional",
+                "100GB document storage",
+                "Custom branding & white-label",
+                "All export formats (JSON, CSV, HTML)",
+                "Custom domain support",
+                "Dedicated account manager",
+                "SLA: 99.5% uptime guarantee",
+                "Dedicated support (4h response)",
+                "Mandatory MFA enforcement",
+                "Data sovereignty options",
+            ],
+            Restrictions = [],
+        },
     ];
 
     /// <summary>List available subscription plans.</summary>
     [HttpGet("plans")]
     [AllowAnonymous]
-    public IActionResult GetPlans() => Ok(Plans);
+    public IActionResult GetPlans()
+    {
+        var result = Plans.Select(p => new
+        {
+            p.Id,
+            p.Name,
+            p.Price,
+            p.AnnualPrice,
+            p.Currency,
+            p.UserLimit,
+            p.StorageGb,
+            p.Features,
+            p.Restrictions,
+            MultiYearDiscounts = new
+            {
+                OneYear = p.AnnualPrice,
+                TwoYear = p.AnnualPrice * 0.9m,
+                ThreeYear = p.AnnualPrice * 0.84m,
+            },
+        });
+        return Ok(result);
+    }
 
     /// <summary>Get the current organisation's subscription.</summary>
     [HttpGet("subscription")]
@@ -92,6 +153,35 @@ public class BillingController(
         });
     }
 
+    /// <summary>Get usage statistics for the current organisation.</summary>
+    [HttpGet("usage")]
+    [Authorize]
+    public async Task<IActionResult> GetUsage()
+    {
+        var orgId = currentUser.OrganizationId;
+        if (!orgId.HasValue) return BadRequest(new { message = "No organization context" });
+
+        var userCount = await db.Users.CountAsync();
+        var decisionCount = await db.Decisions.CountAsync();
+        var storageBytes = await db.Documents.SumAsync(d => (long)d.SizeBytes);
+        var plan = await subscriptionGuard.GetCurrentPlan();
+
+        var limits = plan switch
+        {
+            "starter" => new { Users = 50, StorageGb = 5 },
+            "professional" => new { Users = 200, StorageGb = 25 },
+            "enterprise" => new { Users = -1, StorageGb = 100 },
+            _ => new { Users = 50, StorageGb = 5 },
+        };
+
+        return Ok(new
+        {
+            plan,
+            usage = new { users = userCount, decisions = decisionCount, storageBytes },
+            limits = new { users = limits.Users, storageGb = limits.StorageGb },
+        });
+    }
+
     /// <summary>Create a PlaceToPay checkout session for a plan.</summary>
     [HttpPost("checkout")]
     [Authorize(Policy = PermissionPolicies.CanManageSettings)]
@@ -101,7 +191,7 @@ public class BillingController(
         if (orgId is null) return BadRequest(new { message = "No organization context" });
 
         // Find plan
-        var plan = Plans.Cast<dynamic>().FirstOrDefault(p => (string)p.id == request.PlanId);
+        var plan = Plans.FirstOrDefault(p => p.Id == request.PlanId);
         if (plan is null)
             return BadRequest(new { message = "Invalid plan" });
 
@@ -113,9 +203,9 @@ public class BillingController(
 
         var (processUrl, requestId, error) = await placeToPay.CreateSession(
             reference,
-            $"GovDecision {plan.name} - Monthly Subscription",
-            (decimal)plan.price,
-            (string)plan.currency,
+            $"GovDecision {plan.Name} - Monthly Subscription",
+            plan.Price,
+            plan.Currency,
             returnUrl,
             ipAddress,
             userAgent,
@@ -131,8 +221,8 @@ public class BillingController(
             OrganizationId = orgId.Value,
             RequestId = requestId!,
             Status = "pending",
-            Amount = (decimal)plan.price,
-            Currency = (string)plan.currency,
+            Amount = plan.Price,
+            Currency = plan.Currency,
             Reference = reference,
         });
         await db.SaveChangesAsync();
@@ -177,7 +267,7 @@ public class BillingController(
             case "EXPIRED":
                 record.Status = "expired";
                 break;
-            // PENDING — leave as-is
+            // PENDING -- leave as-is
         }
 
         await db.SaveChangesAsync();
@@ -283,7 +373,7 @@ public class BillingController(
     private async Task ActivateSubscription(PaymentRecord record)
     {
         // Find plan info from the reference
-        var planId = await DeterminePlanFromAmount(record.Amount);
+        var planId = DeterminePlanFromAmount(record.Amount);
         var now = DateTime.UtcNow;
 
         // Check for existing active subscription
@@ -324,15 +414,15 @@ public class BillingController(
         }
     }
 
-    private static Task<string> DeterminePlanFromAmount(decimal amount)
+    private static string DeterminePlanFromAmount(decimal amount)
     {
-        return Task.FromResult(amount switch
+        return amount switch
         {
-            399m => "starter",
-            799m => "professional",
-            1499m => "enterprise",
+            3333m => "starter",
+            7083m => "professional",
+            16667m => "enterprise",
             _ => "starter"
-        });
+        };
     }
 
     // ---- DTOs ----
@@ -343,5 +433,18 @@ public class BillingController(
     {
         public string? RequestId { get; init; }
         public string? Status { get; init; }
+    }
+
+    private class PlanDefinition
+    {
+        public string Id { get; init; } = null!;
+        public string Name { get; init; } = null!;
+        public decimal Price { get; init; }
+        public decimal AnnualPrice { get; init; }
+        public string Currency { get; init; } = "USD";
+        public int UserLimit { get; init; }
+        public int StorageGb { get; init; }
+        public string[] Features { get; init; } = [];
+        public string[] Restrictions { get; init; } = [];
     }
 }

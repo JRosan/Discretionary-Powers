@@ -1,15 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useTenant } from "@/lib/tenant-context";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { UpgradePrompt } from "@/components/common/upgrade-prompt";
 
 export default function OrganizationSettingsPage() {
   const { user } = useAuth();
   const tenant = useTenant();
+
+  const { data: usage } = useQuery({
+    queryKey: ["billing", "usage"],
+    queryFn: () => api.billing.getUsage(),
+  });
+
+  const isGated = usage ? usage.plan !== "enterprise" : false;
 
   const [name, setName] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
@@ -57,6 +66,20 @@ export default function OrganizationSettingsPage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  if (isGated) {
+    return (
+      <div className="mx-auto max-w-3xl space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-text">Organization Branding</h1>
+          <p className="mt-1 text-sm text-text-secondary">
+            Customize your organization&apos;s appearance across the platform.
+          </p>
+        </div>
+        <UpgradePrompt feature="custom branding and white-labeling" requiredPlan="enterprise" />
+      </div>
+    );
   }
 
   return (

@@ -350,6 +350,8 @@ export const api = {
       ),
     getInvoices: () => request<ApiPaymentRecord[]>("/billing/invoices"),
     cancel: () => request<void>("/billing/cancel", { method: "POST" }),
+    getUsage: () =>
+      request<ApiBillingUsage>("/billing/usage"),
   },
 
   health: {
@@ -580,8 +582,30 @@ export interface ApiBillingPlan {
   id: string;
   name: string;
   price: number;
+  annualPrice: number;
   currency: string;
+  userLimit: number;
+  storageGb: number;
   features: string[];
+  restrictions: string[];
+  multiYearDiscounts: {
+    oneYear: number;
+    twoYear: number;
+    threeYear: number;
+  };
+}
+
+export interface ApiBillingUsage {
+  plan: string;
+  usage: {
+    users: number;
+    decisions: number;
+    storageBytes: number;
+  };
+  limits: {
+    users: number;
+    storageGb: number;
+  };
 }
 
 export interface ApiPaymentRecord {

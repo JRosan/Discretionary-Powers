@@ -1,6 +1,7 @@
 using DiscretionaryPowers.Api.Auth;
 using DiscretionaryPowers.Domain.Entities;
 using DiscretionaryPowers.Infrastructure.Data;
+using DiscretionaryPowers.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +11,7 @@ namespace DiscretionaryPowers.Api.Controllers;
 [ApiController]
 [Route("api/workflows")]
 [Authorize]
-public class WorkflowsController(AppDbContext db) : ControllerBase
+public class WorkflowsController(AppDbContext db, SubscriptionGuardService subscriptionGuard) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> List()
@@ -42,6 +43,9 @@ public class WorkflowsController(AppDbContext db) : ControllerBase
     [Authorize(Policy = PermissionPolicies.CanManageSettings)]
     public async Task<IActionResult> Create([FromBody] CreateWorkflowRequest request)
     {
+        if (!await subscriptionGuard.CanUseFeature("custom_workflows"))
+            return StatusCode(403, new { message = "Custom workflows require a Professional or Enterprise plan." });
+
         var workflow = new WorkflowTemplate
         {
             Id = Guid.NewGuid(),
@@ -63,6 +67,9 @@ public class WorkflowsController(AppDbContext db) : ControllerBase
     [Authorize(Policy = PermissionPolicies.CanManageSettings)]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateWorkflowRequest request)
     {
+        if (!await subscriptionGuard.CanUseFeature("custom_workflows"))
+            return StatusCode(403, new { message = "Custom workflows require a Professional or Enterprise plan." });
+
         var workflow = await db.WorkflowTemplates.FindAsync(id);
         if (workflow is null) return NotFound();
 
@@ -78,6 +85,9 @@ public class WorkflowsController(AppDbContext db) : ControllerBase
     [Authorize(Policy = PermissionPolicies.CanManageSettings)]
     public async Task<IActionResult> UpdateSteps(Guid id, [FromBody] List<WorkflowStepRequest> steps)
     {
+        if (!await subscriptionGuard.CanUseFeature("custom_workflows"))
+            return StatusCode(403, new { message = "Custom workflows require a Professional or Enterprise plan." });
+
         var workflow = await db.WorkflowTemplates
             .Include(w => w.Steps)
             .FirstOrDefaultAsync(w => w.Id == id);

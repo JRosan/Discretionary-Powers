@@ -18,6 +18,7 @@ public class DocumentsController(
     DocumentService documentService,
     IAuditService auditService,
     ICurrentUserService currentUser,
+    SubscriptionGuardService subscriptionGuard,
     AppDbContext db) : ControllerBase
 {
     [HttpPost("upload-url")]
@@ -39,6 +40,9 @@ public class DocumentsController(
     [HttpPost("{documentId:guid}/confirm-upload")]
     public async Task<IActionResult> ConfirmUpload(Guid documentId, [FromBody] ConfirmUploadRequest request)
     {
+        var (storageAllowed, storageError) = await subscriptionGuard.CheckStorageLimit(request.SizeBytes);
+        if (!storageAllowed) return StatusCode(403, new { message = storageError });
+
         var result = await documentService.ConfirmUpload(documentId, request.SizeBytes);
         if (!result.Success) return BadRequest(new { message = result.Error });
 
@@ -76,6 +80,9 @@ public class DocumentsController(
     [Authorize(Policy = PermissionPolicies.CanRedactDocument)]
     public async Task<IActionResult> Redact(Guid documentId, [FromBody] RedactDocumentRequest request)
     {
+        if (!await subscriptionGuard.CanUseFeature("document_redaction"))
+            return StatusCode(403, new { message = "Document redaction requires a Professional or Enterprise plan." });
+
         var doc = await db.Documents.FirstOrDefaultAsync(d => d.Id == documentId);
         if (doc is null) return NotFound(new { message = "Document not found." });
 

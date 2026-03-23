@@ -13,12 +13,15 @@ namespace DiscretionaryPowers.Api.Controllers;
 
 [ApiController]
 [Route("api/auth/mfa")]
-public class MfaController(AppDbContext db, MfaService mfaService, JwtTokenService jwtService, ICurrentUserService currentUser) : ControllerBase
+public class MfaController(AppDbContext db, MfaService mfaService, JwtTokenService jwtService, ICurrentUserService currentUser, SubscriptionGuardService subscriptionGuard) : ControllerBase
 {
     [HttpPost("setup")]
     [Authorize]
-    public IActionResult Setup()
+    public async Task<IActionResult> Setup()
     {
+        if (!await subscriptionGuard.CanUseFeature("mfa"))
+            return StatusCode(403, new { message = "Multi-factor authentication requires a Professional or Enterprise plan." });
+
         var secret = mfaService.GenerateSecret();
         var qrCodeUri = mfaService.GetQrCodeUri(secret, currentUser.Email);
         return Ok(new { secret, qrCodeUri });
@@ -28,6 +31,9 @@ public class MfaController(AppDbContext db, MfaService mfaService, JwtTokenServi
     [Authorize]
     public async Task<IActionResult> Enable([FromBody] MfaCodeRequest request)
     {
+        if (!await subscriptionGuard.CanUseFeature("mfa"))
+            return StatusCode(403, new { message = "Multi-factor authentication requires a Professional or Enterprise plan." });
+
         var user = await db.Users.FindAsync(currentUser.UserId);
         if (user is null) return NotFound();
 

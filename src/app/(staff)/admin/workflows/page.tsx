@@ -17,6 +17,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { api, type ApiWorkflowTemplate } from "@/lib/api";
+import { UpgradePrompt } from "@/components/common/upgrade-prompt";
 import { useTranslations } from "@/i18n";
 
 export default function WorkflowsPage() {
@@ -25,6 +26,13 @@ export default function WorkflowsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
   const [newIsDefault, setNewIsDefault] = useState(false);
+
+  const { data: usage } = useQuery({
+    queryKey: ["billing", "usage"],
+    queryFn: () => api.billing.getUsage(),
+  });
+
+  const isGated = usage?.plan === "starter";
 
   const { data: workflows, isLoading } = useQuery({
     queryKey: ["workflows"],
@@ -62,11 +70,17 @@ export default function WorkflowsPage() {
             Configure workflow templates for your organization.
           </p>
         </div>
-        <Button onClick={() => setShowCreate(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Create Workflow
-        </Button>
+        {!isGated && (
+          <Button onClick={() => setShowCreate(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Create Workflow
+          </Button>
+        )}
       </div>
+
+      {isGated && (
+        <UpgradePrompt feature="custom workflow templates" requiredPlan="professional" />
+      )}
 
       {isLoading ? (
         <div className="flex justify-center py-12">

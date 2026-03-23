@@ -16,6 +16,7 @@ public class DecisionsController(
     DecisionService decisionService,
     ExportService exportService,
     IAuditService auditService,
+    SubscriptionGuardService subscriptionGuard,
     ICurrentUserService currentUser) : ControllerBase
 {
     [HttpPost]
@@ -128,7 +129,13 @@ public class DecisionsController(
     [HttpGet("{id:guid}/export")]
     public async Task<IActionResult> Export(Guid id, [FromQuery] string format = "json")
     {
-        return format.ToLowerInvariant() switch
+        var fmt = format.ToLowerInvariant();
+        if (fmt == "csv" && !await subscriptionGuard.CanUseFeature("csv_export"))
+            return StatusCode(403, new { message = "CSV export requires a Professional or Enterprise plan." });
+        if (fmt == "html" && !await subscriptionGuard.CanUseFeature("html_export"))
+            return StatusCode(403, new { message = "HTML export requires an Enterprise plan." });
+
+        return fmt switch
         {
             "json" => File(await exportService.ExportAsJson(id), "application/json", $"decision-{id}.json"),
             "csv" => File(await exportService.ExportAsCsv(id), "text/csv", $"decision-{id}.csv"),
