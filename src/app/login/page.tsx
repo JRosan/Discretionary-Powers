@@ -51,6 +51,7 @@ function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const loggedOut = searchParams.get("logged_out") === "true";
   const { login, loginWithMfa } = useAuth();
   const tAuth = useTranslations("auth");
   const tCommon = useTranslations("common");
@@ -194,6 +195,12 @@ function LoginPage() {
             <h2 className="text-lg font-semibold text-text text-center">
               {tAuth("signInTitle")}
             </h2>
+
+            {loggedOut && !error && (
+              <div className="rounded-md bg-accent/10 border border-accent/20 px-3 py-2 text-sm text-accent-dark text-center">
+                You have been signed out successfully.
+              </div>
+            )}
 
             {error && (
               <div className="rounded-md bg-error/10 px-3 py-2 text-sm text-error">
