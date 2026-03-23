@@ -23,6 +23,10 @@
     "workflows": "Flujos de Trabajo",
     "decisionTypes": "Tipos de Decisión",
     "organization": "Organización",
+    "apiKeys": "Claves API",
+    "billing": "Facturación",
+    "superAdmin": "Super Administrador",
+    "tenants": "Inquilinos",
     "signOut": "Cerrar sesión"
   },
   "auth": {

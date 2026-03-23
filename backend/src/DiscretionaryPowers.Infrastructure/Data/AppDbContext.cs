@@ -28,6 +28,7 @@ public class AppDbContext : DbContext
     public DbSet<WorkflowTemplate> WorkflowTemplates => Set<WorkflowTemplate>();
     public DbSet<WorkflowStepTemplate> WorkflowStepTemplates => Set<WorkflowStepTemplate>();
     public DbSet<DecisionTypeConfig> DecisionTypeConfigs => Set<DecisionTypeConfig>();
+    public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -47,5 +48,6 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Document>().HasQueryFilter(e => _tenantId == null || e.OrganizationId == _tenantId);
         modelBuilder.Entity<WorkflowTemplate>().HasQueryFilter(e => _tenantId == null || e.OrganizationId == _tenantId);
         modelBuilder.Entity<DecisionTypeConfig>().HasQueryFilter(e => _tenantId == null || e.OrganizationId == _tenantId);
+        modelBuilder.Entity<ApiKey>().HasQueryFilter(e => _tenantId == null || e.OrganizationId == _tenantId);
     }
 }

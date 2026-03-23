@@ -23,6 +23,10 @@
     "workflows": "Workflows",
     "decisionTypes": "Decision Types",
     "organization": "Organization",
+    "apiKeys": "API Keys",
+    "billing": "Billing",
+    "superAdmin": "Super Admin",
+    "tenants": "Tenants",
     "signOut": "Sign out"
   },
   "auth": {

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth-context";
 import { useTranslations } from "@/i18n";
-import { Scale, FileSearch, UserCheck, Shield } from "lucide-react";
+import { Scale, FileSearch, UserCheck, Shield, Crown } from "lucide-react";
 import { useTenant } from "@/lib/tenant-context";
 
 const demoAccounts = [
@@ -38,6 +38,13 @@ const demoAccounts = [
     description: "View audit trails and export data",
     icon: FileSearch,
     color: "bg-error/10 text-error",
+  },
+  {
+    email: "superadmin@govdecision.com",
+    role: "Super Admin",
+    description: "Manage tenants and platform configuration",
+    icon: Crown,
+    color: "bg-primary/10 text-primary",
   },
 ];
 

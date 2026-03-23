@@ -324,8 +324,36 @@ export const api = {
       }),
   },
 
+  apiKeys: {
+    list: () => request<ApiKeyResponse[]>("/api-keys"),
+    create: (data: { name: string; scopes: string[] }) =>
+      request<{ id: string; key: string; prefix: string }>("/api-keys", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    revoke: (id: string) =>
+      request<void>(`/api-keys/${id}`, { method: "DELETE" }),
+  },
+
   health: {
     check: () => request<{ status: string }>("/health"),
+  },
+
+  superAdmin: {
+    listTenants: () => request<ApiOrganization[]>("/super-admin/tenants"),
+    getTenant: (id: string) => request<ApiOrganization>(`/super-admin/tenants/${id}`),
+    createTenant: (data: Record<string, unknown>) =>
+      request<ApiOrganization>("/super-admin/tenants", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    updateTenant: (id: string, data: Record<string, unknown>) =>
+      request<void>(`/super-admin/tenants/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
+    getTenantStats: (id: string) =>
+      request<Record<string, unknown>>(`/super-admin/tenants/${id}/stats`),
   },
 };
 
@@ -480,6 +508,17 @@ export interface ApiWorkflowTemplate {
   steps: ApiWorkflowStepTemplate[];
 }
 
+export interface ApiKeyResponse {
+  id: string;
+  name: string;
+  keyPrefix: string;
+  scopes: string[];
+  isActive: boolean;
+  expiresAt: string | null;
+  lastUsedAt: string | null;
+  createdAt: string;
+}
+
 export interface ApiDecisionTypeConfig {
   id: string;
   organizationId: string;
@@ -490,4 +529,20 @@ export interface ApiDecisionTypeConfig {
   defaultWorkflowId: string | null;
   isActive: boolean;
   createdAt: string;
+}
+
+export interface ApiOrganization {
+  id: string;
+  name: string;
+  slug: string;
+  domain: string | null;
+  logoUrl: string | null;
+  primaryColor: string | null;
+  accentColor: string | null;
+  heroImageUrl?: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  userCount?: number;
+  decisionCount?: number;
 }

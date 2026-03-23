@@ -14,5 +14,7 @@ public enum UserRole
     // auditor
     Auditor,
     // public
-    Public
+    Public,
+    // super_admin
+    SuperAdmin
 }

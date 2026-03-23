@@ -31,7 +31,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = builder.Configuration["Jwt:Audience"] ?? "DiscretionaryPowers",
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
         };
-    });
+    })
+    .AddScheme<ApiKeyAuthOptions, ApiKeyAuthHandler>(
+        ApiKeyAuthDefaults.AuthenticationScheme, _ => { });
 
 // Authorization policies
 builder.Services.AddAuthorizationBuilder()
@@ -50,7 +52,9 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy(PermissionPolicies.CanRedactDocument, policy =>
         policy.RequireRole(UserRole.PermanentSecretary.ToString(), UserRole.LegalAdvisor.ToString()))
     .AddPolicy(PermissionPolicies.CanManageSettings, policy =>
-        policy.RequireRole(UserRole.PermanentSecretary.ToString()));
+        policy.RequireRole(UserRole.PermanentSecretary.ToString()))
+    .AddPolicy("SuperAdmin", policy =>
+        policy.RequireRole(UserRole.SuperAdmin.ToString()));
 
 // Rate limiting
 builder.Services.AddRateLimiter(options =>

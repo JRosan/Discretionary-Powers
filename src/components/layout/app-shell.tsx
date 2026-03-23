@@ -13,6 +13,7 @@ import {
   Search,
   LogOut,
   KeyRound,
+  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -55,6 +56,17 @@ const navItemDefs: NavItemDef[] = [
       { labelKey: "organization", href: "/admin/organization" },
       { labelKey: "settings", href: "/admin/settings" },
       { labelKey: "mfa", href: "/admin/mfa" },
+      { labelKey: "apiKeys", href: "/admin/api-keys" },
+      { labelKey: "billing", href: "/admin/billing" },
+    ],
+  },
+  {
+    labelKey: "superAdmin",
+    href: "/super-admin",
+    icon: Shield,
+    roles: ["super_admin"],
+    children: [
+      { labelKey: "tenants", href: "/super-admin/tenants" },
     ],
   },
 ];
@@ -69,7 +81,7 @@ export function AppShell({ children }: AppShellProps) {
   const tenant = useTenant();
   const tNav = useTranslations('nav');
   const tCommon = useTranslations('common');
-  const [adminOpen, setAdminOpen] = React.useState(false);
+  const [openMenus, setOpenMenus] = React.useState<Set<string>>(new Set());
   const [searchOpen, setSearchOpen] = React.useState(false);
   const [notifications, setNotifications] = React.useState<
     { id: string; type: string; title: string; message: string; read: boolean | null; sentAt: string | Date | null; decisionId: string | null }[]
@@ -165,7 +177,12 @@ export function AppShell({ children }: AppShellProps) {
               return (
                 <div key={item.href}>
                   <button
-                    onClick={() => setAdminOpen(!adminOpen)}
+                    onClick={() => setOpenMenus((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(item.href)) next.delete(item.href);
+                      else next.add(item.href);
+                      return next;
+                    })}
                     className={cn(
                       "flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                       isChildActive
@@ -178,11 +195,11 @@ export function AppShell({ children }: AppShellProps) {
                     <ChevronDown
                       className={cn(
                         "h-4 w-4 transition-transform",
-                        adminOpen && "rotate-180"
+                        openMenus.has(item.href) && "rotate-180"
                       )}
                     />
                   </button>
-                  {adminOpen && (
+                  {openMenus.has(item.href) && (
                     <div className="ml-7 mt-1 space-y-1">
                       {item.children.map((child) => (
                         <Link

@@ -97,5 +97,23 @@ public static class DataSeeder
 
         context.Users.AddRange(users);
         await context.SaveChangesAsync();
+
+        // Ensure super admin exists
+        if (!await context.Users.IgnoreQueryFilters().AnyAsync(u => u.Email == "superadmin@govdecision.com"))
+        {
+            context.Users.Add(new User
+            {
+                Id = Guid.NewGuid(),
+                Email = "superadmin@govdecision.com",
+                Name = "Super Admin",
+                Role = UserRole.SuperAdmin,
+                OrganizationId = DefaultOrgId,
+                PasswordHash = passwordHash,
+                Active = true,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+            });
+            await context.SaveChangesAsync();
+        }
     }
 }
