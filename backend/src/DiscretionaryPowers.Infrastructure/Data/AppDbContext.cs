@@ -33,6 +33,7 @@ public class AppDbContext : DbContext
     public DbSet<PaymentRecord> PaymentRecords => Set<PaymentRecord>();
     public DbSet<LoginEvent> LoginEvents => Set<LoginEvent>();
     public DbSet<PlatformAnnouncement> PlatformAnnouncements => Set<PlatformAnnouncement>();
+    public DbSet<PlatformConfig> PlatformConfigs => Set<PlatformConfig>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

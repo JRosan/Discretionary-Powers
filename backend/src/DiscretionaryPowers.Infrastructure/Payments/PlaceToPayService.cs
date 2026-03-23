@@ -2,6 +2,8 @@ using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using DiscretionaryPowers.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -18,15 +20,25 @@ public class PlaceToPayService
     private readonly bool _isMockMode;
 
     public PlaceToPayService(
+        AppDbContext db,
         IConfiguration configuration,
         IHttpClientFactory httpClientFactory,
         ILogger<PlaceToPayService> logger)
     {
         _httpClient = httpClientFactory.CreateClient("PlaceToPay");
-        _login = configuration["PlaceToPay:Login"] ?? "";
-        _secretKey = configuration["PlaceToPay:SecretKey"] ?? "";
-        _endpoint = configuration["PlaceToPay:Endpoint"] ?? "https://checkout-test.placetopay.com";
         _logger = logger;
+
+        // Try DB config first, fall back to appsettings
+        var dbLogin = db.PlatformConfigs.AsNoTracking()
+            .FirstOrDefault(c => c.Key == "placetopay:login")?.Value;
+        var dbSecret = db.PlatformConfigs.AsNoTracking()
+            .FirstOrDefault(c => c.Key == "placetopay:secret_key")?.Value;
+        var dbEndpoint = db.PlatformConfigs.AsNoTracking()
+            .FirstOrDefault(c => c.Key == "placetopay:endpoint")?.Value;
+
+        _login = !string.IsNullOrEmpty(dbLogin) ? dbLogin : (configuration["PlaceToPay:Login"] ?? "");
+        _secretKey = !string.IsNullOrEmpty(dbSecret) ? dbSecret : (configuration["PlaceToPay:SecretKey"] ?? "");
+        _endpoint = !string.IsNullOrEmpty(dbEndpoint) ? dbEndpoint : (configuration["PlaceToPay:Endpoint"] ?? "https://checkout-test.placetopay.com");
         _isMockMode = string.IsNullOrEmpty(_login) || string.IsNullOrEmpty(_secretKey);
 
         if (_isMockMode)
@@ -49,6 +61,33 @@ public class PlaceToPayService
             nonce = Convert.ToBase64String(rawNonce),
             seed
         };
+    }
+
+    /// <summary>
+    /// Test the PlaceToPay connection by attempting to build auth and call the API.
+    /// </summary>
+    public async Task<(bool Success, string Message)> TestConnection()
+    {
+        if (_isMockMode)
+            return (false, "Payment gateway credentials are not configured. Please set the PlaceToPay Login and Secret Key.");
+
+        try
+        {
+            var body = new { auth = BuildAuth() };
+            // Use a simple session query to test connectivity
+            var response = await _httpClient.PostAsJsonAsync($"{_endpoint}/api/session/0", body);
+            // Even a 'not found' response means the API is reachable and auth format is accepted
+            if (response.IsSuccessStatusCode || (int)response.StatusCode < 500)
+            {
+                return (true, $"Successfully connected to PlaceToPay at {_endpoint}");
+            }
+            return (false, $"PlaceToPay returned HTTP {(int)response.StatusCode}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "PlaceToPay connection test failed");
+            return (false, $"Connection failed: {ex.Message}");
+        }
     }
 
     /// <summary>

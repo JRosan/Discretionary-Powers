@@ -402,7 +402,16 @@ export const api = {
     getAuditLog: (params?: Record<string, unknown>) =>
       request<Record<string, unknown>>(`/super-admin/audit${qs(params)}`),
     getSettings: () =>
-      request<Record<string, unknown>>("/super-admin/settings"),
+      request<ApiPlatformSettings>("/super-admin/settings"),
+    updateSettings: (settings: Array<{ key: string; value: string }>) =>
+      request<{ updated: number; keys: string[] }>("/super-admin/settings", {
+        method: "PUT",
+        body: JSON.stringify(settings),
+      }),
+    testPayment: () =>
+      request<{ success: boolean; message: string }>("/super-admin/settings/test-payment", { method: "POST" }),
+    testEmail: () =>
+      request<{ success: boolean; message: string }>("/super-admin/settings/test-email", { method: "POST" }),
     getLoginActivity: (params?: Record<string, unknown>) =>
       request<Record<string, unknown>>(`/super-admin/login-activity${qs(params)}`),
     getSessions: () =>
@@ -691,4 +700,16 @@ export interface ApiAnnouncement {
   isActive?: boolean;
   expiresAt: string | null;
   createdAt: string;
+}
+
+export interface ApiPlatformSettings {
+  categories: Array<{
+    name: string;
+    settings: Array<{
+      key: string;
+      value: string;
+      isSecret: boolean;
+      description: string;
+    }>;
+  }>;
 }

@@ -1,7 +1,10 @@
 using System.Diagnostics;
+using DiscretionaryPowers.Domain.Auth;
 using DiscretionaryPowers.Domain.Entities;
 using DiscretionaryPowers.Domain.Enums;
+using DiscretionaryPowers.Domain.Interfaces;
 using DiscretionaryPowers.Infrastructure.Data;
+using DiscretionaryPowers.Infrastructure.Payments;
 using static DiscretionaryPowers.Infrastructure.Data.EnumConverter;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,7 +15,12 @@ namespace DiscretionaryPowers.Api.Controllers;
 [ApiController]
 [Route("api/super-admin")]
 [Authorize(Policy = "SuperAdmin")]
-public class SuperAdminController(AppDbContext db, IConfiguration configuration) : ControllerBase
+public class SuperAdminController(
+    AppDbContext db,
+    IConfiguration configuration,
+    ICurrentUserService currentUser,
+    IEmailService emailService,
+    PlaceToPayService placeToPayService) : ControllerBase
 {
     [HttpGet("dashboard")]
     public async Task<IActionResult> GetDashboard()
@@ -155,48 +163,95 @@ public class SuperAdminController(AppDbContext db, IConfiguration configuration)
     [HttpGet("settings")]
     public async Task<IActionResult> GetSettings()
     {
-        // Check database connectivity
-        var dbStatus = "connected";
+        var configs = await db.PlatformConfigs
+            .AsNoTracking()
+            .OrderBy(c => c.Category)
+            .ThenBy(c => c.Key)
+            .ToListAsync();
+
+        var grouped = configs
+            .GroupBy(c => c.Category)
+            .Select(g => new
+            {
+                name = g.Key,
+                settings = g.Select(c => new
+                {
+                    key = c.Key,
+                    value = c.IsSecret
+                        ? (string.IsNullOrEmpty(c.Value) ? "" : "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022")
+                        : c.Value,
+                    isSecret = c.IsSecret,
+                    description = c.Description ?? "",
+                }).ToList(),
+            })
+            .ToList();
+
+        return Ok(new { categories = grouped });
+    }
+
+    [HttpPut("settings")]
+    public async Task<IActionResult> UpdateSettings([FromBody] List<UpdatePlatformConfigRequest> settings)
+    {
+        const string maskedValue = "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022";
+        var updatedKeys = new List<string>();
+
+        foreach (var item in settings)
+        {
+            // Skip secrets that weren't actually changed (still masked)
+            if (item.Value == maskedValue)
+                continue;
+
+            var config = await db.PlatformConfigs.FindAsync(item.Key);
+            if (config is null)
+            {
+                // Create new config entry if it doesn't exist
+                config = new PlatformConfig
+                {
+                    Key = item.Key,
+                    Value = item.Value,
+                    IsSecret = false,
+                    Category = item.Key.Contains(':') ? item.Key.Split(':')[0] : "general",
+                    UpdatedAt = DateTime.UtcNow,
+                };
+                db.PlatformConfigs.Add(config);
+            }
+            else
+            {
+                config.Value = item.Value;
+                config.UpdatedAt = DateTime.UtcNow;
+            }
+            updatedKeys.Add(item.Key);
+        }
+
+        if (updatedKeys.Count > 0)
+            await db.SaveChangesAsync();
+
+        return Ok(new { updated = updatedKeys.Count, keys = updatedKeys });
+    }
+
+    [HttpPost("settings/test-payment")]
+    public async Task<IActionResult> TestPaymentConnection()
+    {
+        var (success, message) = await placeToPayService.TestConnection();
+        return Ok(new { success, message });
+    }
+
+    [HttpPost("settings/test-email")]
+    public async Task<IActionResult> TestEmailConnection()
+    {
         try
         {
-            await db.Database.CanConnectAsync();
+            var toEmail = currentUser.Email;
+            await emailService.SendEmail(
+                toEmail,
+                "GovDecision — Test Email",
+                "<h2>Email Configuration Test</h2><p>If you received this email, your email settings are configured correctly.</p><p>Sent at: " + DateTime.UtcNow.ToString("o") + "</p>");
+            return Ok(new { success = true, message = $"Test email sent to {toEmail}" });
         }
-        catch
+        catch (Exception ex)
         {
-            dbStatus = "disconnected";
+            return Ok(new { success = false, message = $"Email test failed: {ex.Message}" });
         }
-
-        var placeToPayEndpoint = configuration["PlaceToPay:Endpoint"] ?? "";
-        var placeToPayConfigured = !string.IsNullOrEmpty(configuration["PlaceToPay:Login"]);
-
-        var smtpHost = configuration["Smtp:Host"] ?? "";
-        var emailConfigured = !string.IsNullOrEmpty(smtpHost);
-
-        // Plans (same as BillingController)
-        var plans = new[]
-        {
-            new { id = "starter", name = "Government Starter", price = 3333m, currency = "USD", userLimit = 50, storageGb = 5 },
-            new { id = "professional", name = "Government Professional", price = 7083m, currency = "USD", userLimit = 200, storageGb = 25 },
-            new { id = "enterprise", name = "Government Enterprise", price = 16667m, currency = "USD", userLimit = -1, storageGb = 100 },
-        };
-
-        return Ok(new
-        {
-            version = "1.0.0",
-            database = dbStatus,
-            paymentGateway = new
-            {
-                provider = "PlaceToPay",
-                endpoint = placeToPayEndpoint,
-                configured = placeToPayConfigured,
-            },
-            email = new
-            {
-                provider = "SMTP",
-                configured = emailConfigured,
-            },
-            plans,
-        });
     }
 
     [HttpGet("tenants")]
@@ -816,4 +871,10 @@ public class CreateAnnouncementRequest
     public string Message { get; set; } = null!;
     public string? Type { get; set; }
     public DateTime? ExpiresAt { get; set; }
+}
+
+public class UpdatePlatformConfigRequest
+{
+    public string Key { get; set; } = null!;
+    public string Value { get; set; } = null!;
 }
